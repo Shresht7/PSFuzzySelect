@@ -2,19 +2,32 @@ namespace PSFuzzySelect;
 
 public class FuzzySelector
 {
+    /// <summary>
+    /// The collection of items to be displayed and matched in the fuzzy selector.
+    /// Each item is represented as a tuple containing the original object and its corresponding display string.
+    /// </summary>
     private readonly IEnumerable<(object obj, string display)> _items;
 
+    /// <summary>The current search query entered by the user</summary>
     private string _searchQuery = string.Empty;
 
+    /// <summary>The fuzzy matcher used to match items against the search query</summary>
     private FuzzyMatcher _matcher = new();
 
+    /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool shouldQuit = false;
 
+    /// <summary>Initializes a new instance of the FuzzySelector class</summary>
+    /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
     public FuzzySelector(IEnumerable<(object obj, string display)> items)
     {
         _items = items;
     }
 
+    /// <summary>
+    /// Shows the fuzzy selector interface to the user, allowing them to enter a search query and view matching items
+    /// </summary>
+    /// <returns>The selected value, if any.</returns>
     public string? Show()
     {
         Console.CursorVisible = false;
@@ -46,7 +59,8 @@ public class FuzzySelector
     }
 
     /// <summary>
-    /// Handles user input for the fuzzy selector, including character input for the search query, backspace for editing, and special keys for selection and exit.
+    /// Handles user input for the fuzzy selector, including character input for the search query,
+    /// backspace for editing, and special keys for selection and exit.
     /// </summary>
     /// <returns>The selected value, if any.</returns>
     private string? HandleInput()
@@ -80,7 +94,8 @@ public class FuzzySelector
     }
 
     /// <summary>
-    /// Renders the user interface for the fuzzy selector, including the search prompt and the list of items that match the current search query.
+    /// Renders the user interface for the fuzzy selector,
+    /// including the search prompt and the list of items that match the current search query.
     /// This method is called on each iteration of the main loop to update the display based on user input.
     /// </summary>
     private void Render()
