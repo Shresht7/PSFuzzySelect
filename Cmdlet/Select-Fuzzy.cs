@@ -46,8 +46,14 @@ public class SelectFuzzyCmdlet : PSCmdlet
         var displayAdapter = new ObjectDisplayAdapter(Property);
         var items = _inputObjects.Select(obj => ((object)obj, displayAdapter.GetDisplayString(obj)));
 
+        // Show the fuzzy selector and get the selected object
         var selector = new FuzzySelector(items);
         var selected = selector.Show();
-        Console.WriteLine($"Selected: {selected}");
+
+        // Write the selected object back to the pipeline
+        if (selected != null)
+        {
+            WriteObject(selected);
+        }
     }
 }
