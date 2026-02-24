@@ -126,7 +126,7 @@ public class FuzzySelector
 
 
         // Handle character input for search query
-        if (char.IsLetterOrDigit(key.KeyChar) || char.IsWhiteSpace(key.KeyChar))
+        if (!char.IsControl(key.KeyChar))
         {
             _searchQuery += key.KeyChar;
             RefreshMatches();
