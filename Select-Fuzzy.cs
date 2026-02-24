@@ -43,7 +43,13 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void EndProcessing()
     {
-        var propertyInfo = Property != null ? $"Properties: {string.Join(", ", Property)}" : "No specific properties";
-        WriteObject($"Hello from Select-Fuzzy! Received {_inputObjects.Count} input object(s). {propertyInfo}");
+        var displayAdapter = new ObjectDisplayAdapter(Property);
+        var previews = _inputObjects.Select(obj => displayAdapter.GetDisplayString(obj));
+
+        WriteObject($"Received {_inputObjects.Count} objects");
+        foreach (var preview in previews)
+        {
+            WriteObject($"  -  {preview}");
+        }
     }
 }
