@@ -1,6 +1,9 @@
 ﻿using System.Management.Automation;
 
-namespace PSFuzzySelect;
+using PSFuzzySelect.Helpers;
+using PSFuzzySelect.UI;
+
+namespace PSFuzzySelect.Cmdlet;
 
 [Cmdlet(VerbsCommon.Select, "Fuzzy")]
 [OutputType(typeof(PSObject))]

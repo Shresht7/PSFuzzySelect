@@ -1,7 +1,7 @@
 using System.Management.Automation;
 using System.Text;
 
-namespace PSFuzzySelect;
+namespace PSFuzzySelect.Helpers;
 
 /// <summary>
 /// Converts PSObjects into displayable string representations based on specified properties or default display properties

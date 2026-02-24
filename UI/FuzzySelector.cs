@@ -1,4 +1,6 @@
-namespace PSFuzzySelect;
+using PSFuzzySelect.Core;
+
+namespace PSFuzzySelect.UI;
 
 public class FuzzySelector
 {

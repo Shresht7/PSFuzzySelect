@@ -1,4 +1,4 @@
-namespace PSFuzzySelect;
+namespace PSFuzzySelect.Core;
 
 public class MatchResult
 {
