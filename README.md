@@ -13,7 +13,7 @@ dotnet build
 Then you can import the module in PowerShell:
 
 ```pwsh
-Import-Module .\PSFuzzySelect.psd1 -Force
+Import-Module .\bin\Debug\net9.0\PSFuzzySelect.psd1 -Force
 ```
 
 > [!NOTE] `-Force` is necessary because PowerShell caches loaded assemblies

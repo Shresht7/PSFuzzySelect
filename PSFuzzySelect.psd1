@@ -9,7 +9,7 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-# RootModule = ''
+RootModule = 'PSFuzzySelect.dll'
 
 # Version number of this module.
 ModuleVersion = '0.1.0'
@@ -72,7 +72,7 @@ PowerShellVersion = '7.0'
 FunctionsToExport = @()
 
 # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-CmdletsToExport = @()
+CmdletsToExport = @('Select-Fuzzy')
 
 # Variables to export from this module
 VariablesToExport = '*'

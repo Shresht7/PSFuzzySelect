@@ -16,4 +16,11 @@
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" PrivateAssets="All" />
   </ItemGroup>
 
+  <!-- Copy the module manifest to the output directory -->
+  <ItemGroup>
+    <None Update="PSFuzzySelect.psd1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
