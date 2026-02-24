@@ -20,6 +20,15 @@ public class FuzzySelector
     /// </summary>
     private List<MatchResult> _currentMatches = new();
 
+    /// <summary>A cursor index to keep track of the currently selected item in the list of matches</summary>
+    private int _cursor = 0;
+
+    /// <summary>
+    /// A selected index to keep track of the item
+    /// that the user has selected (e.g., by pressing Enter)
+    /// </summary>
+    private int _selectedIndex = -1;
+
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool shouldQuit = false;
 
@@ -37,6 +46,9 @@ public class FuzzySelector
     public object? Show()
     {
         Console.CursorVisible = false;
+
+        // Initial refresh to populate matches before the first render
+        RefreshMatches();
 
         try
         {
@@ -86,12 +98,21 @@ public class FuzzySelector
         {
             if (_currentMatches.Count > 0)
             {
-                // For now, just return the top match. 
-                // TODO: In the future, we can implement navigation to select different matches
-                return _currentMatches[0].Item;
+                Select();
+                return _currentMatches[_selectedIndex].Item;
             }
             return null; // No matches, so nothing to select
         }
+
+        if (key.Key == ConsoleKey.UpArrow)
+        {
+            CursorUp();
+        }
+        if (key.Key == ConsoleKey.DownArrow)
+        {
+            CursorDown();
+        }
+
 
         // Handle character input for search query
         if (char.IsLetterOrDigit(key.KeyChar) || char.IsWhiteSpace(key.KeyChar))
@@ -119,12 +140,13 @@ public class FuzzySelector
         Console.Write(prompt + _searchQuery);
         Console.WriteLine();
 
-        var matches = _matcher.Match(_items, _searchQuery);
+        var visibleMatches = _currentMatches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
 
-        // For now, just list all the items.
-        foreach (var item in matches.Take(5)) // Limit to top 5 items for display for now to keep it manageable
+        for (var i = 0; i < visibleMatches.Count; i++)
         {
-            Console.WriteLine($"  -  {item.DisplayString} (Score: {item.Score})");
+            var item = visibleMatches[i];
+            var cursorIndicator = i == _cursor ? ">" : " ";
+            Console.WriteLine($"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
         }
     }
 
@@ -135,6 +157,32 @@ public class FuzzySelector
     private void RefreshMatches()
     {
         _currentMatches = _matcher.Match(_items, _searchQuery);
+        _cursor = 0;
+        _selectedIndex = -1;
+    }
+
+    private void CursorUp()
+    {
+        if (_cursor > 0)
+        {
+            _cursor--;
+        }
+    }
+
+    private void CursorDown()
+    {
+        if (_cursor < _currentMatches.Count - 1)
+        {
+            _cursor++;
+        }
+    }
+
+    private void Select()
+    {
+        if (_cursor >= 0 && _cursor < _currentMatches.Count)
+        {
+            _selectedIndex = _cursor;
+        }
     }
 
     /// <summary>
