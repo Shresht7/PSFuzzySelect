@@ -29,14 +29,14 @@ public class ObjectDisplayAdapter
         // If specific properties are provided, use them for display
         if (_properties?.Length > 0)
         {
-            return GetPropertyDisplay(obj);
+            return GetPropertyDisplay(obj, _properties);
         }
 
         // Otherwise, attempt to use the object's default display properties
         var defaultProperties = GetDefaultDisplayProperties(obj);
         if (defaultProperties?.Length > 0)
         {
-            return GetPropertyDisplay(obj);
+            return GetPropertyDisplay(obj, defaultProperties);
         }
 
         // Fallback to using the object's ToString() method
@@ -47,13 +47,14 @@ public class ObjectDisplayAdapter
     /// Generates a display string for a given PSObject based on the specified properties
     /// </summary>
     /// <param name="obj">The PSObject to generate a display string for</param>
+    /// <param name="properties">The properties to use for generating the display string</param>
     /// <returns>A string representation of the PSObject based on the specified properties</returns>
-    private string GetPropertyDisplay(PSObject obj)
+    private string GetPropertyDisplay(PSObject obj, string[] properties)
     {
         var sb = new StringBuilder();
         bool first = true;  // Check to avoid leading separator
 
-        foreach (var propName in _properties!)
+        foreach (var propName in properties)
         {
             // Append a separator if this is not the first property
             if (!first) sb.Append(" | ");
