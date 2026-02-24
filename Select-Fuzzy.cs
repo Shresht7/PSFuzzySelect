@@ -14,6 +14,14 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter(ValueFromPipeline = true)]
     public PSObject? InputObject { get; set; }
 
+    /// <summary>
+    /// Properties to display and search on.
+    /// If not specified, uses the object's default display properties or ToString() representation.
+    /// </summary>
+    [Parameter(Position = 0)]
+    [ValidateNotNullOrEmpty]
+    public string[]? Property { get; set; }
+
     /// <summary>A list to hold all input objects received from the pipeline</summary>
     private readonly List<PSObject> _inputObjects = new();
 
@@ -35,6 +43,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void EndProcessing()
     {
-        WriteObject($"Hello from Select-Fuzzy! Received {_inputObjects.Count} input object(s)");
+        var propertyInfo = Property != null ? $"Properties: {string.Join(", ", Property)}" : "No specific properties";
+        WriteObject($"Hello from Select-Fuzzy! Received {_inputObjects.Count} input object(s). {propertyInfo}");
     }
 }
