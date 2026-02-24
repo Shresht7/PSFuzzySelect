@@ -40,12 +40,21 @@ public class FuzzySelector
     }
 
     /// <summary>
+    /// Sets up the console UI for the fuzzy selector, including hiding the cursor and preparing any necessary state before entering the main loop.
+    /// This method is called once at the beginning of the Show() method to ensure that the console is in the correct state for rendering the fuzzy selector interface.
+    /// </summary>
+    private void Setup()
+    {
+        Console.CursorVisible = false;  // Hide the cursor for a cleaner UI experience
+    }
+
+    /// <summary>
     /// Shows the fuzzy selector interface to the user, allowing them to enter a search query and view matching items
     /// </summary>
     /// <returns>The selected value, if any.</returns>
     public object? Show()
     {
-        Console.CursorVisible = false;
+        Setup();    // Set up the console UI for the fuzzy selector
 
         // Initial refresh to populate matches before the first render
         RefreshMatches();
@@ -70,7 +79,7 @@ public class FuzzySelector
         }
         finally
         {
-            Console.CursorVisible = true;   // Ensure the cursor is visible again when exiting
+            Cleanup();  // Clean up the console UI when exiting
         }
 
         return null;
@@ -183,6 +192,15 @@ public class FuzzySelector
         {
             _selectedIndex = _cursor;
         }
+    }
+
+    /// <summary>
+    /// Cleans up the console UI by making the cursor visible and clearing any residual UI elements
+    /// </summary>
+    private void Cleanup()
+    {
+        Console.CursorVisible = true;   // Ensure the cursor is visible again when exiting
+        Console.Clear();               // Clear the console to remove any residual UI elements
     }
 
     /// <summary>
