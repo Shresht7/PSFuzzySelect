@@ -43,13 +43,18 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void EndProcessing()
     {
+        var query = "code"; // TODO: Get the search query from user input (e.g., a parameter or interactive prompt)
+
+        var matcher = new FuzzyMatcher();
         var displayAdapter = new ObjectDisplayAdapter(Property);
-        var previews = _inputObjects.Select(obj => displayAdapter.GetDisplayString(obj));
+
+        var items = _inputObjects.Select(obj => ((object)obj, displayAdapter.GetDisplayString(obj)));
+        var matches = matcher.Match(items, query);
 
         WriteObject($"Received {_inputObjects.Count} objects");
-        foreach (var preview in previews)
+        foreach (var match in matches)
         {
-            WriteObject($"  -  {preview}");
+            WriteObject($"  -  {match.DisplayString} (Score: {match.Score})");
         }
     }
 }
