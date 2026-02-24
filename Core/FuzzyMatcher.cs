@@ -58,8 +58,7 @@ public class FuzzyMatcher
 
         foreach (var (item, display) in items)
         {
-            var displayLower = display.ToLowerInvariant();
-            var matchInfo = TryMatch(displayLower, queryLower);
+            var matchInfo = TryMatch(display, queryLower);
             if (matchInfo.HasValue)
             {
                 results.Add(new MatchResult(item, display, matchInfo.Value.score, matchInfo.Value.positions));
@@ -87,16 +86,14 @@ public class FuzzyMatcher
         // Iterate through each character in the query and try to find it in the text in order
         foreach (char queryChar in query)
         {
-            // Find next occurrence of the query character in the text, starting from the last matched position
-            int foundIndex = text.IndexOf(queryChar, textIndex);
+            // Find next occurrence of the query character in the text (case-insensitive)
+            int foundIndex = text.IndexOf(queryChar.ToString(), textIndex, StringComparison.OrdinalIgnoreCase);
             if (foundIndex == -1)
             {
                 return null; // Character not found, no match
             }
 
             // Character found, calculate score and store position
-
-            // Add the position to the list
             positions.Add(foundIndex);
 
             // Bonus for matching at start of text
@@ -108,53 +105,45 @@ public class FuzzyMatcher
             // Bonus for consecutive matches
             if (foundIndex == textIndex && consecutiveMatches > 0)
             {
-                // Consecutive Match Bonus
                 score += 15;
                 consecutiveMatches++;
             }
             else
             {
-                consecutiveMatches = 1; // Reset consecutive match count
+                consecutiveMatches = 1;
             }
 
-            // TODO? Should do something about the magic numbers here, maybe make them parameters or constants?
-
-            // Bonus for matching after word boundary (e.g. space, dash, underscore, camelCase)
-            if (foundIndex > 0)
+            // Bonus for matching at a word boundary
+            if (IsWordStart(text, foundIndex))
             {
-                if (IsWordBoundary(text, foundIndex))
-                {
-                    score += 10;
-                }
+                score += 10;
             }
 
             // Base Score (Earlier matches are better)
             score += Math.Max(0, 100 - foundIndex);
 
-            textIndex = foundIndex + 1; // Move past the matched character for the next search
+            textIndex = foundIndex + 1;
         }
 
         return (score, positions.ToArray());
     }
 
     /// <summary>
-    /// Determines if the character at the given index in the text is a word boundary, which can be a space, separator, or camelCase transition.
+    /// Determines if the character at the given index is the start of a word.
+    /// A word starts at index 0, after a separator, or at a camelCase transition.
     /// </summary>
-    /// <param name="text">The text to check</param>
-    /// <param name="index">The index of the character to check</param>
-    /// <returns>True if the character at the given index is a word boundary; otherwise, false</returns>
-    private static bool IsWordBoundary(string text, int index)
+    private static bool IsWordStart(string text, int index)
     {
-        if (index == 0)
-        {
-            return true;
-        }
+        if (index == 0) return true;
 
         var curr = text[index];
         var prev = text[index - 1];
 
-        bool isCamelCaseBoundary = char.IsLower(prev) && char.IsUpper(curr);
-        bool isSeparator = curr == '-' || curr == '_' || curr == '/' || curr == '\\';
-        return char.IsWhiteSpace(curr) || isSeparator || isCamelCaseBoundary;
+        // camelCase boundary (e.g., 'C' in 'myClass')
+        if (char.IsLower(prev) && char.IsUpper(curr)) return true;
+
+        // After a separator (e.g., 'f' in 'my-folder')
+        bool isPrevSeparator = prev == ' ' || prev == '-' || prev == '_' || prev == '/' || prev == '\\';
+        return isPrevSeparator;
     }
 }
