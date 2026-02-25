@@ -4,17 +4,17 @@ namespace PSFuzzySelect.UI.Layouts;
 
 public static class Layout
 {
-    public static IRenderSurface[] Vertical(IRenderSurface parent, params LayoutConstraint[] constraints)
+    public static IRenderSurface[] Vertical(IRenderSurface parent, params LayoutSection[] constraints)
     {
         return LayoutAlongAxis(parent, constraints, isVertical: true);
     }
 
-    public static IRenderSurface[] Horizontal(IRenderSurface parent, params LayoutConstraint[] constraints)
+    public static IRenderSurface[] Horizontal(IRenderSurface parent, params LayoutSection[] constraints)
     {
         return LayoutAlongAxis(parent, constraints, isVertical: false);
     }
 
-    private static IRenderSurface[] LayoutAlongAxis(IRenderSurface parent, LayoutConstraint[] constraints, bool isVertical)
+    private static IRenderSurface[] LayoutAlongAxis(IRenderSurface parent, LayoutSection[] constraints, bool isVertical)
     {
         var surfaces = new IRenderSurface[constraints.Length];
 
