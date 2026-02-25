@@ -1,3 +1,5 @@
+using PSFuzzySelect.UI.Helpers;
+
 namespace PSFuzzySelect.UI.Renderer;
 
 public class ConsoleRenderer
@@ -30,8 +32,17 @@ public class ConsoleRenderer
                 // Only update the cell if it has changed since the last render
                 if (currentCell != previousCell)
                 {
+                    // !! This is temporary. Eventually we want to batch updates together and minimize the number of cursor movements and writes to the console for better performance.
                     Console.SetCursorPosition(x, y);
+                    if (currentCell.Style != null)
+                    {
+                        Console.Write(currentCell.Style?.ToAnsi());
+                    }
                     Console.Write(currentCell.Character);
+                    if (currentCell.Style != null)
+                    {
+                        Console.Write(Ansi.Reset);
+                    }
                 }
             }
         }
