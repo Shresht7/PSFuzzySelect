@@ -1,3 +1,5 @@
+using PSFuzzySelect.UI.Renderer;
+
 namespace PSFuzzySelect.UI.Components;
 
 public class Input
@@ -17,9 +19,8 @@ public class Input
         return null; // No relevant input to handle
     }
 
-    public static void Render(string query)
+    public static void Render(IRenderSurface surface, int x, int y, string query)
     {
-        Console.Write("Search: ");
-        Console.Write(query);
+        surface.Write(x, y, "Search: " + query);
     }
 }

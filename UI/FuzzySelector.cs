@@ -162,12 +162,11 @@ public class FuzzySelector
         var buffer = _renderer.CreateBuffer();
         buffer.Write(0, 0, "Search: " + _searchQuery);   // Render the search prompt with the current query
 
-        // TODO: Render the components using the buffer
-        // Input.Render(_searchQuery);
-        // Console.WriteLine();
-        // List.Render(_currentMatches, _cursor);
-        // Console.WriteLine();
-        // StatusBar.Render(_currentMatches.Count, _cursor);
+        // TODO: Need a layout engine to manage positioning of components instead of hardcoding values
+
+        Input.Render(buffer, 0, 0, _searchQuery);
+        List.Render(buffer, 0, 2, _currentMatches, _cursor);
+        StatusBar.Render(buffer, 0, 8, _currentMatches.Count, _cursor);
 
         _renderer.Render(buffer);    // Render the current buffer to the console
 
