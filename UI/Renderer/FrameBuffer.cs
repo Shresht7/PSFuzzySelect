@@ -136,7 +136,7 @@ public class FrameBuffer : IRenderSurface
         }
     }
 
-    public void Write(int x, int y, string text, string? style)
+    public void Write(int x, int y, string text, Style? style)
     {
         // Write each character of the string to the buffer starting at the specified position with the specified style
         for (int i = 0; i < text.Length && x + i < Width && y < Height; i++)
