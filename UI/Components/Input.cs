@@ -1,3 +1,4 @@
+using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Components;
@@ -21,6 +22,8 @@ public class Input
 
     public static void Render(IRenderSurface surface, string query)
     {
-        surface.Write(0, 0, "Search: " + query);
+        var prompt = "Search: ";
+        surface.Write(0, 0, prompt, Style.Default.WithForeground(Ansi.Color.Magenta));
+        surface.Write(prompt.Length, 0, query);
     }
 }
