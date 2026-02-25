@@ -53,6 +53,7 @@ public class FuzzySelector
     private void Setup()
     {
         Console.CursorVisible = false;  // Hide the cursor for a cleaner UI experience
+        Console.Clear();                // Clear the console to prepare for first-paint
     }
 
     /// <summary>
@@ -70,9 +71,6 @@ public class FuzzySelector
         {
             while (!_shouldQuit)
             {
-                // Clear the console to redraw the UI on each iteration
-                Console.Clear();
-
                 // Render the User Interface
                 Render();
 
