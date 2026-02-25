@@ -160,7 +160,7 @@ public class FuzzySelector
     private void Render()
     {
         var buffer = _renderer.CreateBuffer();
-        buffer.Write(0, 0, "Search: " + _searchQuery);   // Render the search prompt with the current query
+
 
         // TODO: Need a layout engine to manage positioning of components instead of hardcoding values
 
