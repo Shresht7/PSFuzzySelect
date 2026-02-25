@@ -28,7 +28,7 @@ public static class Layout
         var fractionSections = sections.OfType<Fraction>().ToArray();
         int fractionalSpace = fractionSections.Sum(c => (int)(c.Frac * space));
 
-        // Calculate flexible space per item flex item
+        // Calculate flexible space per flex item
         var flexSections = sections.OfType<Flexible>().ToArray();
         int totalFlexFactor = flexSections.Sum(c => c.Factor);
 
@@ -43,7 +43,7 @@ public static class Layout
             {
                 Fixed f => Math.Max(0, f.Size),
                 Fraction f => (int)Math.Floor(f.Frac * space),
-                Flexible f => remainingSpace * f.Factor / totalFlexFactor,
+                Flexible f => totalFlexFactor > 0 ? remainingSpace * f.Factor / totalFlexFactor : 0,
                 _ => 0
             };
         }

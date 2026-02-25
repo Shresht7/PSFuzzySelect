@@ -96,7 +96,7 @@ public class FrameBuffer : IRenderSurface
         {
             for (int x = 0; x < Width; x++)
             {
-                SetCell(x, y, new Cell(' '));    // Clear the buffer by setting all characters to a empty space
+                SetCell(x, y, new Cell(' '));    // Clear the buffer by setting all characters to an empty space
             }
         }
     }

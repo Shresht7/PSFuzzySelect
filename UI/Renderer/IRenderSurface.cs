@@ -17,10 +17,6 @@ public interface IRenderSurface
     /// <returns>The character at the specified position on the render surface</returns>
     Cell GetCell(int x, int y);
 
-    /// <summary>Retrieves the entire line of characters at the specified Y coordinate on the render surface</summary>
-    /// <param name="y">The Y coordinate of the line to retrieve</param>
-    /// <returns>A string representing the line of characters at the specified Y coordinate on the render surface</returns>
-    // string GetLine(int y);
 
     /// <summary>Clears the render surface, resetting all characters to a default state</summary>
     void Clear();
@@ -47,11 +43,11 @@ public interface IRenderSurface
     /// <param name="x">The X coordinate of the first cell to draw</param>
     /// <param name="y">The Y coordinate of the first cell to draw</param>
     /// <param name="text">The string of characters to draw starting at the specified position</param>
-    /// <param name="style">The style to apply to the string of characters</param>
-    void Write(int x, int y, string text, string? style);
-
-    /// <summary>Creates a new sub-surface that represents a portion of the current render surface</summary>
-    /// <param name="rect">The rectangle defining the area of the current render surface to use for the new sub-surface</param>
+    /// <summary>Draws a styled string of cells starting at the specified position on the render surface</summary>
+    /// <param name="x">The X coordinate of the first cell to draw</param>
+    /// <param name="y">The Y coordinate of the first cell to draw</param>
+    /// <param name="text">The text to draw as a sequence of styled cells starting at the specified position</param>
+    /// <param name="style">The style to apply to the rendered text</param>
     /// <returns>A new IRenderSurface that represents the specified portion of the current render surface</returns>
     IRenderSurface CreateSubSurface(Rect rect);
 }

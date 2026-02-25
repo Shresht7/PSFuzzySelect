@@ -168,7 +168,7 @@ public class FuzzySelector
             new Fixed(2)           // Status bar at the bottom
         );
 
-        // Create sub-surfaces for each component of the UI by divying up the main frame buffer
+        // Create sub-surfaces for each component of the UI by divvying up the main frame buffer
         var inputSurface = layout[0];
         var listSurface = layout[1];
         var statusSurface = layout[2];

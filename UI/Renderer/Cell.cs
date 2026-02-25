@@ -10,7 +10,7 @@ public struct Cell(char character, string? style = null)
     /// <summary>The character to be displayed in the cell</summary>
     public char Character { get; set; } = character;
 
-    /// <summary>An optional string representing the ansi styles</summary>
+    /// <summary>An optional string representing the ANSI styles</summary>
     public string? Style { get; set; } = style;
 
     // Equality members to allow comparison of Cell instances based on their content
