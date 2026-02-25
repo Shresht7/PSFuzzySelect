@@ -34,7 +34,7 @@ public class FuzzySelector
     private int _selectedIndex = -1;
 
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
-    private bool shouldQuit = false;
+    private bool _shouldQuit = false;
 
     /// <summary>Initializes a new instance of the FuzzySelector class</summary>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
@@ -65,7 +65,7 @@ public class FuzzySelector
 
         try
         {
-            while (!shouldQuit)
+            while (!_shouldQuit)
             {
                 // Clear the console to redraw the UI on each iteration
                 Console.Clear();
@@ -210,6 +210,6 @@ public class FuzzySelector
     /// </summary>
     private void Quit()
     {
-        shouldQuit = true;
+        _shouldQuit = true;
     }
 }
