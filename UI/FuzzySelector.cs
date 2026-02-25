@@ -1,6 +1,7 @@
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Renderer;
+using PSFuzzySelect.UI.Layouts;
 
 namespace PSFuzzySelect.UI;
 
@@ -161,16 +162,19 @@ public class FuzzySelector
     {
         var buffer = _renderer.CreateBuffer();
 
-
-        // TODO: Need a layout engine to manage positioning of components instead of hardcoding values
+        var layout = Layout.Vertical(buffer,
+            new Fixed(1),          // Search input at the top
+            new Flexible(1),       // List takes up the remaining space
+            new Fixed(2)           // Status bar at the bottom
+        );
 
         // Create sub-surfaces for each component of the UI by divying up the main frame buffer
-        var bufferSurface = buffer.CreateSubSurface(new Rect(0, 0, buffer.Width, 1));
-        var listSurface = buffer.CreateSubSurface(new Rect(0, 2, buffer.Width, buffer.Height - 4));
-        var statusSurface = buffer.CreateSubSurface(new Rect(0, buffer.Height - 2, buffer.Width, 2));
+        var inputSurface = layout[0];
+        var listSurface = layout[1];
+        var statusSurface = layout[2];
 
         // Render the components to their respective surfaces
-        Input.Render(bufferSurface, _searchQuery);
+        Input.Render(inputSurface, _searchQuery);
         List.Render(listSurface, _currentMatches, _cursor);
         StatusBar.Render(statusSurface, _currentMatches.Count, _cursor);
 
