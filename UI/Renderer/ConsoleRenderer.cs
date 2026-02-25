@@ -59,6 +59,12 @@ public class ConsoleRenderer
                             activeStyle = currentCell.Style ?? Style.Default;
                             frame.Append(activeStyle.ToAnsi());
                         }
+                        else if (activeStyle != Style.Default)
+                        {
+                            // Transition from a styled cell to an unstyled cell: reset and return to default style
+                            frame.Append(Ansi.Reset);
+                            activeStyle = Style.Default;
+                        }
                     }
 
                     // Append the character to the frame
