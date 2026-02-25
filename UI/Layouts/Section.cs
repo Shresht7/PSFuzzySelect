@@ -22,6 +22,3 @@ public record Flexible(int Factor) : LayoutSection;
 /// </summary>
 /// <param name="Frac">The fraction of the available space this section should occupy, expressed as a float between 0 and 1</param>
 public record Fraction(float Frac) : LayoutSection;
-
-// Implement Fill and Percentage if needed in the future
-// public record Fill : LayoutSection;
