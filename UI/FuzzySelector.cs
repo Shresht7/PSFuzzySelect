@@ -161,6 +161,8 @@ public class FuzzySelector
         Input.Render(_searchQuery);
         Console.WriteLine();
         List.Render(_currentMatches, _cursor);
+        Console.WriteLine();
+        StatusBar.Render(_currentMatches.Count, _cursor);
     }
 
     /// <summary>
