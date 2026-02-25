@@ -33,6 +33,8 @@ public class FrameBuffer : IRenderSurface
     {
         if (y >= 0 && y < Height)
         {
+            // ? Consider optimizing this by using a StringBuilder or BlockCopy/Array.Copy
+            // ? Will need to look at how ANSI codes come into play before I commit to something
             char[] lineChars = new char[Width];
             for (int x = 0; x < Width; x++)
             {

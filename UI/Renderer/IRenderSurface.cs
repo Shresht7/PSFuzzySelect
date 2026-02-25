@@ -1,5 +1,8 @@
 namespace PSFuzzySelect.UI.Renderer;
 
+/// <summary>
+/// Represents a 2D character-based surface that can be read from and written to
+/// </summary>
 public interface IRenderSurface
 {
     /// <summary>Gets the width of the render surface in characters</summary>

@@ -53,7 +53,7 @@ public class FuzzySelector
     private void Setup()
     {
         Console.CursorVisible = false;  // Hide the cursor for a cleaner UI experience
-        Console.Clear();                // Clear the console to prepare for first-paint
+        Console.Clear();                // Clear the console to prepare for the first-paint
     }
 
     /// <summary>
