@@ -105,22 +105,11 @@ public class FuzzySelector
             return new Quit();
         }
 
-        // Check if the user selected an item
-        if (key.Key == ConsoleKey.Enter)
+        // Handle list navigation and selection keys
+        var listMessage = List.HandleKey(key, _currentMatches, _cursor);
+        if (listMessage != null)
         {
-            if (_currentMatches.Count > 0)
-            {
-                return new Select();
-            }
-        }
-
-        if (key.Key == ConsoleKey.UpArrow)
-        {
-            return new CursorMove(-1);
-        }
-        if (key.Key == ConsoleKey.DownArrow)
-        {
-            return new CursorMove(1);
+            return listMessage;
         }
 
         // Handle character input for search query
@@ -150,6 +139,7 @@ public class FuzzySelector
                 break;
             case Select msg:
                 Select();
+                Quit(); // Exit after selection. At least until we setup multi-select
                 break;
             case Quit msg:
                 Quit();
@@ -170,15 +160,7 @@ public class FuzzySelector
     {
         Input.Render(_searchQuery);
         Console.WriteLine();
-
-        var visibleMatches = _currentMatches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
-
-        for (var i = 0; i < visibleMatches.Count; i++)
-        {
-            var item = visibleMatches[i];
-            var cursorIndicator = i == _cursor ? ">" : " ";
-            Console.WriteLine($"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
-        }
+        List.Render(_currentMatches, _cursor);
     }
 
     /// <summary>
