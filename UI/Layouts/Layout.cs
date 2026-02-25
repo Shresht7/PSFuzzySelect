@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Renderer;
 
-namespace PSFuzzySelect.UI.Layout;
+namespace PSFuzzySelect.UI.Layouts;
 
 public static class Layout
 {

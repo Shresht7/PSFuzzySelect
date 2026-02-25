@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Layout;
+namespace PSFuzzySelect.UI.Layouts;
 
 /// <summary>
 /// Defines the layout constraints for a UI component, allowing for fixed or flexible sizing based on the available space
