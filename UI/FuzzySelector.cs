@@ -1,5 +1,6 @@
 using Markdig.Syntax;
 using PSFuzzySelect.Core;
+using PSFuzzySelect.UI.Components;
 
 namespace PSFuzzySelect.UI;
 
@@ -122,15 +123,11 @@ public class FuzzySelector
             return new CursorMove(1);
         }
 
-
         // Handle character input for search query
-        if (!char.IsControl(key.KeyChar))
+        var inputMessage = Input.HandleKey(key, _searchQuery);
+        if (inputMessage != null)
         {
-            return new QueryChange(_searchQuery + key.KeyChar);
-        }
-        else if (key.Key == ConsoleKey.Backspace && _searchQuery.Length > 0)
-        {
-            return new QueryChange(_searchQuery[..^1]);
+            return inputMessage;
         }
 
         return null;
@@ -171,8 +168,7 @@ public class FuzzySelector
     /// </summary>
     private void Render()
     {
-        var prompt = "> ";
-        Console.Write(prompt + _searchQuery);
+        Input.Render(_searchQuery);
         Console.WriteLine();
 
         var visibleMatches = _currentMatches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
