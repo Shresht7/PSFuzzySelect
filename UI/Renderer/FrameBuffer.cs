@@ -49,7 +49,7 @@ public class FrameBuffer : IRenderSurface
         _offsetY = region.Y;
     }
 
-    public FrameBuffer CreateSubSurface(Rect region)
+    public IRenderSurface CreateSubSurface(Rect region)
     {
         var rect = GetRect();
         if (!rect.Contains(region))
