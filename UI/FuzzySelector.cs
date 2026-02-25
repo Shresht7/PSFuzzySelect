@@ -1,4 +1,3 @@
-using Markdig.Syntax;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
 
@@ -184,6 +183,11 @@ public class FuzzySelector
 
     private void CursorMove(int delta)
     {
+        if (_currentMatches.Count == 0)
+        {
+            _cursor = -1;
+            return;
+        }
         _cursor = Math.Clamp(_cursor + delta, 0, _currentMatches.Count - 1);
     }
 
