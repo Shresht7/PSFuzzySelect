@@ -72,11 +72,7 @@ public class FuzzySelector
                 Render();
 
                 // Handle User Input
-                var value = HandleInput();
-                if (value != null)
-                {
-                    return value;
-                }
+                HandleInput();
             }
         }
         finally
@@ -84,15 +80,15 @@ public class FuzzySelector
             Cleanup();  // Clean up the console UI when exiting
         }
 
-        return null;
+        // Return the selected item if any, otherwise null
+        return _selectedIndex >= 0 ? _currentMatches[_selectedIndex].Item : null;
     }
 
     /// <summary>
     /// Handles user input for the fuzzy selector, including character input for the search query,
     /// backspace for editing, and special keys for selection and exit.
     /// </summary>
-    /// <returns>The selected value, if any.</returns>
-    private object? HandleInput()
+    private void HandleInput()
     {
         // Handle User Input
         var key = Console.ReadKey(intercept: true);
@@ -101,7 +97,6 @@ public class FuzzySelector
         if (key.Key == ConsoleKey.Escape)
         {
             Quit();
-            return null;
         }
 
         // Check if the user selected an item
@@ -110,9 +105,7 @@ public class FuzzySelector
             if (_currentMatches.Count > 0)
             {
                 Select();
-                return _currentMatches[_selectedIndex].Item;
             }
-            return null; // No matches, so nothing to select
         }
 
         if (key.Key == ConsoleKey.UpArrow)
@@ -136,8 +129,6 @@ public class FuzzySelector
             _searchQuery = _searchQuery[..^1];
             RefreshMatches();
         }
-
-        return null;
     }
 
     /// <summary>
