@@ -49,7 +49,7 @@ public static class Ansi
     /// <summary>Generates an ANSI escape code to move the cursor to a specific position (row and column)</summary>
     /// <param name="row">The row number to move the cursor to (0-based index)</param>
     /// <param name="column">The column number to move the cursor to (0-based index)</param>
-    /// <returns>`\x1b[{row};{column}H`</returns>
+    /// <returns>`\x1b[{row + 1};{column + 1}H`</returns>
     public static string CursorPosition(int row, int column) => $"{Esc}{row + 1};{column + 1}H";
 
     // CLEAR
