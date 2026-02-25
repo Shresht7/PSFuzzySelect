@@ -1,0 +1,63 @@
+namespace PSFuzzySelect.UI.Renderer;
+
+/// <summary>
+/// Defines a rectangle area in the console with a specified position (X, Y) and size (Width, Height)
+/// </summary>
+public readonly struct Rect
+{
+    /// <summary>The X coordinate of the rectangle's top-left corner</summary>
+    public int X { get; }
+
+    /// <summary>The Y coordinate of the rectangle's top-left corner</summary>
+    public int Y { get; }
+
+    /// <summary>The width of the rectangle</summary>
+    public int Width { get; }
+
+    /// <summary>The height of the rectangle</summary>
+    public int Height { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Rect"/> struct with the specified position and size.
+    /// </summary>
+    /// <param name="x">The X coordinate of the rectangle's top-left corner</param>
+    /// <param name="y">The Y coordinate of the rectangle's top-left corner</param>
+    /// <param name="width">The width of the rectangle</param>
+    /// <param name="height">The height of the rectangle</param>
+    public Rect(int x, int y, int width, int height)
+    {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
+
+    /// <summary>Gets the top edge of the rectangle</summary>
+    public int Top => Y;
+
+    /// <summary>Gets the right edge of the rectangle</summary>
+    public int Right => X + Width - 1;
+
+    /// <summary>Gets the bottom edge of the rectangle</summary>
+    public int Bottom => Y + Height - 1;
+
+    /// <summary>Gets the left edge of the rectangle</summary>
+    public int Left => X;
+
+    /// <summary>Determines whether the rectangle contains the specified rectangle</summary>
+    /// <param name="other">The rectangle to test for containment</param>
+    /// <returns><c>true</c> if the rectangle contains the specified rectangle; otherwise, <c>false</c></returns>
+    public bool Contains(Rect other)
+    {
+        return other.Left >= Left && other.Right <= Right && other.Top >= Top && other.Bottom <= Bottom;
+    }
+
+    /// <summary>Determines whether the rectangle contains the specified point</summary>
+    /// <param name="x">The X coordinate of the point to test for containment</param>
+    /// <param name="y">The Y coordinate of the point to test for containment</param>
+    /// <returns><c>true</c> if the rectangle contains the specified point; otherwise, <c>false</c></returns>
+    public bool Contains(int x, int y)
+    {
+        return x >= Left && x <= Right && y >= Top && y <= Bottom;
+    }
+}
