@@ -2,12 +2,28 @@ namespace PSFuzzySelect.UI.Renderer;
 
 public class ConsoleRenderer
 {
-    public static void Render(FrameBuffer currentBuffer, FrameBuffer? previousBuffer)
+    public FrameBuffer CurrentBuffer { get; set; }
+
+    private FrameBuffer? _previousBuffer;
+    private readonly int _width;
+    private readonly int _height;
+
+    public ConsoleRenderer(int width, int height)
+    {
+        _width = width;
+        _height = height;
+        CurrentBuffer = new FrameBuffer(width, height);
+        _previousBuffer = null;
+    }
+
+    public FrameBuffer CreateBuffer() => new FrameBuffer(_width, _height);
+
+    public void Render(FrameBuffer currentBuffer)
     {
         for (int y = 0; y < currentBuffer.Height; y++)
         {
             string currentLine = currentBuffer.GetLine(y);
-            string previousLine = previousBuffer?.GetLine(y) ?? new string(' ', currentBuffer.Width);
+            string previousLine = _previousBuffer?.GetLine(y) ?? new string(' ', currentBuffer.Width);
 
             if (currentLine != previousLine)
             {
@@ -15,5 +31,8 @@ public class ConsoleRenderer
                 Console.Write(currentLine);    // Write the current line to the console
             }
         }
+
+        // Update the previous buffer reference to the current buffer for the next render cycle
+        _previousBuffer = currentBuffer;
     }
 }
