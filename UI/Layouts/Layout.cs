@@ -2,20 +2,47 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Layouts;
 
+/// <summary>
+/// Provides methods for laying out UI sections within a parent render surface, either vertically or horizontally
+/// </summary>
 public static class Layout
 {
+    /// <summary>
+    /// Lays out the given sections vertically within the parent surface.
+    /// Each section can be of type Fixed, Fraction, or Flexible,
+    /// which determines how much space it occupies relative to the total available height.
+    /// </summary>
+    /// <param name="parent">The parent render surface</param>
+    /// <param name="sections">The sections to layout</param>
+    /// <returns>An array of render surfaces representing the laid out sections</returns>
     public static IRenderSurface[] Vertical(IRenderSurface parent, params LayoutSection[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: true);
     }
 
+    /// <summary>
+    /// Lays out the given sections horizontally within the parent surface.
+    /// Each section can be of type Fixed, Fraction, or Flexible,
+    /// which determines how much space it occupies relative to the total available width.
+    /// </summary>
+    /// <param name="parent">The parent render surface</param>
+    /// <param name="sections">The sections to layout</param>
+    /// <returns>An array of render surfaces representing the laid out sections</returns>
     public static IRenderSurface[] Horizontal(IRenderSurface parent, params LayoutSection[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: false);
     }
 
+    /// <summary>
+    /// Lays out the given sections along the specified axis (vertical or horizontal) within the parent surface.
+    /// </summary>
+    /// <param name="parent">The parent render surface</param>
+    /// <param name="sections">The sections to layout</param>
+    /// <param name="isVertical">Whether to layout vertically or horizontally</param>
+    /// <returns>An array of render surfaces representing the laid out sections</returns>
     private static IRenderSurface[] LayoutAlongAxis(IRenderSurface parent, LayoutSection[] sections, bool isVertical)
     {
+        // An array to hold the resulting render surfaces for each section
         var surfaces = new IRenderSurface[sections.Length];
 
         // Determine the total space available along the chosen axis (height for vertical, width for horizontal)
