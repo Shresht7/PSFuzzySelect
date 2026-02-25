@@ -197,12 +197,13 @@ public class FuzzySelector
     }
 
     /// <summary>
-    /// Cleans up the console UI by making the cursor visible and clearing any residual UI elements
+    /// Cleans up the console UI by making the cursor visible, resetting the console colors, and clearing any residual UI elements
     /// </summary>
     private void Cleanup()
     {
+        Console.ResetColor();           // Reset console colors to default
         Console.CursorVisible = true;   // Ensure the cursor is visible again when exiting
-        Console.Clear();               // Clear the console to remove any residual UI elements
+        Console.Clear();                // Clear the console to remove any residual UI elements
     }
 
     /// <summary>
