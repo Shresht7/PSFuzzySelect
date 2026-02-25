@@ -49,4 +49,9 @@ public interface IRenderSurface
     /// <param name="text">The string of characters to draw starting at the specified position</param>
     /// <param name="style">The style to apply to the string of characters</param>
     void Write(int x, int y, string text, string? style);
+
+    /// <summary>Creates a new sub-surface that represents a portion of the current render surface</summary>
+    /// <param name="rect">The rectangle defining the area of the current render surface to use for the new sub-surface</param>
+    /// <returns>A new IRenderSurface that represents the specified portion of the current render surface</returns>
+    IRenderSurface CreateSubSurface(Rect rect);
 }
