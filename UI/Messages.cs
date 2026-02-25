@@ -3,7 +3,7 @@
 /// These messages represent user actions such as changing the search query, moving the cursor, or selecting an item.
 /// The main loop will process these messages to update the state of the fuzzy selector and re-render the UI accordingly.
 /// </summary>
-abstract record Message;
+public abstract record Message;
 
 /// <summary>
 /// Message indicating that the search query has changed. Contains the new query string entered by the user
