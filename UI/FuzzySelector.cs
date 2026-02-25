@@ -1,4 +1,5 @@
 using PSFuzzySelect.Core;
+using PSFuzzySelect.UI.Components;
 
 namespace PSFuzzySelect.UI;
 
@@ -32,7 +33,7 @@ public class FuzzySelector
     private int _selectedIndex = -1;
 
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
-    private bool shouldQuit = false;
+    private bool _shouldQuit = false;
 
     /// <summary>Initializes a new instance of the FuzzySelector class</summary>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
@@ -63,7 +64,7 @@ public class FuzzySelector
 
         try
         {
-            while (!shouldQuit)
+            while (!_shouldQuit)
             {
                 // Clear the console to redraw the UI on each iteration
                 Console.Clear();
@@ -72,7 +73,10 @@ public class FuzzySelector
                 Render();
 
                 // Handle User Input
-                HandleInput();
+                var msg = HandleInput();
+
+                // Perform the update based on the received messages
+                Update(msg);
             }
         }
         finally
@@ -88,7 +92,8 @@ public class FuzzySelector
     /// Handles user input for the fuzzy selector, including character input for the search query,
     /// backspace for editing, and special keys for selection and exit.
     /// </summary>
-    private void HandleInput()
+    /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
+    private Message? HandleInput()
     {
         // Handle User Input
         var key = Console.ReadKey(intercept: true);
@@ -96,38 +101,52 @@ public class FuzzySelector
         // Exit on Escape key
         if (key.Key == ConsoleKey.Escape)
         {
-            Quit();
+            return new Quit();
         }
 
-        // Check if the user selected an item
-        if (key.Key == ConsoleKey.Enter)
+        // Handle list navigation and selection keys
+        var listMessage = List.HandleKey(key);
+        if (listMessage != null)
         {
-            if (_currentMatches.Count > 0)
-            {
-                Select();
-            }
+            return listMessage;
         }
-
-        if (key.Key == ConsoleKey.UpArrow)
-        {
-            CursorUp();
-        }
-        if (key.Key == ConsoleKey.DownArrow)
-        {
-            CursorDown();
-        }
-
 
         // Handle character input for search query
-        if (!char.IsControl(key.KeyChar))
+        var inputMessage = Input.HandleKey(key, _searchQuery);
+        if (inputMessage != null)
         {
-            _searchQuery += key.KeyChar;
-            RefreshMatches();
+            return inputMessage;
         }
-        else if (key.Key == ConsoleKey.Backspace && _searchQuery.Length > 0)
+
+        return null;
+    }
+
+    /// <summary>
+    /// Updates the state of the fuzzy selector based on the received message, which can represent various user actions
+    /// such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
+    /// </summary>
+    /// <param name="message">The message representing a user action.</param>
+    private void Update(Message? message)
+    {
+        switch (message)
         {
-            _searchQuery = _searchQuery[..^1];
-            RefreshMatches();
+            case QueryChange msg:
+                UpdateQuery(msg.Query);
+                break;
+            case CursorMove msg:
+                CursorMove(msg.Delta);
+                break;
+            case Select msg:
+                Select();
+                Quit(); // Exit after selection. At least until we setup multi-select
+                break;
+            case Quit msg:
+                Quit();
+                break;
+            case null:
+            default:
+                // No message to process, do nothing
+                break;
         }
     }
 
@@ -138,18 +157,11 @@ public class FuzzySelector
     /// </summary>
     private void Render()
     {
-        var prompt = "> ";
-        Console.Write(prompt + _searchQuery);
+        Input.Render(_searchQuery);
         Console.WriteLine();
-
-        var visibleMatches = _currentMatches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
-
-        for (var i = 0; i < visibleMatches.Count; i++)
-        {
-            var item = visibleMatches[i];
-            var cursorIndicator = i == _cursor ? ">" : " ";
-            Console.WriteLine($"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
-        }
+        List.Render(_currentMatches, _cursor);
+        Console.WriteLine();
+        StatusBar.Render(_currentMatches.Count, _cursor);
     }
 
     /// <summary>
@@ -163,20 +175,20 @@ public class FuzzySelector
         _selectedIndex = -1;
     }
 
-    private void CursorUp()
+    private void UpdateQuery(string newQuery)
     {
-        if (_cursor > 0)
-        {
-            _cursor--;
-        }
+        _searchQuery = newQuery;
+        RefreshMatches();
     }
 
-    private void CursorDown()
+    private void CursorMove(int delta)
     {
-        if (_cursor < _currentMatches.Count - 1)
+        if (_currentMatches.Count == 0)
         {
-            _cursor++;
+            _cursor = -1;
+            return;
         }
+        _cursor = Math.Clamp(_cursor + delta, 0, _currentMatches.Count - 1);
     }
 
     private void Select()
@@ -202,6 +214,6 @@ public class FuzzySelector
     /// </summary>
     private void Quit()
     {
-        shouldQuit = true;
+        _shouldQuit = true;
     }
 }
