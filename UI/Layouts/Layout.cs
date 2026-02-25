@@ -24,9 +24,13 @@ public static class Layout
         // Calculate total fixed space
         int fixedSize = constraints.OfType<Fixed>().Sum(c => c.Size);
 
+        // Calculate the fractional spacing for Fraction sections
+        // ? This is kinda rudimentary as it doesn't normalize/rescale the fractions if they don't sum up to 1
+        int fractionalSize = constraints.OfType<Fraction>().Sum(c => (int)(c.Frac * space));
+
         // Calculate flexible space per item flex item
         int flexCount = constraints.Count(c => c is Flexible);
-        int availableFlexSpace = space - fixedSize;
+        int availableFlexSpace = space - fixedSize - fractionalSize;
         int flexPerItem = flexCount > 0 ? availableFlexSpace / flexCount : 0;
 
         // Apply constraints
@@ -38,6 +42,7 @@ public static class Layout
             {
                 Fixed f => f.Size,
                 Flexible f => flexPerItem * f.Factor,
+                Fraction f => (int)(f.Frac * space),
                 _ => 0
             };
 
