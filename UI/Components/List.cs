@@ -4,15 +4,12 @@ namespace PSFuzzySelect.UI.Components;
 
 public class List
 {
-    public static Message? HandleKey(ConsoleKeyInfo key, List<MatchResult> matches, int cursor)
+    public static Message? HandleKey(ConsoleKeyInfo key)
     {
         // Check if the user selected an item
         if (key.Key == ConsoleKey.Enter)
         {
-            if (matches.Count > 0)
-            {
-                return new Select();
-            }
+            return new Select();
         }
 
         // Handle cursor movement

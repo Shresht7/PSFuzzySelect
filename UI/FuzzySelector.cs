@@ -106,7 +106,7 @@ public class FuzzySelector
         }
 
         // Handle list navigation and selection keys
-        var listMessage = List.HandleKey(key, _currentMatches, _cursor);
+        var listMessage = List.HandleKey(key);
         if (listMessage != null)
         {
             return listMessage;
