@@ -47,10 +47,10 @@ public static class Ansi
     public static string CursorLeft(int number = 1) => $"{Esc}{number}D";
 
     /// <summary>Generates an ANSI escape code to move the cursor to a specific position (row and column)</summary>
-    /// <param name="row">The row number to move the cursor to (1-based index)</param>
-    /// <param name="column">The column number to move the cursor to (1-based index)</param>
+    /// <param name="row">The row number to move the cursor to (0-based index)</param>
+    /// <param name="column">The column number to move the cursor to (0-based index)</param>
     /// <returns>`\x1b[{row};{column}H`</returns>
-    public static string CursorPosition(int row, int column) => $"{Esc}{row};{column}H";
+    public static string CursorPosition(int row, int column) => $"{Esc}{row + 1};{column + 1}H";
 
     // CLEAR
     // -----
