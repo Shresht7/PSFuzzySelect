@@ -19,8 +19,8 @@ public class Input
         return null; // No relevant input to handle
     }
 
-    public static void Render(IRenderSurface surface, int x, int y, string query)
+    public static void Render(IRenderSurface surface, string query)
     {
-        surface.Write(x, y, "Search: " + query);
+        surface.Write(0, 0, "Search: " + query);
     }
 }

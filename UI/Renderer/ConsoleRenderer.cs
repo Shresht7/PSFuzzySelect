@@ -22,13 +22,17 @@ public class ConsoleRenderer
     {
         for (int y = 0; y < currentBuffer.Height; y++)
         {
-            string currentLine = currentBuffer.GetLine(y);
-            string previousLine = _previousBuffer?.GetLine(y) ?? new string(' ', currentBuffer.Width);
-
-            if (currentLine != previousLine)
+            for (int x = 0; x < currentBuffer.Width; x++)
             {
-                Console.SetCursorPosition(0, y);   // Move the cursor to the beginning of the line
-                Console.Write(currentLine);    // Write the current line to the console
+                Cell currentCell = currentBuffer.GetCell(x, y);
+                Cell previousCell = _previousBuffer?.GetCell(x, y) ?? new Cell(' ');
+
+                // Only update the cell if it has changed since the last render
+                if (currentCell != previousCell)
+                {
+                    Console.SetCursorPosition(x, y);
+                    Console.Write(currentCell.Character);
+                }
             }
         }
 
