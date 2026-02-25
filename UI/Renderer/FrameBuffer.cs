@@ -20,6 +20,29 @@ public class FrameBuffer : IRenderSurface
         Clear();
     }
 
+    public char GetChar(int x, int y)
+    {
+        if (x >= 0 && x < Width && y >= 0 && y < Height)
+        {
+            return _buffer[y, x];   // Return the character from the buffer at the specified position
+        }
+        return ' ';    // Return a space character if the position is out of bounds
+    }
+
+    public string GetLine(int y)
+    {
+        if (y >= 0 && y < Height)
+        {
+            char[] lineChars = new char[Width];
+            for (int x = 0; x < Width; x++)
+            {
+                lineChars[x] = _buffer[y, x];   // Get each character in the specified line
+            }
+            return new string(lineChars);   // Return the line as a string
+        }
+        return string.Empty;    // Return an empty string if the line number is out of bounds
+    }
+
     public void Clear()
     {
         for (int y = 0; y < Height; y++)
