@@ -164,9 +164,15 @@ public class FuzzySelector
 
         // TODO: Need a layout engine to manage positioning of components instead of hardcoding values
 
-        Input.Render(buffer, 0, 0, _searchQuery);
-        List.Render(buffer, 0, 2, _currentMatches, _cursor);
-        StatusBar.Render(buffer, 0, 8, _currentMatches.Count, _cursor);
+        // Create sub-surfaces for each component of the UI by divying up the main frame buffer
+        var bufferSurface = buffer.CreateSubSurface(new Rect(0, 0, buffer.Width, 1));
+        var listSurface = buffer.CreateSubSurface(new Rect(0, 2, buffer.Width, buffer.Height - 4));
+        var statusSurface = buffer.CreateSubSurface(new Rect(0, buffer.Height - 2, buffer.Width, 2));
+
+        // Render the components to their respective surfaces
+        Input.Render(bufferSurface, _searchQuery);
+        List.Render(listSurface, _currentMatches, _cursor);
+        StatusBar.Render(statusSurface, _currentMatches.Count, _cursor);
 
         _renderer.Render(buffer);    // Render the current buffer to the console
 
