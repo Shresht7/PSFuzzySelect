@@ -1,5 +1,6 @@
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
+using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI;
 
@@ -35,11 +36,14 @@ public class FuzzySelector
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool _shouldQuit = false;
 
+    private readonly ConsoleRenderer _renderer;
+
     /// <summary>Initializes a new instance of the FuzzySelector class</summary>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
     public FuzzySelector(IEnumerable<(object obj, string display)> items)
     {
         _items = items;
+        _renderer = new ConsoleRenderer(Console.WindowWidth, Console.WindowHeight);
     }
 
     /// <summary>
@@ -49,6 +53,7 @@ public class FuzzySelector
     private void Setup()
     {
         Console.CursorVisible = false;  // Hide the cursor for a cleaner UI experience
+        Console.Clear();                // Clear the console to prepare for the first-paint
     }
 
     /// <summary>
@@ -66,9 +71,6 @@ public class FuzzySelector
         {
             while (!_shouldQuit)
             {
-                // Clear the console to redraw the UI on each iteration
-                Console.Clear();
-
                 // Render the User Interface
                 Render();
 
@@ -157,11 +159,17 @@ public class FuzzySelector
     /// </summary>
     private void Render()
     {
-        Input.Render(_searchQuery);
-        Console.WriteLine();
-        List.Render(_currentMatches, _cursor);
-        Console.WriteLine();
-        StatusBar.Render(_currentMatches.Count, _cursor);
+        var buffer = _renderer.CreateBuffer();
+
+
+        // TODO: Need a layout engine to manage positioning of components instead of hardcoding values
+
+        Input.Render(buffer, 0, 0, _searchQuery);
+        List.Render(buffer, 0, 2, _currentMatches, _cursor);
+        StatusBar.Render(buffer, 0, 8, _currentMatches.Count, _cursor);
+
+        _renderer.Render(buffer);    // Render the current buffer to the console
+
     }
 
     /// <summary>

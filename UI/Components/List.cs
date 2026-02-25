@@ -1,4 +1,5 @@
 using PSFuzzySelect.Core;
+using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Components;
 
@@ -25,7 +26,7 @@ public class List
         return null;
     }
 
-    public static void Render(List<MatchResult> matches, int cursor)
+    public static void Render(IRenderSurface surface, int x, int y, List<MatchResult> matches, int cursor)
     {
         var visibleMatches = matches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
 
@@ -33,7 +34,7 @@ public class List
         {
             var item = visibleMatches[i];
             var cursorIndicator = i == cursor ? ">" : " ";
-            Console.WriteLine($"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
+            surface.Write(x, y + i, $"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
         }
     }
 }
