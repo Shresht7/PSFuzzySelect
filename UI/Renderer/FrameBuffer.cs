@@ -66,6 +66,11 @@ public class FrameBuffer : IRenderSurface
 
     public Cell GetCell(int x, int y)
     {
+        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        {
+            return new Cell(' ');
+        }
+
         if (_parent != null)
         {
             // If this is a sub-surface, read from the parent buffer with the appropriate offset
@@ -78,6 +83,11 @@ public class FrameBuffer : IRenderSurface
 
     private void SetCell(int x, int y, Cell cell)
     {
+        if (x < 0 || x >= Width || y < 0 || y >= Height)
+        {
+            return; // Ignore writes outside the bounds of the surface
+        }
+
         if (_parent != null)
         {
             // If this is a sub-surface, write to the parent buffer with the appropriate offset
