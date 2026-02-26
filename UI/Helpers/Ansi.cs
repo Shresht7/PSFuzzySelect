@@ -147,12 +147,30 @@ public static class Ansi
         BrightDefault = 99,
     }
 
+    // Cache
+
+    private static readonly Dictionary<Color, string> _fgCache;
+    private static readonly Dictionary<Color, string> _bgCache;
+
+    // Constructor
+    static Ansi()
+    {
+        // Pre-generate ANSI escape codes for all colors and cache them for fast retrieval
+        _fgCache = new Dictionary<Color, string>();
+        _bgCache = new Dictionary<Color, string>();
+        foreach (Color color in Enum.GetValues(typeof(Color)))
+        {
+            _fgCache[color] = $"{Esc}{(int)color}m";
+            _bgCache[color] = $"{Esc}{(int)color + 10}m";
+        }
+    }
+
     // Foreground Colors
 
     /// <summary>Generates an ANSI escape code to set the foreground color</summary>
     /// <param name="color">The color to set for the foreground</param>
     /// <returns>`\x1b[{color}m`</returns>
-    public static string Foreground(Color color) => $"{Esc}{(int)color}m";
+    public static string Foreground(Color color) => _fgCache[color];
 
     /// <summary>Generates an ANSI escape code to set the foreground color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -166,7 +184,7 @@ public static class Ansi
     /// <summary>Generates an ANSI escape code to set the background color</summary>
     /// <param name="color">The color to set for the background</param>
     /// <returns>`\x1b[{color + 10}m`</returns>
-    public static string Background(Color color) => $"{Esc}{(int)color + 10}m";
+    public static string Background(Color color) => _bgCache[color];
 
     /// <summary>Generates an ANSI escape code to set the background color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
