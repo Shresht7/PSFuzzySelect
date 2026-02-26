@@ -67,6 +67,20 @@ public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, Tex
     public Style WithTextStyle(TextStyle? textStyle) => new Style(Foreground, Background, textStyle);
 
     /// <summary>
+    /// Creates a new Style instance by patching the current style with the non-null properties of another style. 
+    /// For each property (foreground, background, text styles), if the corresponding property in the other style is non-null,
+    /// it will override the value from the current style; otherwise, the value from the current style will be retained.
+    /// </summary>
+    /// <param name="other">The style to patch with</param>
+    /// <returns>A new Style instance with the patched properties</returns>
+    public Style Patch(Style other) => new Style(
+        other.Foreground ?? Foreground,
+        other.Background ?? Background,
+        other.TextStyles ?? TextStyles
+    );
+
+
+    /// <summary>
     /// Generates the ANSI escape code string that represents this style, including foreground color, background color, and text styles
     /// </summary>
     /// <returns>A string containing the ANSI escape codes for the style</returns>
