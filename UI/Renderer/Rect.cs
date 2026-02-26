@@ -66,4 +66,60 @@ public readonly struct Rect
     {
         return x >= Left && x <= Right && y >= Top && y <= Bottom;
     }
+
+    /// <summary>
+    /// Returns a new rectangle that is inset by the specified amount from all edges of the original rectangle.
+    /// </summary>
+    /// <param name="delta">The amount to inset from all edges</param>
+    /// <returns>A new rectangle that is inset by the specified amount from all edges</returns>
+    public Rect Inset(int delta) => Inset(delta, delta, delta, delta);
+
+    /// <summary>
+    /// Returns a new rectangle that is inset by the specified amounts from the horizontal and vertical edges of the original rectangle.
+    /// </summary>
+    /// <param name="horizontal">The amount to inset from the left and right edges</param>
+    /// <param name="vertical">The amount to inset from the top and bottom edges</param>
+    /// <returns>A new rectangle that is inset by the specified amounts from the horizontal and vertical edges</returns>
+    public Rect Inset(int horizontal, int vertical) => Inset(horizontal, vertical, horizontal, vertical);
+
+    /// <summary>
+    /// Returns a new rectangle that is inset by the specified amounts from the edges of the original rectangle.
+    /// </summary>
+    /// <param name="left">The amount to inset from the left edge</param>
+    /// <param name="top">The amount to inset from the top edge</param>
+    /// <param name="right">The amount to inset from the right edge</param>
+    /// <param name="bottom">The amount to inset from the bottom edge</param>
+    /// <returns>A new rectangle that is inset by the specified amounts</returns>
+    public Rect Inset(int left, int top, int right, int bottom)
+    {
+        return new Rect(X + left, Y + top, Width - left - right, Height - top - bottom);
+    }
+
+    /// <summary>
+    /// Returns a new rectangle that is offset by the specified amount from all edges of the original rectangle.
+    /// </summary>
+    /// <param name="delta">The amount to offset from all edges</param>
+    /// <returns>A new rectangle that is offset by the specified amount from all edges</returns>
+    public Rect Offset(int delta) => Offset(delta, delta, delta, delta);
+
+    /// <summary>
+    /// Returns a new rectangle that is offset by the specified amounts from the horizontal and vertical edges of the original rectangle.
+    /// </summary>
+    /// <param name="horizontal">The amount to offset from the left and right edges</param>
+    /// <param name="vertical">The amount to offset from the top and bottom edges</param>
+    /// <returns>A new rectangle that is offset by the specified amounts from the horizontal and vertical edges</returns>
+    public Rect Offset(int horizontal, int vertical) => Offset(horizontal, vertical, horizontal, vertical);
+
+    /// <summary>
+    /// Returns a new rectangle that is offset by the specified amounts from the edges of the original rectangle.
+    /// </summary>
+    /// <param name="left">The amount to offset from the left edge</param>
+    /// <param name="top">The amount to offset from the top edge</param>
+    /// <param name="right">The amount to offset from the right edge</param>
+    /// <param name="bottom">The amount to offset from the bottom edge</param>
+    /// <returns>A new rectangle that is offset by the specified amounts</returns>
+    public Rect Offset(int left, int top, int right, int bottom)
+    {
+        return new Rect(X + left, Y + top, Width + left + right, Height + top + bottom);
+    }
 }
