@@ -164,9 +164,9 @@ public class FuzzySelector
         var buffer = _renderer.GetBackBuffer();
 
         var layout = Layout.Vertical(buffer,
-            new Fixed(1),          // Search input at the top
-            new Flexible(1),       // List takes up the remaining space
-            new Fixed(2)           // Status bar at the bottom
+            new FixedSize(1),          // Search input at the top
+            new FlexibleSize(1),       // List takes up the remaining space
+            new FixedSize(2)           // Status bar at the bottom
         );
 
         // Create sub-surfaces for each component of the UI by divvying up the main frame buffer

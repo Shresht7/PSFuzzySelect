@@ -15,7 +15,7 @@ public static class Layout
     /// <param name="parent">The parent render surface</param>
     /// <param name="sections">The sections to layout</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    public static ISurface[] Vertical(ISurface parent, params LayoutSection[] sections)
+    public static ISurface[] Vertical(ISurface parent, params Size[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: true);
     }
@@ -28,7 +28,7 @@ public static class Layout
     /// <param name="parent">The parent render surface</param>
     /// <param name="sections">The sections to layout</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    public static ISurface[] Horizontal(ISurface parent, params LayoutSection[] sections)
+    public static ISurface[] Horizontal(ISurface parent, params Size[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: false);
     }
@@ -40,7 +40,7 @@ public static class Layout
     /// <param name="sections">The sections to layout</param>
     /// <param name="isVertical">Whether to layout vertically or horizontally</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    private static ISurface[] LayoutAlongAxis(ISurface parent, LayoutSection[] sections, bool isVertical)
+    private static ISurface[] LayoutAlongAxis(ISurface parent, Size[] sections, bool isVertical)
     {
         // An array to hold the resulting render surfaces for each section
         var surfaces = new ISurface[sections.Length];
@@ -49,14 +49,14 @@ public static class Layout
         var space = isVertical ? parent.Height : parent.Width;
 
         // Calculate total fixed space
-        int fixedSpace = sections.OfType<Fixed>().Sum(c => c.Size);
+        int fixedSpace = sections.OfType<FixedSize>().Sum(c => c.Size);
 
         // Calculate total fractional space
-        var fractionSections = sections.OfType<Fraction>().ToArray();
+        var fractionSections = sections.OfType<FractionalSize>().ToArray();
         int fractionalSpace = fractionSections.Sum(c => (int)(c.Frac * space));
 
         // Calculate flexible space per flex item
-        var flexSections = sections.OfType<Flexible>().ToArray();
+        var flexSections = sections.OfType<FlexibleSize>().ToArray();
         int totalFlexFactor = flexSections.Sum(c => c.Factor);
 
         // Calculate remaining space after allocating fixed and fractional space
@@ -68,9 +68,9 @@ public static class Layout
         {
             sizes[i] = sections[i] switch
             {
-                Fixed f => Math.Max(0, f.Size),
-                Fraction f => (int)Math.Floor(f.Frac * space),
-                Flexible f => totalFlexFactor > 0 ? remainingSpace * f.Factor / totalFlexFactor : 0,
+                FixedSize f => Math.Max(0, f.Size),
+                FractionalSize f => (int)Math.Floor(f.Frac * space),
+                FlexibleSize f => totalFlexFactor > 0 ? remainingSpace * f.Factor / totalFlexFactor : 0,
                 _ => 0
             };
         }
@@ -87,9 +87,9 @@ public static class Layout
             {
                 bool wants = pass switch
                 {
-                    0 => sections[i] is Flexible,
-                    1 => sections[i] is Fraction,
-                    2 => sections[i] is Fixed,
+                    0 => sections[i] is FlexibleSize,
+                    1 => sections[i] is FractionalSize,
+                    2 => sections[i] is FixedSize,
                     _ => false
                 };
                 if (wants)
