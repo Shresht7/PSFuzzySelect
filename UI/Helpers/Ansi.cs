@@ -78,25 +78,49 @@ public static class Ansi
     /// <returns>`\x1b[1m`</returns>
     public static string Bold => $"{Esc}1m";
 
+    /// <summary>ANSI escape code for unbolding text</summary>
+    /// <returns>`\x1b[22m`</returns>
+    public static string UnBold => $"{Esc}22m"; // Not 21 for some reason
+
     /// <summary>ANSI escape code for dimmed text</summary>
     /// <returns>`\x1b[2m`</returns>
     public static string Dim => $"{Esc}2m";
+
+    /// <summary>ANSI escape code for undimmed text</summary>
+    /// <returns>`\x1b[22m`</returns>
+    public static string UnDim => $"{Esc}22m";
 
     /// <summary>ANSI escape code for italic text</summary>
     /// <returns>`\x1b[3m`</returns>
     public static string Italic => $"{Esc}3m";
 
+    /// <summary>ANSI escape code for unitalicizing text</summary>
+    /// <returns>`\x1b[23m`</returns>
+    public static string UnItalic => $"{Esc}23m";
+
     /// <summary>ANSI escape code for underlined text</summary>
     /// <returns>`\x1b[4m`</returns>
     public static string Underline => $"{Esc}4m";
+
+    /// <summary>ANSI escape code for ununderlining text</summary>
+    /// <returns>`\x1b[24m`</returns>
+    public static string UnUnderline => $"{Esc}24m";
 
     /// <summary>ANSI escape code for inverse text</summary>
     /// <returns>`\x1b[7m`</returns>
     public static string Inverse => $"{Esc}7m";
 
+    /// <summary>ANSI escape code for uninverting text</summary>
+    /// <returns>`\x1b[27m`</returns>
+    public static string UnInverse => $"{Esc}27m";
+
     /// <summary>ANSI escape code for strikethrough text</summary>
     /// <returns>`\x1b[9m`</returns>
     public static string Strikethrough => $"{Esc}9m";
+
+    /// <summary>ANSI escape code for unstrikethrough text</summary>
+    /// <returns>`\x1b[29m`</returns>
+    public static string UnStrikethrough => $"{Esc}29m";
 
     // COLORS
     // ------
