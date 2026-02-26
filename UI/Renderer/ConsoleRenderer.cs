@@ -1,6 +1,6 @@
 using System.Text;
 
-using PSFuzzySelect.UI.Helpers;
+using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Renderer;
 

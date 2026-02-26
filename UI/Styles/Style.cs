@@ -1,8 +1,6 @@
 using System.Text;
 
-using PSFuzzySelect.UI.Helpers;
-
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Styles;
 
 /// <summary>
 /// Defines text styles that can be applied to characters drawn on a render surface, such as bold, italic, underline, inverse, dim, and strikethrough
@@ -67,6 +65,20 @@ public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, Tex
     public Style WithTextStyle(TextStyle? textStyle) => new Style(Foreground, Background, textStyle);
 
     /// <summary>
+    /// Creates a new Style instance by patching the current style with the non-null properties of another style. 
+    /// For each property (foreground, background, text styles), if the corresponding property in the other style is non-null,
+    /// it will override the value from the current style; otherwise, the value from the current style will be retained.
+    /// </summary>
+    /// <param name="other">The style to patch with</param>
+    /// <returns>A new Style instance with the patched properties</returns>
+    public Style Patch(Style other) => new Style(
+        other.Foreground ?? Foreground,
+        other.Background ?? Background,
+        other.TextStyles ?? TextStyles
+    );
+
+
+    /// <summary>
     /// Generates the ANSI escape code string that represents this style, including foreground color, background color, and text styles
     /// </summary>
     /// <returns>A string containing the ANSI escape codes for the style</returns>
@@ -108,4 +120,22 @@ public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, Tex
     public override int GetHashCode() => HashCode.Combine(Foreground, Background, TextStyles);
     public static bool operator ==(Style left, Style right) => left.Equals(right);
     public static bool operator !=(Style left, Style right) => !left.Equals(right);
+
+    /// <summary>Returns a new Style instance with the Bold text style applied</summary>
+    public Style Bold() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Bold);
+
+    /// <summary>Returns a new Style instance with the Italic text style applied</summary>
+    public Style Italic() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Italic);
+
+    /// <summary>Returns a new Style instance with the Underline text style applied</summary>
+    public Style Underline() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Underline);
+
+    /// <summary>Returns a new Style instance with the Inverse text style applied</summary>
+    public Style Inverse() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Inverse);
+
+    /// <summary>Returns a new Style instance with the Dim text style applied</summary>
+    public Style Dim() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Dim);
+
+    /// <summary>Returns a new Style instance with the Strikethrough text style applied</summary>
+    public Style Strikethrough() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Strikethrough);
 }

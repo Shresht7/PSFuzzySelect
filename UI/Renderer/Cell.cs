@@ -1,3 +1,5 @@
+using PSFuzzySelect.UI.Styles;
+
 namespace PSFuzzySelect.UI.Renderer;
 
 /// <summary>

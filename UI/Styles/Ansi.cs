@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Helpers;
+namespace PSFuzzySelect.UI.Styles;
 
 /// <summary>
 /// Helper class for ANSI escape code generation
@@ -78,25 +78,49 @@ public static class Ansi
     /// <returns>`\x1b[1m`</returns>
     public static string Bold => $"{Esc}1m";
 
+    /// <summary>ANSI escape code for unbolding text</summary>
+    /// <returns>`\x1b[22m`</returns>
+    public static string UnBold => $"{Esc}22m"; // Not 21 for some reason
+
     /// <summary>ANSI escape code for dimmed text</summary>
     /// <returns>`\x1b[2m`</returns>
     public static string Dim => $"{Esc}2m";
+
+    /// <summary>ANSI escape code for undimmed text</summary>
+    /// <returns>`\x1b[22m`</returns>
+    public static string UnDim => $"{Esc}22m";
 
     /// <summary>ANSI escape code for italic text</summary>
     /// <returns>`\x1b[3m`</returns>
     public static string Italic => $"{Esc}3m";
 
+    /// <summary>ANSI escape code for unitalicizing text</summary>
+    /// <returns>`\x1b[23m`</returns>
+    public static string UnItalic => $"{Esc}23m";
+
     /// <summary>ANSI escape code for underlined text</summary>
     /// <returns>`\x1b[4m`</returns>
     public static string Underline => $"{Esc}4m";
+
+    /// <summary>ANSI escape code for ununderlining text</summary>
+    /// <returns>`\x1b[24m`</returns>
+    public static string UnUnderline => $"{Esc}24m";
 
     /// <summary>ANSI escape code for inverse text</summary>
     /// <returns>`\x1b[7m`</returns>
     public static string Inverse => $"{Esc}7m";
 
+    /// <summary>ANSI escape code for uninverting text</summary>
+    /// <returns>`\x1b[27m`</returns>
+    public static string UnInverse => $"{Esc}27m";
+
     /// <summary>ANSI escape code for strikethrough text</summary>
     /// <returns>`\x1b[9m`</returns>
     public static string Strikethrough => $"{Esc}9m";
+
+    /// <summary>ANSI escape code for unstrikethrough text</summary>
+    /// <returns>`\x1b[29m`</returns>
+    public static string UnStrikethrough => $"{Esc}29m";
 
     // COLORS
     // ------
@@ -111,6 +135,7 @@ public static class Ansi
         Magenta = 35,
         Cyan = 36,
         White = 37,
+        Default = 39,
         BrightBlack = 90,
         BrightRed = 91,
         BrightGreen = 92,
@@ -118,7 +143,26 @@ public static class Ansi
         BrightBlue = 94,
         BrightMagenta = 95,
         BrightCyan = 96,
-        BrightWhite = 97
+        BrightWhite = 97,
+        BrightDefault = 99,
+    }
+
+    // Cache
+
+    private static readonly Dictionary<Color, string> _fgCache;
+    private static readonly Dictionary<Color, string> _bgCache;
+
+    // Constructor
+    static Ansi()
+    {
+        // Pre-generate ANSI escape codes for all colors and cache them for fast retrieval
+        _fgCache = new Dictionary<Color, string>();
+        _bgCache = new Dictionary<Color, string>();
+        foreach (Color color in Enum.GetValues(typeof(Color)))
+        {
+            _fgCache[color] = $"{Esc}{(int)color}m";
+            _bgCache[color] = $"{Esc}{(int)color + 10}m";
+        }
     }
 
     // Foreground Colors
@@ -126,7 +170,7 @@ public static class Ansi
     /// <summary>Generates an ANSI escape code to set the foreground color</summary>
     /// <param name="color">The color to set for the foreground</param>
     /// <returns>`\x1b[{color}m`</returns>
-    public static string Foreground(Color color) => $"{Esc}{(int)color}m";
+    public static string Foreground(Color color) => _fgCache[color];
 
     /// <summary>Generates an ANSI escape code to set the foreground color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -140,7 +184,7 @@ public static class Ansi
     /// <summary>Generates an ANSI escape code to set the background color</summary>
     /// <param name="color">The color to set for the background</param>
     /// <returns>`\x1b[{color + 10}m`</returns>
-    public static string Background(Color color) => $"{Esc}{(int)color + 10}m";
+    public static string Background(Color color) => _bgCache[color];
 
     /// <summary>Generates an ANSI escape code to set the background color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
