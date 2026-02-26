@@ -135,6 +135,7 @@ public static class Ansi
         Magenta = 35,
         Cyan = 36,
         White = 37,
+        Default = 39,
         BrightBlack = 90,
         BrightRed = 91,
         BrightGreen = 92,
@@ -142,7 +143,8 @@ public static class Ansi
         BrightBlue = 94,
         BrightMagenta = 95,
         BrightCyan = 96,
-        BrightWhite = 97
+        BrightWhite = 97,
+        BrightDefault = 99,
     }
 
     // Foreground Colors
