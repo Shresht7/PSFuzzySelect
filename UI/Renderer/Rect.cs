@@ -32,6 +32,12 @@ public readonly struct Rect
         Height = height;
     }
 
+    /// <summary>Gets an empty rectangle with all dimensions set to zero</summary>
+    public static Rect Empty => new Rect(0, 0, 0, 0);
+
+    /// <summary>Gets a value indicating whether the rectangle is empty (i.e., has zero or negative width and height).</summary>
+    public bool IsEmpty => Width <= 0 && Height <= 0;
+
     /// <summary>Gets the top edge of the rectangle</summary>
     public int Top => Y;
 
