@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Helpers;
+namespace PSFuzzySelect.UI.Styles;
 
 /// <summary>
 /// Helper class for ANSI escape code generation

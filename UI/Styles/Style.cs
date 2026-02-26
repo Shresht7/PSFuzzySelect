@@ -1,8 +1,7 @@
 using System.Text;
 
-using PSFuzzySelect.UI.Helpers;
-
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Styles
+;
 
 /// <summary>
 /// Defines text styles that can be applied to characters drawn on a render surface, such as bold, italic, underline, inverse, dim, and strikethrough
