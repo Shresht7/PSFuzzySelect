@@ -160,7 +160,8 @@ public class FuzzySelector
     /// </summary>
     private void Render()
     {
-        var buffer = _renderer.CreateBuffer();
+        // Get the pre-cleared back buffer from the renderer to render the current frame
+        var buffer = _renderer.GetBackBuffer();
 
         var layout = Layout.Vertical(buffer,
             new Fixed(1),          // Search input at the top
@@ -178,7 +179,7 @@ public class FuzzySelector
         List.Render(listSurface, _currentMatches, _cursor);
         StatusBar.Render(statusSurface, _currentMatches.Count, _cursor);
 
-        _renderer.Render(buffer);    // Render the current buffer to the console
+        _renderer.Render();    // Render the current buffer to the console
 
     }
 
