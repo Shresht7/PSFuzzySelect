@@ -33,7 +33,7 @@ public interface IRenderSurface
     /// <param name="x">The X coordinate of the character to draw</param>
     /// <param name="y">The Y coordinate of the character to draw</param>
     /// <param name="character">The character to draw at the specified position</param>
-    void Write(int x, int y, char character);
+    void Write(int x, int y, char character) => Write(x, y, new Cell(character, Style.Default));
 
     /// <summary>Draws a single cell at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the cell to draw</param>
@@ -45,7 +45,7 @@ public interface IRenderSurface
     /// <param name="x">The X coordinate of the first cell to draw</param>
     /// <param name="y">The Y coordinate of the first cell to draw</param>
     /// <param name="text">The string of cells to draw starting at the specified position</param>
-    void Write(int x, int y, string text);
+    void Write(int x, int y, string text) => Write(x, y, text, Style.Default);
 
     /// <summary>Draws a string of cells with the specified style starting at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the first cell to draw</param>
