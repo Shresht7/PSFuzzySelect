@@ -1,14 +1,13 @@
 using System.Text;
-
+using Humanizer;
 using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Renderer;
 
 public class ConsoleRenderer
 {
-    public FrameBuffer CurrentBuffer { get; set; }
-
-    private FrameBuffer? _previousBuffer;
+    private FrameBuffer _frontBuffer;
+    private FrameBuffer _backBuffer;
     private readonly int _width;
     private readonly int _height;
 
@@ -16,55 +15,49 @@ public class ConsoleRenderer
     {
         _width = width;
         _height = height;
-        CurrentBuffer = new FrameBuffer(width, height);
-        _previousBuffer = null;
+        _backBuffer = new FrameBuffer(width, height);
+        _frontBuffer = new FrameBuffer(width, height);
     }
 
-    public FrameBuffer CreateBuffer() => new FrameBuffer(_width, _height);
+    public ISurface GetBackBuffer()
+    {
+        _backBuffer.Clear();
+        return _backBuffer;
+    }
 
-    public void Render(FrameBuffer currentBuffer)
+    public void Render()
     {
         // The final string representation of the frame to be rendered to the console
         var frame = new StringBuilder();
 
-        for (int y = 0; y < currentBuffer.Height; y++)
+        for (int y = 0; y < _height; y++)
         {
-            int runStart = -1;
+            bool inRun = false;
             Style activeStyle = Style.Default;
 
-            for (int x = 0; x < currentBuffer.Width; x++)
+            for (int x = 0; x < _width; x++)
             {
-                Cell currentCell = currentBuffer.GetCell(x, y);
-                Cell previousCell = _previousBuffer?.GetCell(x, y) ?? new Cell(' ');
+                Cell currentCell = _backBuffer.GetCell(x, y);
+                Cell previousCell = _frontBuffer.GetCell(x, y);
 
                 // Only update the cell if it has changed since the last render
                 if (currentCell != previousCell)
                 {
                     // Start the first run if uninitialized
-                    if (runStart == -1)
+                    if (!inRun)
                     {
-                        runStart = x;
-                        activeStyle = currentCell.Style ?? Style.Default;
                         frame.Append(Ansi.CursorPosition(y, x));
-                        frame.Append(activeStyle.ToAnsi());
+                        inRun = true;
+                        frame.Append(Ansi.Reset); // Reset to clear any previous styles
+                        activeStyle = Style.Default; // Start with default style for the new run
                     }
 
                     // Update the active style if it changes since the last cell
                     if (currentCell.Style != activeStyle)
                     {
-                        if (currentCell.Style != null)
-                        {
-                            // ? These null-checks are getting annoying. Maybe something can be done about this.
-                            frame.Append(Ansi.Reset);
-                            activeStyle = currentCell.Style ?? Style.Default;
-                            frame.Append(activeStyle.ToAnsi());
-                        }
-                        else if (activeStyle != Style.Default)
-                        {
-                            // Transition from a styled cell to an unstyled cell: reset and return to default style
-                            frame.Append(Ansi.Reset);
-                            activeStyle = Style.Default;
-                        }
+                        frame.Append(Ansi.Reset); // Reset to clear any previous styles
+                        frame.Append(currentCell.Style.ToAnsi());
+                        activeStyle = currentCell.Style;
                     }
 
                     // Append the character to the frame
@@ -72,18 +65,12 @@ public class ConsoleRenderer
                 }
                 else
                 {
-                    // If the cell is the same as the previous render, we can skip it and reset the run if it was active
-                    if (runStart != -1)
-                    {
-                        frame.Append(Ansi.Reset);
-                        runStart = -1;
-                        activeStyle = Style.Default;
-                    }
+                    inRun = false;
                 }
             }
 
             // Reset the style at the end of the line if it was changed
-            if (runStart != -1)
+            if (inRun)
             {
                 frame.Append(Ansi.Reset);
             }
@@ -96,7 +83,7 @@ public class ConsoleRenderer
             Console.Out.Flush();
         }
 
-        // Update the previous buffer reference to the current buffer for the next render cycle
-        _previousBuffer = currentBuffer;
+        // Swap the buffers for the next render cycle
+        (_frontBuffer, _backBuffer) = (_backBuffer, _frontBuffer);
     }
 }
