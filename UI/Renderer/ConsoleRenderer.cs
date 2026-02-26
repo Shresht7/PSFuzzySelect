@@ -31,8 +31,19 @@ public class ConsoleRenderer
         return _backBuffer;
     }
 
+    private void Setup()
+    {
+        Console.CursorVisible = false; // Hide the cursor for a cleaner rendering experience
+        _terminalStyle = Style.Default; // Reset terminal style to default at the start
+        // Unitialize to -1 to ensure the first cursor position is always updated to keep track of the terminal's cursor position
+        _terminalX = -1;
+        _terminalY = -1;
+    }
+
     public void Render()
     {
+        Setup();    // Ensure the console is in the correct state for rendering before we start drawing the frame
+
         // The final string representation of the frame to be rendered to the console
         var frame = new StringBuilder();
 
@@ -85,5 +96,12 @@ public class ConsoleRenderer
 
         // Swap the buffers for the next render cycle
         (_frontBuffer, _backBuffer) = (_backBuffer, _frontBuffer);
+
+        Cleanup(); // Leave the terminal in a clean state after rendering the frame
+    }
+
+    private void Cleanup()
+    {
+        Console.CursorVisible = true;   // Ensure the cursor is visible again when exiting
     }
 }
