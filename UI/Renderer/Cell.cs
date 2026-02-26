@@ -15,6 +15,8 @@ public readonly struct Cell(char character, Style style) : IEquatable<Cell>
     /// <summary>The style to apply to the character</summary>
     public Style Style { get; init; } = style;
 
+    public static Cell Empty => new Cell(' ', Style.Default);
+
     // Equality members to allow comparison of Cell instances based on their content
     public bool Equals(Cell other) => Character == other.Character && Style == other.Style;
     public override bool Equals(object? obj) => obj is Cell cell && Equals(cell);
