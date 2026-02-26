@@ -3,24 +3,30 @@ using PSFuzzySelect.UI.Styles;
 namespace PSFuzzySelect.UI.Renderer;
 
 /// <summary>
-/// Represents a 2D character-based surface that can be read from and written to
+/// Represents a 2D cell-based surface that can be read from and written to
 /// </summary>
 public interface IRenderSurface
 {
-    /// <summary>Gets the width of the render surface in characters</summary>
+    /// <summary>The width of the render surface in cells</summary>
     int Width { get; }
 
-    /// <summary>Gets the height of the render surface in characters</summary>
+    /// <summary>The height of the render surface in cells</summary>
     int Height { get; }
 
-    /// <summary>Retrieves the character at the specified position on the render surface</summary>
-    /// <param name="x">The X coordinate of the character to retrieve</param>
-    /// <param name="y">The Y coordinate of the character to retrieve</param>
-    /// <returns>The character at the specified position on the render surface</returns>
+    /// <summary>
+    /// The area of the render surface represented as a rectangle, 
+    /// where the top-left corner is at (0, 0) and the size is defined by the Width and Height properties
+    /// </summary>
+    Rect Area { get; }
+
+    /// <summary>Retrieves the cell at the specified position on the render surface</summary>
+    /// <param name="x">The X coordinate of the cell to retrieve</param>
+    /// <param name="y">The Y coordinate of the cell to retrieve</param>
+    /// <returns>The cell at the specified position on the render surface</returns>
     Cell GetCell(int x, int y);
 
 
-    /// <summary>Clears the render surface, resetting all characters to a default state</summary>
+    /// <summary>Clears the render surface, resetting all cells to a default state</summary>
     void Clear();
 
     /// <summary>Draws a single character at the specified position on the render surface</summary>
@@ -35,17 +41,17 @@ public interface IRenderSurface
     /// <param name="cell">The cell to draw at the specified position</param>
     void Write(int x, int y, Cell cell);
 
-    /// <summary>Draws a string of characters starting at the specified position on the render surface</summary>
-    /// <param name="x">The X coordinate of the first character to draw</param>
-    /// <param name="y">The Y coordinate of the first character to draw</param>
-    /// <param name="text">The string of characters to draw starting at the specified position</param>
+    /// <summary>Draws a string of cells starting at the specified position on the render surface</summary>
+    /// <param name="x">The X coordinate of the first cell to draw</param>
+    /// <param name="y">The Y coordinate of the first cell to draw</param>
+    /// <param name="text">The string of cells to draw starting at the specified position</param>
     void Write(int x, int y, string text);
 
-    /// <summary>Draws a string of characters with the specified style starting at the specified position on the render surface</summary>
-    /// <param name="x">The X coordinate of the first character to draw</param>
-    /// <param name="y">The Y coordinate of the first character to draw</param>
-    /// <param name="text">The string of characters to draw starting at the specified position</param>
-    /// <param name="style">The style to apply to the characters being drawn</param>
+    /// <summary>Draws a string of cells with the specified style starting at the specified position on the render surface</summary>
+    /// <param name="x">The X coordinate of the first cell to draw</param>
+    /// <param name="y">The Y coordinate of the first cell to draw</param>
+    /// <param name="text">The string of cells to draw starting at the specified position</param>
+    /// <param name="style">The style to apply to the cells being drawn</param>
     void Write(int x, int y, string text, Style? style);
 
     /// <summary>Creates a new render surface that represents a sub-region of the current surface defined by the given rectangle</summary>
