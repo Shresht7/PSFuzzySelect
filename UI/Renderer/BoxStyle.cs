@@ -2,15 +2,28 @@ using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Renderer;
 
-/// <summary>The kind of border to draw around a box</summary>
-public enum BorderStyle
+/// <summary>Describes the style of a box</summary>
+public readonly struct BorderStyle(
+    char topLeft, char top, char topRight,
+    char left, char right,
+    char bottomLeft, char bottom, char bottomRight
+)
 {
-    None,
-    Single,     // ┌───────────┐
-    Double,     // ╔═══════════╗
-    Rounded,    // ╭───────────╮
-    Thick,      // ┏━━━━━━━━━━━┓
-    Hidden,     // (no visible border. useful for reserving space for borders without actually drawing them)
+    public char TopLeft { get; init; } = topLeft;
+    public char Top { get; init; } = top;
+    public char TopRight { get; init; } = topRight;
+    public char Left { get; init; } = left;
+    public char Right { get; init; } = right;
+    public char BottomLeft { get; init; } = bottomLeft;
+    public char Bottom { get; init; } = bottom;
+    public char BottomRight { get; init; } = bottomRight;
+
+    public static BorderStyle None => default;
+    public static BorderStyle Single => new BorderStyle('┌', '─', '┐', '│', '│', '└', '─', '┘');
+    public static BorderStyle Double => new BorderStyle('╔', '═', '╗', '║', '║', '╚', '═', '╝');
+    public static BorderStyle Rounded => new BorderStyle('╭', '─', '╮', '│', '│', '╰', '─', '╯');
+    public static BorderStyle Thick => new BorderStyle('┏', '━', '┓', '┃', '┃', '┗', '━', '┛');
+    public static BorderStyle Hidden => new BorderStyle(' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
 }
 
 public record BoxStyle
