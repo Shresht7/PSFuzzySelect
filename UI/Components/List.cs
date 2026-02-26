@@ -26,7 +26,7 @@ public class List
         return null;
     }
 
-    public static void Render(IRenderSurface surface, List<MatchResult> matches, int cursor)
+    public static void Render(ISurface surface, List<MatchResult> matches, int cursor)
     {
         var visibleMatches = matches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
 

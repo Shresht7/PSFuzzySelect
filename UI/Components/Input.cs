@@ -20,7 +20,7 @@ public class Input
         return null; // No relevant input to handle
     }
 
-    public static void Render(IRenderSurface surface, string query)
+    public static void Render(ISurface surface, string query)
     {
         var prompt = "Search: ";
         surface.Write(0, 0, prompt, Style.Default.WithForeground(Ansi.Color.Magenta));

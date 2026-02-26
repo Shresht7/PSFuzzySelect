@@ -5,7 +5,7 @@ namespace PSFuzzySelect.UI.Renderer;
 /// <summary>
 /// A rectangular frame buffer for rendering characters to the console.
 /// </summary>
-public class FrameBuffer : IRenderSurface
+public class FrameBuffer : ISurface
 {
     /// <summary>
     /// The underlying character buffer that holds the current state of the render surface.
@@ -51,7 +51,7 @@ public class FrameBuffer : IRenderSurface
         _offsetY = region.Y;
     }
 
-    public IRenderSurface CreateSubSurface(Rect region)
+    public ISurface CreateSubSurface(Rect region)
     {
         var rect = GetRect();
         if (!rect.Contains(region))

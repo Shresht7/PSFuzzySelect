@@ -5,7 +5,7 @@ namespace PSFuzzySelect.UI.Renderer;
 /// <summary>
 /// Represents a 2D cell-based surface that can be read from and written to
 /// </summary>
-public interface IRenderSurface
+public interface ISurface
 {
     /// <summary>The width of the render surface in cells</summary>
     int Width { get; }
@@ -57,5 +57,5 @@ public interface IRenderSurface
     /// <summary>Creates a new render surface that represents a sub-region of the current surface defined by the given rectangle</summary>
     /// <param name="rect">The rectangle defining the position and size of the sub-surface to create</param>
     /// <returns>A new render surface that represents the specified sub-region of the current surface</returns>
-    IRenderSurface CreateSubSurface(Rect rect);
+    ISurface CreateSubSurface(Rect rect);
 }

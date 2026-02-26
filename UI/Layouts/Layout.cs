@@ -15,7 +15,7 @@ public static class Layout
     /// <param name="parent">The parent render surface</param>
     /// <param name="sections">The sections to layout</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    public static IRenderSurface[] Vertical(IRenderSurface parent, params LayoutSection[] sections)
+    public static ISurface[] Vertical(ISurface parent, params LayoutSection[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: true);
     }
@@ -28,7 +28,7 @@ public static class Layout
     /// <param name="parent">The parent render surface</param>
     /// <param name="sections">The sections to layout</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    public static IRenderSurface[] Horizontal(IRenderSurface parent, params LayoutSection[] sections)
+    public static ISurface[] Horizontal(ISurface parent, params LayoutSection[] sections)
     {
         return LayoutAlongAxis(parent, sections, isVertical: false);
     }
@@ -40,10 +40,10 @@ public static class Layout
     /// <param name="sections">The sections to layout</param>
     /// <param name="isVertical">Whether to layout vertically or horizontally</param>
     /// <returns>An array of render surfaces representing the laid out sections</returns>
-    private static IRenderSurface[] LayoutAlongAxis(IRenderSurface parent, LayoutSection[] sections, bool isVertical)
+    private static ISurface[] LayoutAlongAxis(ISurface parent, LayoutSection[] sections, bool isVertical)
     {
         // An array to hold the resulting render surfaces for each section
-        var surfaces = new IRenderSurface[sections.Length];
+        var surfaces = new ISurface[sections.Length];
 
         // Determine the total space available along the chosen axis (height for vertical, width for horizontal)
         var space = isVertical ? parent.Height : parent.Width;
