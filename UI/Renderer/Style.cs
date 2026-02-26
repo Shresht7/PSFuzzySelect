@@ -122,4 +122,22 @@ public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, Tex
     public override int GetHashCode() => HashCode.Combine(Foreground, Background, TextStyles);
     public static bool operator ==(Style left, Style right) => left.Equals(right);
     public static bool operator !=(Style left, Style right) => !left.Equals(right);
+
+    /// <summary>Returns a new Style instance with the Bold text style applied</summary>
+    public Style Bold() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Bold);
+
+    /// <summary>Returns a new Style instance with the Italic text style applied</summary>
+    public Style Italic() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Italic);
+
+    /// <summary>Returns a new Style instance with the Underline text style applied</summary>
+    public Style Underline() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Underline);
+
+    /// <summary>Returns a new Style instance with the Inverse text style applied</summary>
+    public Style Inverse() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Inverse);
+
+    /// <summary>Returns a new Style instance with the Dim text style applied</summary>
+    public Style Dim() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Dim);
+
+    /// <summary>Returns a new Style instance with the Strikethrough text style applied</summary>
+    public Style Strikethrough() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Strikethrough);
 }
