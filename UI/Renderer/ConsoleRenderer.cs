@@ -11,6 +11,12 @@ public class ConsoleRenderer
     private readonly int _width;
     private readonly int _height;
 
+    // Track the terminal's current cursor position and style
+    // to optimize rendering by minimizing unnecessary cursor movements and style changes
+    private int _terminalX = 0;
+    private int _terminalY = 0;
+    private Style _terminalStyle = Style.Default;
+
     public ConsoleRenderer(int width, int height)
     {
         _width = width;
@@ -32,55 +38,49 @@ public class ConsoleRenderer
 
         for (int y = 0; y < _height; y++)
         {
-            bool inRun = false;
-            Style activeStyle = Style.Default;
-
             for (int x = 0; x < _width; x++)
             {
                 Cell currentCell = _backBuffer.GetCell(x, y);
                 Cell previousCell = _frontBuffer.GetCell(x, y);
 
-                // Only update the cell if it has changed since the last render
-                if (currentCell != previousCell)
+                // Only render the cell if it has changed since the last frame
+                if (currentCell == previousCell) continue;
+
+                // Only move the cursor if we aren't already where we need to be
+                if (x != _terminalX || y != _terminalY)
                 {
-                    // Start the first run if uninitialized
-                    if (!inRun)
+                    frame.Append(Ansi.CursorPosition(y, x));
+                }
+
+                // Only change the style codes if the style is different from the terminal's current "brush" style
+                if (currentCell.Style != _terminalStyle)
+                {
+                    // We always reset before applying new styles to ensure
+                    // that there are no lingering styles from the previous cell
+                    // Skip if the terminal style is already default
+                    if (_terminalStyle != Style.Default)
                     {
-                        frame.Append(Ansi.CursorPosition(y, x));
-                        inRun = true;
-                        frame.Append(Ansi.Reset); // Reset to clear any previous styles
-                        activeStyle = Style.Default; // Start with default style for the new run
+                        frame.Append(Ansi.Reset);
                     }
 
-                    // Update the active style if it changes since the last cell
-                    if (currentCell.Style != activeStyle)
-                    {
-                        frame.Append(Ansi.Reset); // Reset to clear any previous styles
-                        frame.Append(currentCell.Style.ToAnsi());
-                        activeStyle = currentCell.Style;
-                    }
+                    frame.Append(currentCell.Style.ToAnsi());
+                    _terminalStyle = currentCell.Style;
+                }
 
-                    // Append the character to the frame
-                    frame.Append(currentCell.Character);
-                }
-                else
-                {
-                    inRun = false;
-                }
+                // Write the actual character
+                frame.Append(currentCell.Character);
+
+                // Update the terminal's cursor state
+                _terminalX = x + 1; // After writing a character, the terminal's cursor naturally moves to the right
+                _terminalY = y;
             }
 
-            // Reset the style at the end of the line if it was changed
-            if (inRun)
-            {
-                frame.Append(Ansi.Reset);
-            }
         }
 
         // Write the final frame to the console
         if (frame.Length > 0)
         {
-            Console.Out.Write(frame.ToString());
-            Console.Out.Flush();
+            Console.Write(frame.ToString());
         }
 
         // Swap the buffers for the next render cycle
