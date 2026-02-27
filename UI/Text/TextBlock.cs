@@ -6,7 +6,7 @@ namespace PSFuzzySelect.UI.Text;
 /// <summary>
 /// A text component that can render multiple spans of text with different styles on a render surface.
 /// </summary>
-public class Text : IComponent
+public class TextBlock : IComponent
 {
     /// <summary>
     /// The list of spans that make up the text content of this component.
@@ -20,7 +20,7 @@ public class Text : IComponent
     /// </summary>
     private TextAlignment _alignment = TextAlignment.Left;
 
-    public Text Align(TextAlignment alignment)
+    public TextBlock Align(TextAlignment alignment)
     {
         _alignment = alignment;
         return this;
@@ -28,41 +28,41 @@ public class Text : IComponent
 
     private TextOverflow _overflow = TextOverflow.Clip;
 
-    public Text Overflow(TextOverflow overflow)
+    public TextBlock Overflow(TextOverflow overflow)
     {
         _overflow = overflow;
         return this;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Text"/> class with no spans.
+    /// Initializes a new instance of the <see cref="TextBlock"/> class with no spans.
     /// This allows you to create an empty text component and add spans to it later using the <see cref="Add"/> method.
     /// If you want to initialize the text component with spans, use the constructor that takes a params array of <see cref="TextSpan"/> or the constructor that takes a single string.
     /// </summary>
-    public Text() { }
+    public TextBlock() { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Text"/> class with the provided spans
+    /// Initializes a new instance of the <see cref="TextBlock"/> class with the provided spans
     /// </summary>
     /// <param name="spans">The spans to initialize the text component with</param>
-    public Text(params TextSpan[] spans)
+    public TextBlock(params TextSpan[] spans)
     {
         _spans.AddRange(spans);
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Text"/> class with a single span containing the provided text and the default style
+    /// Initializes a new instance of the <see cref="TextBlock"/> class with a single span containing the provided text and the default style
     /// </summary>
     /// <param name="Text">The text content for the span</param>
-    public Text(string Text) : this(new TextSpan(Text, Style.Default)) { }
+    public TextBlock(string Text) : this(new TextSpan(Text, Style.Default)) { }
 
     /// <summary>
     /// Adds a span to the text component.
     /// Spans are rendered in the order they are added, so adding a span will cause it to be rendered after all previously added spans.
     /// </summary>
     /// <param name="span">The span to add</param>
-    /// <returns>The current <see cref="Text"/> instance</returns>
-    public Text Add(TextSpan span)
+    /// <returns>The current <see cref="TextBlock"/> instance</returns>
+    public TextBlock Add(TextSpan span)
     {
         _spans.Add(span);
         return this;

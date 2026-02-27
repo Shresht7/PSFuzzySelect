@@ -1,7 +1,7 @@
 namespace PSFuzzySelect.UI.Text;
 
 /// <summary>
-/// Defines the behavior for handling text that exceeds the available space when rendering a <see cref="Text"/> component on a surface
+/// Defines the behavior for handling text that exceeds the available space when rendering a <see cref="TextBlock"/> component on a surface
 /// </summary>
 public enum TextOverflow
 {
