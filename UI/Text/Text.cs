@@ -15,6 +15,18 @@ public class Text : IComponent
     private readonly List<TextSpan> _spans = [];
 
     /// <summary>
+    /// The horizontal alignment of the text within its allocated surface.
+    /// This determines how the text is positioned when rendered on a surface that is wider than the total length of the text spans.
+    /// </summary>
+    private TextAlignment _alignment = TextAlignment.Left;
+
+    public Text Align(TextAlignment alignment)
+    {
+        _alignment = alignment;
+        return this;
+    }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Text"/> class with no spans.
     /// This allows you to create an empty text component and add spans to it later using the <see cref="Add"/> method.
     /// If you want to initialize the text component with spans, use the constructor that takes a params array of <see cref="TextSpan"/> or the constructor that takes a single string.
@@ -50,7 +62,19 @@ public class Text : IComponent
 
     public void Render(ISurface surface)
     {
-        int x = 0, y = 0;
+        // Calculate the total width to determine the starting x position
+        int totalWidth = _spans.Sum(span => span.Length);
+
+        // Deterimine the starting x position based on alignment
+        int x = _alignment switch
+        {
+            TextAlignment.Left => 0,
+            TextAlignment.Center => (surface.Width - totalWidth) / 2,
+            TextAlignment.Right => surface.Width - totalWidth,
+            _ => 0,
+        };
+        int y = 0; // Vertical alignment is usually handled by layout containers
+
         foreach (var span in _spans)
         {
             surface.Write(x, y, span.Text, span.Style);
