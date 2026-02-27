@@ -49,7 +49,29 @@ public readonly struct Spacing
     /// <summary>Gets a spacing instance with all sides set to zero, representing no spacing</summary>
     public static Spacing None => new Spacing(0);
 
+    /// <summary>
+    /// Creates a spacing instance with the specified horizontal spacing applied to left and right, and zero vertical spacing.
+    /// </summary>
+    /// <param name="value">The horizontal spacing value to apply to the left and right sides.</param>
+    public static Spacing Horizontal(int value) => new Spacing(value, 0);
+
+    /// <summary>
+    /// Creates a spacing instance with the specified vertical spacing applied to top and bottom, and zero horizontal spacing.
+    /// </summary>
+    /// <param name="value">The vertical spacing value to apply to the top and bottom sides.</param>
+    public static Spacing Vertical(int value) => new Spacing(0, value);
+
+
     /// <summary>Implicitly converts an integer to a Spacing instance, applying the same value to all sides</summary>
     /// <param name="all">The spacing value to apply to all sides</param>
     public static implicit operator Spacing(int all) => new Spacing(all);
+
+    /// <summary>Implicitly converts a tuple of (horizontal, vertical) to a Spacing instance, applying the horizontal value to left and right, and the vertical value to top and bottom</summary>
+    /// <param name="values">A tuple containing the horizontal and vertical spacing values</param>
+    public static implicit operator Spacing((int horizontal, int vertical) values) => new Spacing(values.horizontal, values.vertical);
+
+    /// <summary>Implicitly converts a tuple of (left, top, right, bottom) to a Spacing instance, applying the respective values to each side</summary>
+    /// <param name="values">A tuple containing the left, top, right, and bottom spacing values</param>
+    public static implicit operator Spacing((int left, int top, int right, int bottom) values) =>
+        new Spacing(values.left, values.top, values.right, values.bottom);
 }

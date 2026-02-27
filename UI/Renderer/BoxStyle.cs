@@ -7,7 +7,7 @@ public readonly struct BorderStyle(
     char topLeft, char top, char topRight,
     char left, char right,
     char bottomLeft, char bottom, char bottomRight
-)
+) : IEquatable<BorderStyle>
 {
     public char TopLeft { get; init; } = topLeft;
     public char Top { get; init; } = top;
@@ -24,6 +24,23 @@ public readonly struct BorderStyle(
     public static BorderStyle Rounded => new BorderStyle('╭', '─', '╮', '│', '│', '╰', '─', '╯');
     public static BorderStyle Thick => new BorderStyle('┏', '━', '┓', '┃', '┃', '┗', '━', '┛');
     public static BorderStyle Hidden => new BorderStyle(' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+
+    public bool Equals(BorderStyle other)
+    {
+        return TopLeft == other.TopLeft &&
+               Top == other.Top &&
+               TopRight == other.TopRight &&
+               Left == other.Left &&
+               Right == other.Right &&
+               BottomLeft == other.BottomLeft &&
+               Bottom == other.Bottom &&
+               BottomRight == other.BottomRight;
+    }
+
+    public override bool Equals(object? obj) => obj is BorderStyle other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(TopLeft, Top, TopRight, Left, Right, BottomLeft, Bottom, BottomRight);
+    public static bool operator ==(BorderStyle left, BorderStyle right) => left.Equals(right);
+    public static bool operator !=(BorderStyle left, BorderStyle right) => !left.Equals(right);
 }
 
 public record BoxStyle
