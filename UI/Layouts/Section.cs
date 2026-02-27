@@ -27,7 +27,7 @@ public class Section(IComponent component) : IComponent
     public void Render(ISurface surface)
     {
         // Apply Margin
-        var borderRect = new Rect(0, 0, surface.Width, surface.Height)
+        var borderRect = surface.Area
             .Inset(Style.Margin.Left, Style.Margin.Top, Style.Margin.Right, Style.Margin.Bottom);
 
         // Apply Border
@@ -41,8 +41,8 @@ public class Section(IComponent component) : IComponent
 
         // Apply Padding
         int b = hasBorder ? 1 : 0;
-
-        var contentRect = borderRect.Inset(Style.Padding.Left, Style.Padding.Top, Style.Padding.Right, Style.Padding.Bottom);
+        var contentRect = borderRect
+            .Inset(b + Style.Padding.Left, b + Style.Padding.Top, b + Style.Padding.Right, b + Style.Padding.Bottom);
 
         // Render Content
         if (contentRect.Width <= 0 || contentRect.Height <= 0) return; // Not enough space to render
