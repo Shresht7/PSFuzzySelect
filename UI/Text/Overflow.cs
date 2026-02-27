@@ -12,7 +12,7 @@ public enum TextOverflow
     Clip,
 
     /// <summary>
-    /// An overflow behavior where text that exceeds the available space is truncated and an ellipsis ("...") is appended to indicate that there is more text that is not being displayed.
+    /// An overflow behavior where text that exceeds the available space is truncated and an ellipsis ("…") is appended to indicate that there is more text that is not being displayed.
     /// This provides a visual cue to the user that there is additional content that is not currently visible, while still fitting within the allocated surface.
     /// </summary>
     Ellipsis

@@ -88,7 +88,7 @@ public class TextBlock : IComponent
         // Determine if the text exceeds the available space on the surface
         bool isOverflowing = totalWidth > surface.Width;
 
-        // Deterimine the starting x position based on alignment
+        // Determine the starting x position based on alignment
         int x = _alignment switch
         {
             TextAlignment.Left => 0,
