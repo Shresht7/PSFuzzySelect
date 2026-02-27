@@ -29,4 +29,11 @@ public class Section(Size size)
         Style = Style.WithMargin(margin);
         return this;
     }
+
+    public void Render(ISurface surface, IComponent content)
+    {
+        // For now, just pass-through
+        // TODO: Apply border, padding, and margin to the rect before rendering the content
+        content.Render(surface);
+    }
 }
