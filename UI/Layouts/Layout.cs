@@ -4,6 +4,6 @@ namespace PSFuzzySelect.UI.Layouts;
 
 public static class Layout
 {
-    public static Blueprint Vertical(params Section[] sections) => new Blueprint(sections, true);
-    public static Blueprint Horizontal(params Section[] sections) => new Blueprint(sections, false);
+    public static Blueprint Vertical(params Size[] sizes) => new Blueprint(sizes, true);
+    public static Blueprint Horizontal(params Size[] sizes) => new Blueprint(sizes, false);
 }

@@ -165,9 +165,9 @@ public class FuzzySelector
 
         // Create the layout blueprint for the fuzzy selector UI
         var blueprint = Layout.Vertical(
-            Section.Fixed(1),          // Search input at the top
-            Section.Flexible(1),       // List takes up the remaining space
-            Section.Fixed(2)           // Status bar at the bottom
+            Size.Fixed(1),          // Search input at the top
+            Size.Flexible(1),       // List takes up the remaining space
+            Size.Fixed(2)           // Status bar at the bottom
         ).Gap(1);                       // Add a gap between sections
 
         // Compose the UI components according to the blueprint and render them to the buffer

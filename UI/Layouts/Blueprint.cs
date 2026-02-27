@@ -2,7 +2,7 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Layouts;
 
-public class Blueprint(Section[] sections, bool isVertical)
+public class Blueprint(Size[] sections, bool isVertical)
 {
     private int _gap = 0;
 
@@ -22,7 +22,7 @@ public class Blueprint(Section[] sections, bool isVertical)
     }
 }
 
-public class Frame(Section[] sections, IComponent[] components, bool isVertical, int gap) : IComponent
+public class Frame(Size[] sections, IComponent[] components, bool isVertical, int gap) : IComponent
 {
     public void Render(ISurface surface)
     {
@@ -38,7 +38,7 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
 
         // Create sub-surfaces for each section based on the calculated sizes
         var position = 0;
-        for (int i = 0; i < sections.Length; i++)
+        for (int i = 0; i < sizes.Length; i++)
         {
             int size = sizes[i];
             var rect = isVertical
@@ -46,8 +46,8 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
                 : new Rect(position, 0, size, surface.Height);
             var subSurface = surface.CreateSubSurface(rect);
 
-            // Delegate rendering to the component for this section
-            sections[i].Render(subSurface, components[i]);
+            // Render the component within the sub-surface
+            components[i].Render(subSurface);
 
             // Advance the position for the next section, accounting for the gap
             position += size + gap;
@@ -60,14 +60,14 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
         var surfaces = new ISurface[sections.Length];
 
         // Calculate total fixed space
-        int fixedSpace = sections.Select(s => s.Size).OfType<FixedSize>().Sum(c => c.Size);
+        int fixedSpace = sections.OfType<FixedSize>().Sum(c => c.Size);
 
         // Calculate total fractional space
-        var fractionSections = sections.Select(s => s.Size).OfType<FractionalSize>().ToArray();
+        var fractionSections = sections.OfType<FractionalSize>().ToArray();
         int fractionalSpace = fractionSections.Sum(c => (int)(c.Frac * space));
 
         // Calculate flexible space per flex item
-        var flexSections = sections.Select(s => s.Size).OfType<FlexibleSize>().ToArray();
+        var flexSections = sections.OfType<FlexibleSize>().ToArray();
         int totalFlexFactor = flexSections.Sum(c => c.Factor);
 
 
@@ -76,9 +76,9 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
 
         // Calculate the size for each section based on its type and the available space
         var sizes = new int[sections.Length];
-        for (int i = 0; i < sections.Length; i++)
+        for (int i = 0; i < sizes.Length; i++)
         {
-            sizes[i] = sections[i].Size switch
+            sizes[i] = sections[i] switch
             {
                 FixedSize f => Math.Max(0, f.Size),
                 FractionalSize f => (int)Math.Floor(f.Frac * space),
@@ -91,7 +91,7 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
         // Distribute leftovers
         int allocatedSpace = sizes.Sum();
         int leftover = space - allocatedSpace;
-        for (int i = 0; i < sections.Length; i++)
+        for (int i = 0; i < sizes.Length; i++)
         {
             if (leftover <= 0) break; // No more space to distribute
 
@@ -100,9 +100,9 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical,
             {
                 bool wants = pass switch
                 {
-                    0 => sections[i].Size is FlexibleSize,
-                    1 => sections[i].Size is FractionalSize,
-                    2 => sections[i].Size is FixedSize,
+                    0 => sections[i] is FlexibleSize,
+                    1 => sections[i] is FractionalSize,
+                    2 => sections[i] is FixedSize,
                     _ => false
                 };
                 if (wants)
