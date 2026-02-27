@@ -33,7 +33,7 @@ public class Section()
         // Apply Border
         if (borderRect.Width <= 0 || borderRect.Height <= 0) return; // Not enough space to render
         var borderSurface = surface.CreateSubSurface(borderRect);
-        bool hasBorder = !Style.Border.Equals(BorderStyle.None);
+        bool hasBorder = Style.Border != BorderStyle.None;
         if (hasBorder)
         {
             DrawBorder(borderSurface);
