@@ -2,7 +2,7 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Layouts;
 
-public class Section()
+public class Section(IComponent component) : IComponent
 {
     public BoxStyle Style { get; private set; } = BoxStyle.Default;
 
@@ -24,7 +24,7 @@ public class Section()
         return this;
     }
 
-    public void Render(ISurface surface, IComponent content)
+    public void Render(ISurface surface)
     {
         // Apply Margin
         var borderRect = new Rect(0, 0, surface.Width, surface.Height)
@@ -47,7 +47,7 @@ public class Section()
         // Render Content
         if (contentRect.Width <= 0 || contentRect.Height <= 0) return; // Not enough space to render
         var contentSurface = borderSurface.CreateSubSurface(contentRect);
-        content.Render(contentSurface);
+        component.Render(contentSurface);
     }
 
     private void DrawBorder(ISurface surface)
