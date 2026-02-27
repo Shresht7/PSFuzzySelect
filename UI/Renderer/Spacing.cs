@@ -49,7 +49,16 @@ public readonly struct Spacing
     /// <summary>Gets a spacing instance with all sides set to zero, representing no spacing</summary>
     public static Spacing None => new Spacing(0);
 
+    /// <summary>
+    /// Creates a spacing instance with the specified horizontal spacing applied to left and right, and zero vertical spacing.
+    /// </summary>
+    /// <param name="value">The horizontal spacing value to apply to the left and right sides.</param>
     public static Spacing Horizontal(int value) => new Spacing(value, 0);
+
+    /// <summary>
+    /// Creates a spacing instance with the specified vertical spacing applied to top and bottom, and zero horizontal spacing.
+    /// </summary>
+    /// <param name="value">The vertical spacing value to apply to the top and bottom sides.</param>
     public static Spacing Vertical(int value) => new Spacing(0, value);
 
 
