@@ -26,6 +26,14 @@ public class Text : IComponent
         return this;
     }
 
+    private TextOverflow _overflow = TextOverflow.Clip;
+
+    public Text Overflow(TextOverflow overflow)
+    {
+        _overflow = overflow;
+        return this;
+    }
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Text"/> class with no spans.
     /// This allows you to create an empty text component and add spans to it later using the <see cref="Add"/> method.
@@ -65,12 +73,15 @@ public class Text : IComponent
         // Calculate the total width to determine the starting x position
         int totalWidth = _spans.Sum(span => span.Length);
 
+        // Determine if the text exceeds the available space on the surface
+        bool isOverflowing = totalWidth > surface.Width;
+
         // Deterimine the starting x position based on alignment
         int x = _alignment switch
         {
             TextAlignment.Left => 0,
-            TextAlignment.Center => (surface.Width - totalWidth) / 2,
-            TextAlignment.Right => surface.Width - totalWidth,
+            TextAlignment.Center => Math.Max(0, (surface.Width - totalWidth) / 2),
+            TextAlignment.Right => Math.Max(0, surface.Width - totalWidth),
             _ => 0,
         };
         int y = 0; // Vertical alignment is usually handled by layout containers
@@ -82,6 +93,12 @@ public class Text : IComponent
 
             // If the x position exceeds the surface width, stop rendering this line
             if (x >= surface.Width) break;
+        }
+
+        // Handle overflow behavior
+        if (isOverflowing && _overflow == TextOverflow.Ellipsis && surface.Width >= 3)
+        {
+            surface.Write(x - 3, y, "...", Style.Default);
         }
     }
 }
