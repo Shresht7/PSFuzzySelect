@@ -2,23 +2,23 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Layouts;
 
-public class Section(IComponent component) : IComponent
+public class Box(IComponent component) : IComponent
 {
     public BoxStyle Style { get; private set; } = BoxStyle.Default;
 
-    public Section Border(BorderStyle border)
+    public Box Border(BorderStyle border)
     {
         Style = Style.WithBorder(border);
         return this;
     }
 
-    public Section Padding(Spacing padding)
+    public Box Padding(Spacing padding)
     {
         Style = Style.WithPadding(padding);
         return this;
     }
 
-    public Section Margin(Spacing margin)
+    public Box Margin(Spacing margin)
     {
         Style = Style.WithMargin(margin);
         return this;
