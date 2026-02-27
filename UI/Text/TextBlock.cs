@@ -110,7 +110,9 @@ public class TextBlock : IComponent
         // Handle overflow behavior
         if (isOverflowing && _overflow == TextOverflow.Ellipsis)
         {
-            surface.Write(surface.Width - 1, y, "…", Style.Default);
+            // Place the ellipsis at the end of the actually rendered text, not always at the far right
+            int ellipsisX = Math.Max(0, Math.Min(surface.Width - 1, x - 1));
+            surface.Write(ellipsisX, y, "…", Style.Default);
         }
     }
 }
