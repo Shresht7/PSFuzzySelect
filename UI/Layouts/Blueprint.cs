@@ -4,22 +4,34 @@ namespace PSFuzzySelect.UI.Layouts;
 
 public class Blueprint(Section[] sections, bool isVertical)
 {
+    private int _gap = 0;
+
+    public Blueprint Gap(int gap)
+    {
+        _gap = gap;
+        return this;
+    }
+
     public IComponent Compose(params IComponent[] components)
     {
         if (components.Length != sections.Length)
         {
             throw new ArgumentException("Number of components must match the number of sections in the blueprint");
         }
-        return new Frame(sections, components, isVertical);
+        return new Frame(sections, components, isVertical, _gap);
     }
 }
 
-public class Frame(Section[] sections, IComponent[] components, bool isVertical) : IComponent
+public class Frame(Section[] sections, IComponent[] components, bool isVertical, int gap) : IComponent
 {
     public void Render(ISurface surface)
     {
         // Determine the total space available along the chosen axis (height for vertical, width for horizontal)
         var space = isVertical ? surface.Height : surface.Width;
+
+        // Determine the available space after accounting for gaps between sections
+        int totalGapSpace = gap * Math.Max(0, sections.Length - 1);
+        space = Math.Max(0, space - totalGapSpace);
 
         // Calculate the sizes for each section based on the available space
         var sizes = CalculateSizes(space);
@@ -37,7 +49,8 @@ public class Frame(Section[] sections, IComponent[] components, bool isVertical)
             // Delegate rendering to the component for this section
             sections[i].Render(subSurface, components[i]);
 
-            position += size;
+            // Advance the position for the next section, accounting for the gap
+            position += size + gap;
         }
     }
 
