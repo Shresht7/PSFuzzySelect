@@ -55,7 +55,6 @@ public class Section(IComponent component) : IComponent
         var border = Style.Border;
 
         // Draw top and bottom borders
-        surface.Write(0, 0, border.TopLeft);
         for (int x = 1; x < surface.Width - 1; x++)
         {
             surface.Write(x, 0, border.Top);
@@ -70,9 +69,9 @@ public class Section(IComponent component) : IComponent
         }
 
         // Draw corners
+        surface.Write(0, 0, border.TopLeft);
+        surface.Write(surface.Width - 1, 0, border.TopRight);
         surface.Write(0, surface.Height - 1, border.BottomLeft);
         surface.Write(surface.Width - 1, surface.Height - 1, border.BottomRight);
-        surface.Write(surface.Width - 1, 0, border.TopLeft);
-        surface.Write(0, 0, border.TopRight);
     }
 }
