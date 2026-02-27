@@ -68,6 +68,18 @@ public class TextBlock : IComponent
         return this;
     }
 
+    /// <summary>
+    /// Adds multiple spans to the text component.
+    /// This is a convenient method for adding multiple spans at once, instead of calling <see cref="Add"/> multiple times.
+    /// </summary>
+    /// <param name="spans">The spans to add</param>
+    /// <returns>The current <see cref="TextBlock"/> instance</returns>
+    public TextBlock AddRange(IEnumerable<TextSpan> spans)
+    {
+        _spans.AddRange(spans);
+        return this;
+    }
+
     public void Render(ISurface surface)
     {
         // Calculate the total width to determine the starting x position
