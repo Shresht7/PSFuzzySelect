@@ -3,7 +3,12 @@ namespace PSFuzzySelect.UI.Layouts;
 /// <summary>
 /// Defines the layout sections for a UI component, allowing for fixed or flexible sizing based on the available space
 /// </summary>
-public abstract record Size;
+public abstract record Size
+{
+    public static Size Fixed(int size) => new FixedSize(size);
+    public static Size Flexible(int factor) => new FlexibleSize(factor);
+    public static Size Fractional(float frac) => new FractionalSize(frac);
+}
 
 /// <summary>
 /// Represents a fixed layout section that takes up a specific number of characters or lines regardless of the available space
