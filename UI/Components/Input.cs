@@ -1,5 +1,6 @@
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Renderer;
+using PSFuzzySelect.UI.Text;
 
 namespace PSFuzzySelect.UI.Components;
 
@@ -7,9 +8,10 @@ public class Input(string query) : IComponent
 {
     public void Render(ISurface surface)
     {
-        var prompt = "Search: ";
-        surface.Write(0, 0, prompt, Style.Default.WithForeground(Ansi.Color.Magenta));
-        surface.Write(prompt.Length, 0, query);
+        new TextBlock(
+            new TextSpan("Search: ", Style.Default.WithForeground(Ansi.Color.Blue)),
+            new TextSpan(query, Style.Default.WithForeground(Ansi.Color.White))
+        ).Render(surface);
     }
 
     public static Message? HandleKey(ConsoleKeyInfo key, string currentQuery)
