@@ -56,9 +56,6 @@ public class Frame(Size[] sections, IComponent[] components, bool isVertical, in
 
     private int[] CalculateSizes(int space)
     {
-        // An array to hold the resulting render surfaces for each section
-        var surfaces = new ISurface[sections.Length];
-
         // Calculate total fixed space
         int fixedSpace = sections.OfType<FixedSize>().Sum(c => c.Size);
 
