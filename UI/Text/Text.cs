@@ -96,9 +96,9 @@ public class Text : IComponent
         }
 
         // Handle overflow behavior
-        if (isOverflowing && _overflow == TextOverflow.Ellipsis && surface.Width >= 3)
+        if (isOverflowing && _overflow == TextOverflow.Ellipsis)
         {
-            surface.Write(x - 3, y, "...", Style.Default);
+            surface.Write(surface.Width - 1, y, "…", Style.Default);
         }
     }
 }
