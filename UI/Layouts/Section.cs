@@ -27,7 +27,7 @@ public class Section(IComponent component) : IComponent
     public void Render(ISurface surface)
     {
         // Apply Margin
-        var borderRect = surface.Area
+        var borderRect = new Rect(0, 0, surface.Width, surface.Height)
             .Inset(Style.Margin.Left, Style.Margin.Top, Style.Margin.Right, Style.Margin.Bottom);
 
         // Apply Border
