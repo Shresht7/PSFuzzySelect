@@ -2,9 +2,9 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class StatusBar
+public class StatusBar(int matchCount, int cursor) : IComponent
 {
-    public static void Render(ISurface surface, int matchCount, int cursor)
+    public void Render(ISurface surface)
     {
         surface.Write(0, 0, $"[{cursor + 1}/{matchCount}]");
     }

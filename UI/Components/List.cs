@@ -3,30 +3,9 @@ using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class List
+public class List(List<MatchResult> matches, int cursor) : IComponent
 {
-    public static Message? HandleKey(ConsoleKeyInfo key)
-    {
-        // Check if the user selected an item
-        if (key.Key == ConsoleKey.Enter)
-        {
-            return new Select();
-        }
-
-        // Handle cursor movement
-        if (key.Key == ConsoleKey.UpArrow)
-        {
-            return new CursorMove(-1);
-        }
-        if (key.Key == ConsoleKey.DownArrow)
-        {
-            return new CursorMove(1);
-        }
-
-        return null;
-    }
-
-    public static void Render(ISurface surface, List<MatchResult> matches, int cursor)
+    public void Render(ISurface surface)
     {
         var visibleMatches = matches.Take(5).ToList(); // Limit to top 5 matches for now to keep the display manageable
 
@@ -36,5 +15,16 @@ public class List
             var cursorIndicator = i == cursor ? ">" : " ";
             surface.Write(0, i, $"{cursorIndicator} {item.DisplayString} (Score: {item.Score})");
         }
+    }
+
+    public static Message? HandleKey(ConsoleKeyInfo key)
+    {
+        return key.Key switch
+        {
+            ConsoleKey.Enter => new Select(),
+            ConsoleKey.UpArrow => new CursorMove(-1),
+            ConsoleKey.DownArrow => new CursorMove(1),
+            _ => null
+        };
     }
 }

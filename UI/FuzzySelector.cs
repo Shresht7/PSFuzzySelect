@@ -163,21 +163,19 @@ public class FuzzySelector
         // Get the pre-cleared back buffer from the renderer to render the current frame
         var buffer = _renderer.GetBackBuffer();
 
-        var layout = Layout.Vertical(buffer,
-            new Fixed(1),          // Search input at the top
-            new Flexible(1),       // List takes up the remaining space
-            new Fixed(2)           // Status bar at the bottom
-        );
+        // Create the layout blueprint for the fuzzy selector UI
+        var blueprint = Layout.Vertical(
+            Size.Fixed(1),          // Search input at the top
+            Size.Flexible(1),       // List takes up the remaining space
+            Size.Fixed(2)           // Status bar at the bottom
+        ).Gap(1);                       // Add a gap between sections
 
-        // Create sub-surfaces for each component of the UI by divvying up the main frame buffer
-        var inputSurface = layout[0];
-        var listSurface = layout[1];
-        var statusSurface = layout[2];
-
-        // Render the components to their respective surfaces
-        Input.Render(inputSurface, _searchQuery);
-        List.Render(listSurface, _currentMatches, _cursor);
-        StatusBar.Render(statusSurface, _currentMatches.Count, _cursor);
+        // Compose the UI components according to the blueprint and render them to the buffer
+        blueprint.Compose(
+            new Input(_searchQuery),
+            new List(_currentMatches, _cursor),
+            new StatusBar(_currentMatches.Count, _cursor)
+        ).Render(buffer);
 
         _renderer.Render();    // Render the current buffer to the console
 
