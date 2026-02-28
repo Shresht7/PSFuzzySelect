@@ -1,4 +1,6 @@
-namespace PSFuzzySelect.UI.Surface;
+using PSFuzzySelect.UI.Surface;
+
+namespace PSFuzzySelect.UI.Components;
 
 public interface IComponent
 {
