@@ -41,7 +41,7 @@ public class Box(IComponent component) : IComponent
 
         // Apply Padding
         int b = hasBorder ? 1 : 0;
-        var contentRect = borderRect
+        var contentRect = new Rect(0, 0, borderSurface.Width, borderSurface.Height)
             .Inset(b + Style.Padding.Left, b + Style.Padding.Top, b + Style.Padding.Right, b + Style.Padding.Bottom);
 
         // Render Content
