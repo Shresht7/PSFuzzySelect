@@ -26,9 +26,24 @@ public interface ISurface
     /// <returns>The cell at the specified position on the render surface</returns>
     Cell GetCell(int x, int y);
 
+    /// <summary>Fills the entire render surface with the specified cell</summary>
+    /// <param name="cell">The cell to fill the render surface with</param>
+    void Fill(Cell cell)
+    {
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                Write(x, y, cell);
+            }
+        }
+    }
 
     /// <summary>Clears the render surface, resetting all cells to a default state</summary>
-    void Clear();
+    void Clear()
+    {
+        Fill(Cell.Empty);
+    }
 
     /// <summary>Draws a single character at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the character to draw</param>
