@@ -20,49 +20,31 @@ public enum TextStyle
 /// <summary>
 /// Represents a combination of foreground color, background color, and text styles that can be applied to characters drawn on a render surface
 /// </summary>
-public readonly struct Style(Color? foreground, Color? background, TextStyle? textStyle)
+public readonly record struct Style(Color? Foreground, Color? Background, TextStyle? TextStyles)
 {
-    /// <summary>
-    /// The foreground color of the style,
-    /// or null if it should not override the default foreground color
-    /// </summary>
-    public Color? Foreground { get; } = foreground;
-
-    /// <summary>
-    /// The background color of the style,
-    /// or null if it should not override the default background color
-    /// </summary>
-    public Color? Background { get; } = background;
-
-    /// <summary>
-    /// The text styles applied to the style,
-    /// or null if no text styles are applied
-    /// </summary>
-    public TextStyle? TextStyles { get; } = textStyle;
-
     /// <summary>A default style with no foreground color, no background color, and no text styles applied</summary>
-    public static Style Default => new Style(null, null, null);
+    public static Style Default => new(null, null, null);
 
     /// <summary>
     /// Creates a new Style instance with the specified foreground color
     /// </summary>
     /// <param name="foreground">The foreground color to apply</param>
     /// <returns>A new Style instance with the specified foreground color</returns>
-    public Style WithForeground(Color? foreground) => new Style(foreground, Background, TextStyles);
+    public Style WithForeground(Color? foreground) => new(foreground, Background, TextStyles);
 
     /// <summary>
     /// Creates a new Style instance with the specified background color
     /// </summary>
     /// <param name="background">The background color to apply</param>
     /// <returns>A new Style instance with the specified background color</returns>
-    public Style WithBackground(Color? background) => new Style(Foreground, background, TextStyles);
+    public Style WithBackground(Color? background) => new(Foreground, background, TextStyles);
 
     /// <summary>
     /// Creates a new Style instance with the specified text styles
     /// </summary>
     /// <param name="textStyle">The text styles to apply</param>
     /// <returns>A new Style instance with the specified text styles</returns>
-    public Style WithTextStyle(TextStyle? textStyle) => new Style(Foreground, Background, textStyle);
+    public Style WithTextStyle(TextStyle? textStyle) => new(Foreground, Background, textStyle);
 
     /// <summary>
     /// Creates a new Style instance by patching the current style with the non-null properties of another style. 
@@ -71,7 +53,7 @@ public readonly struct Style(Color? foreground, Color? background, TextStyle? te
     /// </summary>
     /// <param name="other">The style to patch with</param>
     /// <returns>A new Style instance with the patched properties</returns>
-    public Style Patch(Style other) => new Style(
+    public Style Patch(Style other) => new(
         other.Foreground ?? Foreground,
         other.Background ?? Background,
         other.TextStyles ?? TextStyles
@@ -110,16 +92,6 @@ public readonly struct Style(Color? foreground, Color? background, TextStyle? te
 
         return ansi.ToString();
     }
-
-    public override bool Equals(object? obj) => obj is Style s && Equals(s);
-    public bool Equals(Style other) =>
-        Foreground == other.Foreground &&
-        Background == other.Background &&
-        TextStyles == other.TextStyles;
-
-    public override int GetHashCode() => HashCode.Combine(Foreground, Background, TextStyles);
-    public static bool operator ==(Style left, Style right) => left.Equals(right);
-    public static bool operator !=(Style left, Style right) => !left.Equals(right);
 
     /// <summary>Returns a new Style instance with the Bold text style applied</summary>
     public Style Bold() => WithTextStyle((TextStyles ?? TextStyle.None) | TextStyle.Bold);
