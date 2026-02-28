@@ -24,7 +24,7 @@ public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Re
     public static Rect Empty => new(0, 0, 0, 0);
 
     /// <summary>Gets a value indicating whether the rectangle is empty (i.e., has zero or negative width and height)</summary>
-    public bool IsEmpty => Width <= 0 && Height <= 0;
+    public bool IsEmpty => Width <= 0 || Height <= 0;
 
     /// <summary>Gets the top edge of the rectangle</summary>
     public int Top => Y;
