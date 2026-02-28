@@ -1,6 +1,7 @@
+using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Box;
 
 /// <summary>Describes the style of a box</summary>
 public readonly struct BorderStyle(

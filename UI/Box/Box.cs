@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Renderer;
 
-namespace PSFuzzySelect.UI.Components;
+namespace PSFuzzySelect.UI.Box;
 
 public class Box(IComponent component) : IComponent
 {
