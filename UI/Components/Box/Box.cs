@@ -56,7 +56,7 @@ public class Box(IComponent component) : IComponent
     public void Render(ISurface surface)
     {
         // Apply Margin
-        var borderRect = new Rect(0, 0, surface.Width, surface.Height)
+        var borderRect = surface.Area
             .Inset(Style.Margin.Left, Style.Margin.Top, Style.Margin.Right, Style.Margin.Bottom);
 
         // Apply Border
@@ -70,7 +70,7 @@ public class Box(IComponent component) : IComponent
 
         // Apply Padding
         int b = hasBorder ? 1 : 0;
-        var contentRect = new Rect(0, 0, borderSurface.Width, borderSurface.Height)
+        var contentRect = borderSurface.Area
             .Inset(b + Style.Padding.Left, b + Style.Padding.Top, b + Style.Padding.Right, b + Style.Padding.Bottom);
 
         // Render Content
