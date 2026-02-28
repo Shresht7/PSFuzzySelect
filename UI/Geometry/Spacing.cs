@@ -5,7 +5,7 @@ namespace PSFuzzySelect.UI.Geometry;
 /// defining the amount of space on each side (left, top, right, bottom) 
 /// that should be reserved for padding or margins
 /// </summary>
-public readonly struct Spacing(int left, int top, int right, int bottom)
+public readonly struct Spacing(int left, int top, int right, int bottom) : IEquatable<Spacing>
 {
     /// <summary>The space on the left</summary>
     public int Left { get; } = left;
@@ -80,4 +80,8 @@ public readonly struct Spacing(int left, int top, int right, int bottom)
     /// <returns>A new Spacing instance with each side being the difference of the corresponding sides of the input instances</returns>
     public static Spacing operator -(Spacing a, Spacing b) =>
         new(a.Left - b.Left, a.Top - b.Top, a.Right - b.Right, a.Bottom - b.Bottom);
+
+    public override bool Equals(object? obj) => obj is Spacing other && Equals(other);
+    public bool Equals(Spacing other) => Left == other.Left && Top == other.Top && Right == other.Right && Bottom == other.Bottom;
+    public override int GetHashCode() => HashCode.Combine(Left, Top, Right, Bottom);
 }

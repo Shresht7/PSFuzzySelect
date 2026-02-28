@@ -6,7 +6,7 @@ namespace PSFuzzySelect.UI.Geometry;
 /// <remarks>
 /// Initializes a new instance of the <see cref="Rect"/> struct with the specified position and size
 /// </remarks>
-public readonly struct Rect(int x, int y, int width, int height)
+public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Rect>
 {
     /// <summary>The X coordinate of the rectangle's top-left corner</summary>
     public int X { get; } = x;
@@ -124,4 +124,8 @@ public readonly struct Rect(int x, int y, int width, int height)
     /// <param name="spacing">The spacing to offset from all edges</param>
     /// <returns>A new rectangle that is offset by the specified spacing from all edges</returns>
     public Rect Offset(Spacing spacing) => Offset(spacing.Left, spacing.Top, spacing.Right, spacing.Bottom);
+
+    public override bool Equals(object? obj) => obj is Rect other && Equals(other);
+    public bool Equals(Rect other) => X == other.X && Y == other.Y && Width == other.Width && Height == other.Height;
+    public override int GetHashCode() => HashCode.Combine(X, Y, Width, Height);
 }
