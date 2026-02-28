@@ -32,7 +32,7 @@ public class Box(IComponent component) : IComponent
             .Inset(Style.Margin.Left, Style.Margin.Top, Style.Margin.Right, Style.Margin.Bottom);
 
         // Apply Border
-        if (borderRect.Width <= 0 || borderRect.Height <= 0) return; // Not enough space to render
+        if (borderRect.IsEmpty) return; // Not enough space to render
         var borderSurface = surface.CreateSubSurface(borderRect);
         bool hasBorder = Style.Border != BorderStyle.None;
         if (hasBorder)
@@ -46,7 +46,7 @@ public class Box(IComponent component) : IComponent
             .Inset(b + Style.Padding.Left, b + Style.Padding.Top, b + Style.Padding.Right, b + Style.Padding.Bottom);
 
         // Render Content
-        if (contentRect.Width <= 0 || contentRect.Height <= 0) return; // Not enough space to render
+        if (contentRect.IsEmpty) return; // Not enough space to render
         var contentSurface = borderSurface.CreateSubSurface(contentRect);
         component.Render(contentSurface);
     }
