@@ -18,6 +18,9 @@ public record BoxStyle
     /// <summary>The style to apply to the box borders</summary>
     public Style BorderStyle { get; init; } = Style.Default;
 
+    /// <summary>The style to apply to the background of the box</summary>
+    public Style BackgroundStyle { get; init; } = Style.Default;
+
     /// <summary>The type of border to draw around the box</summary>
     public BorderStyle Border { get; init; } = Components.Box.BorderStyle.None;
 
@@ -57,4 +60,12 @@ public record BoxStyle
     /// <param name="border">The border style to apply to the box</param>
     /// <returns>A new <see cref="BoxStyle"/> with the specified border style</returns>
     public BoxStyle WithBorder(BorderStyle border) => this with { Border = border };
+
+    /// <summary>
+    /// Creates a new <see cref="BoxStyle"/> with the specified background style.
+    /// Any properties that are not specified will default to the values from the current style.
+    /// </summary>
+    /// <param name="background">The background style to apply to the box</param>
+    /// <returns>A new <see cref="BoxStyle"/> with the specified background style</returns>
+    public BoxStyle WithBackground(Style background) => this with { BackgroundStyle = background };
 }

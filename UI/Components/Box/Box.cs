@@ -58,9 +58,14 @@ public class Box(IComponent component) : IComponent
         // Apply Margin
         var borderRect = surface.Area.Inset(Style.Margin);
 
-        // Apply Border
+        // Create a sub-surface for the border and inner content
         if (borderRect.IsEmpty) return; // Not enough space to render
         var borderSurface = surface.CreateSubSurface(borderRect);
+
+        // Draw Background
+        DrawBackground(borderSurface);
+
+        // Draw Border
         bool hasBorder = Style.Border != BorderStyle.None;
         if (hasBorder)
         {
@@ -76,6 +81,17 @@ public class Box(IComponent component) : IComponent
         if (contentRect.IsEmpty) return; // Not enough space to render
         var contentSurface = borderSurface.CreateSubSurface(contentRect);
         component.Render(contentSurface);
+    }
+
+    private void DrawBackground(ISurface surface)
+    {
+        for (int y = 0; y < surface.Height; y++)
+        {
+            for (int x = 0; x < surface.Width; x++)
+            {
+                surface.Write(x, y, ' ', Style.BackgroundStyle);
+            }
+        }
     }
 
     private void DrawBorder(ISurface surface)
