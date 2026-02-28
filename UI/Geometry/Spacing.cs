@@ -5,20 +5,12 @@ namespace PSFuzzySelect.UI.Geometry;
 /// defining the amount of space on each side (left, top, right, bottom) 
 /// that should be reserved for padding or margins
 /// </summary>
-public readonly struct Spacing(int left, int top, int right, int bottom) : IEquatable<Spacing>
+/// <param name="Left">The amount of space to reserve on the left side</param>
+/// <param name="Top">The amount of space to reserve on the top side</param>
+/// <param name="Right">The amount of space to reserve on the right side</param>
+/// <param name="Bottom">The amount of space to reserve on the bottom side</param>
+public readonly record struct Spacing(int Left, int Top, int Right, int Bottom)
 {
-    /// <summary>The space on the left</summary>
-    public int Left { get; } = left;
-
-    /// <summary>The space at the top</summary>
-    public int Top { get; } = top;
-
-    /// <summary>The space on the right</summary>
-    public int Right { get; } = right;
-
-    /// <summary>The space at the bottom</summary>
-    public int Bottom { get; } = bottom;
-
     /// <summary>
     /// Initializes a new instance of the Spacing struct with the same value for all sides (left, top, right, bottom)
     /// </summary>
@@ -83,10 +75,4 @@ public readonly struct Spacing(int left, int top, int right, int bottom) : IEqua
     /// <returns>A new Spacing instance with each side being the difference of the corresponding sides of the input instances</returns>
     public static Spacing operator -(Spacing a, Spacing b) =>
         new(a.Left - b.Left, a.Top - b.Top, a.Right - b.Right, a.Bottom - b.Bottom);
-
-    public override bool Equals(object? obj) => obj is Spacing other && Equals(other);
-    public bool Equals(Spacing other) => Left == other.Left && Top == other.Top && Right == other.Right && Bottom == other.Bottom;
-    public override int GetHashCode() => HashCode.Combine(Left, Top, Right, Bottom);
-    public static bool operator ==(Spacing left, Spacing right) => left.Equals(right);
-    public static bool operator !=(Spacing left, Spacing right) => !left.Equals(right);
 }

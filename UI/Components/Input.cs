@@ -1,5 +1,5 @@
 using PSFuzzySelect.UI.Styles;
-using PSFuzzySelect.UI.Renderer;
+using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Text;
 
 namespace PSFuzzySelect.UI.Components;

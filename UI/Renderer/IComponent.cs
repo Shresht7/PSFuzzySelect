@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 public interface IComponent
 {

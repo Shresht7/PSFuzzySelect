@@ -1,7 +1,7 @@
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Geometry;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 /// <summary>
 /// Represents a 2D cell-based surface that can be read from and written to
@@ -14,11 +14,9 @@ public interface ISurface
     /// <summary>The height of the render surface in cells</summary>
     int Height { get; }
 
-    /// <summary>
-    /// The area of the render surface represented as a rectangle, 
-    /// where the top-left corner is at (0, 0) and the size is defined by the Width and Height properties
-    /// </summary>
-    Rect Area { get; }
+    /// <summary>Gets the rectangular area of the render surface, starting at (0, 0) and extending to the width and height of the surface</summary>
+    /// <returns>A Rect struct representing the area of the render surface</returns>
+    Rect Area => new(0, 0, Width, Height);
 
     /// <summary>Retrieves the cell at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the cell to retrieve</param>
@@ -26,9 +24,24 @@ public interface ISurface
     /// <returns>The cell at the specified position on the render surface</returns>
     Cell GetCell(int x, int y);
 
+    /// <summary>Fills the entire render surface with the specified cell</summary>
+    /// <param name="cell">The cell to fill the render surface with</param>
+    void Fill(Cell cell)
+    {
+        for (int y = 0; y < Height; y++)
+        {
+            for (int x = 0; x < Width; x++)
+            {
+                Write(x, y, cell);
+            }
+        }
+    }
 
     /// <summary>Clears the render surface, resetting all cells to a default state</summary>
-    void Clear();
+    void Clear()
+    {
+        Fill(Cell.Empty);
+    }
 
     /// <summary>Draws a single character at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the character to draw</param>

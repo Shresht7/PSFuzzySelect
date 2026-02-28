@@ -6,20 +6,12 @@ namespace PSFuzzySelect.UI.Geometry;
 /// <remarks>
 /// Initializes a new instance of the <see cref="Rect"/> struct with the specified position and size
 /// </remarks>
-public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Rect>
+/// <param name="X">The X coordinate of the top-left corner of the rectangle</param>
+/// <param name="Y">The Y coordinate of the top-left corner of the rectangle</param>
+/// <param name="Width">The width of the rectangle</param>
+/// <param name="Height">The height of the rectangle</param>
+public readonly record struct Rect(int X, int Y, int Width, int Height)
 {
-    /// <summary>The X coordinate of the rectangle's top-left corner</summary>
-    public int X { get; } = x;
-
-    /// <summary>The Y coordinate of the rectangle's top-left corner</summary>
-    public int Y { get; } = y;
-
-    /// <summary>The width of the rectangle</summary>
-    public int Width { get; } = width;
-
-    /// <summary>The height of the rectangle</summary>
-    public int Height { get; } = height;
-
     /// <summary>Gets an empty rectangle with all dimensions set to zero</summary>
     public static Rect Empty => new(0, 0, 0, 0);
 
@@ -132,10 +124,4 @@ public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Re
     /// <param name="deltaY">The amount to translate in the Y direction</param>
     /// <returns>A new rectangle that is translated by the specified amounts</returns>
     public Rect Translate(int deltaX, int deltaY) => new(X + deltaX, Y + deltaY, Width, Height);
-
-    public override bool Equals(object? obj) => obj is Rect other && Equals(other);
-    public bool Equals(Rect other) => X == other.X && Y == other.Y && Width == other.Width && Height == other.Height;
-    public override int GetHashCode() => HashCode.Combine(X, Y, Width, Height);
-    public static bool operator ==(Rect left, Rect right) => left.Equals(right);
-    public static bool operator !=(Rect left, Rect right) => !left.Equals(right);
 }
