@@ -51,37 +51,11 @@ public class FrameBuffer : ISurface
         }
     }
 
-    public void Write(int x, int y, char character)
-    {
-        if (Area.Contains(x, y))
-        {
-            _buffer[y, x] = new Cell(character, Style.Default);
-        }
-    }
-
     public void Write(int x, int y, Cell cell)
     {
         if (Area.Contains(x, y))
         {
             _buffer[y, x] = cell;
-        }
-    }
-
-    public void Write(int x, int y, string text)
-    {
-        // Write each character of the string to the buffer starting at the specified position
-        for (int i = 0; i < text.Length && x + i < Width && y < Height; i++)
-        {
-            Write(x + i, y, text[i]);
-        }
-    }
-
-    public void Write(int x, int y, string text, Style style)
-    {
-        // Write each character of the string to the buffer starting at the specified position with the specified style
-        for (int i = 0; i < text.Length && x + i < Width && y < Height; i++)
-        {
-            Write(x + i, y, new Cell(text[i], style));
         }
     }
 

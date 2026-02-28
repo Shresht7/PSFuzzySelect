@@ -33,14 +33,6 @@ public class SubSurface(ISurface parent, Rect rect) : ISurface
         _parent.Write(_rect.X + x, _rect.Y + y, cell);
     }
 
-    public void Write(int x, int y, string text, Style style)
-    {
-        // Clipping
-        if (IsOutOfBounds(x, y)) return;
-        // Translate coordinates to parent surface
-        _parent.Write(_rect.X + x, _rect.Y + y, text, style);
-    }
-
     public void Clear()
     {
         // To clear out the sub-surface, we fill the entire area with empty cells

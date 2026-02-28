@@ -52,7 +52,13 @@ public interface ISurface
     /// <param name="y">The Y coordinate of the first cell to draw</param>
     /// <param name="text">The string of cells to draw starting at the specified position</param>
     /// <param name="style">The style to apply to the cells being drawn</param>
-    void Write(int x, int y, string text, Style style);
+    void Write(int x, int y, string text, Style style)
+    {
+        for (int i = 0; i < text.Length; i++)
+        {
+            Write(x + i, y, new Cell(text[i], style));
+        }
+    }
 
     /// <summary>Creates a new render surface that represents a sub-region of the current surface defined by the given rectangle</summary>
     /// <param name="rect">The rectangle defining the position and size of the sub-surface to create</param>
