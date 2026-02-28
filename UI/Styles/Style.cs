@@ -66,31 +66,31 @@ public readonly record struct Style(Color? Foreground, Color? Background, TextSt
     /// <returns>A string containing the ANSI escape codes for the style</returns>
     public string ToAnsi()
     {
-        var ansi = new StringBuilder();
+        var ansi = "";
 
         if (Foreground.HasValue)
-            ansi.Append(Ansi.Foreground(Foreground.Value));
+            ansi += Ansi.Foreground(Foreground.Value);
 
         if (Background.HasValue)
-            ansi.Append(Ansi.Background(Background.Value));
+            ansi += Ansi.Background(Background.Value);
 
         if (TextStyles.HasValue)
         {
             if (TextStyles.Value.HasFlag(TextStyle.Bold))
-                ansi.Append(Ansi.Bold);
+                ansi += Ansi.Bold;
             if (TextStyles.Value.HasFlag(TextStyle.Italic))
-                ansi.Append(Ansi.Italic);
+                ansi += Ansi.Italic;
             if (TextStyles.Value.HasFlag(TextStyle.Underline))
-                ansi.Append(Ansi.Underline);
+                ansi += Ansi.Underline;
             if (TextStyles.Value.HasFlag(TextStyle.Inverse))
-                ansi.Append(Ansi.Inverse);
+                ansi += Ansi.Inverse;
             if (TextStyles.Value.HasFlag(TextStyle.Dim))
-                ansi.Append(Ansi.Dim);
+                ansi += Ansi.Dim;
             if (TextStyles.Value.HasFlag(TextStyle.Strikethrough))
-                ansi.Append(Ansi.Strikethrough);
+                ansi += Ansi.Strikethrough;
         }
 
-        return ansi.ToString();
+        return ansi;
     }
 
     /// <summary>Returns a new Style instance with the Bold text style applied</summary>
