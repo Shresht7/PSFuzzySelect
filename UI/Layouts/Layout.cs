@@ -1,5 +1,3 @@
-using PSFuzzySelect.UI.Renderer;
-
 namespace PSFuzzySelect.UI.Layouts;
 
 public static class Layout
