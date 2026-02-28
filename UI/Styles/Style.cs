@@ -20,19 +20,19 @@ public enum TextStyle
 /// <summary>
 /// Represents a combination of foreground color, background color, and text styles that can be applied to characters drawn on a render surface
 /// </summary>
-public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, TextStyle? textStyle)
+public readonly struct Style(Color? foreground, Color? background, TextStyle? textStyle)
 {
     /// <summary>
     /// The foreground color of the style,
     /// or null if it should not override the default foreground color
     /// </summary>
-    public Ansi.Color? Foreground { get; } = foreground;
+    public Color? Foreground { get; } = foreground;
 
     /// <summary>
     /// The background color of the style,
     /// or null if it should not override the default background color
     /// </summary>
-    public Ansi.Color? Background { get; } = background;
+    public Color? Background { get; } = background;
 
     /// <summary>
     /// The text styles applied to the style,
@@ -48,14 +48,14 @@ public readonly struct Style(Ansi.Color? foreground, Ansi.Color? background, Tex
     /// </summary>
     /// <param name="foreground">The foreground color to apply</param>
     /// <returns>A new Style instance with the specified foreground color</returns>
-    public Style WithForeground(Ansi.Color? foreground) => new Style(foreground, Background, TextStyles);
+    public Style WithForeground(Color? foreground) => new Style(foreground, Background, TextStyles);
 
     /// <summary>
     /// Creates a new Style instance with the specified background color
     /// </summary>
     /// <param name="background">The background color to apply</param>
     /// <returns>A new Style instance with the specified background color</returns>
-    public Style WithBackground(Ansi.Color? background) => new Style(Foreground, background, TextStyles);
+    public Style WithBackground(Color? background) => new Style(Foreground, background, TextStyles);
 
     /// <summary>
     /// Creates a new Style instance with the specified text styles
