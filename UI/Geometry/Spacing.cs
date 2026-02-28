@@ -41,6 +41,9 @@ public readonly struct Spacing(int left, int top, int right, int bottom) : IEqua
     /// <param name="value">The horizontal spacing value to apply to the left and right sides.</param>
     public static Spacing Horizontal(int value) => new(value, 0);
 
+    public int TotalHorizontal => Left + Right;
+    public int TotalVertical => Top + Bottom;
+
     /// <summary>
     /// Creates a spacing instance with the specified vertical spacing applied to top and bottom, and zero horizontal spacing
     /// </summary>
