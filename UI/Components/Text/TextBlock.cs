@@ -105,18 +105,29 @@ public class TextBlock : IComponent
 
         foreach (var span in _spans)
         {
-            surface.Write(x, y, span.Text, span.Style);
-            x += span.Length; // Advance the x position based on the length of the span's text
+            // Calculate how much space is left for text on this surface
+            int spaceLeft = totalWidth - x;
+            if (spaceLeft <= 0) break; // No more space to render text
 
-            // If the x position exceeds the surface width, stop rendering this line
-            if (x >= surface.Width) break;
+            // If the span is longer than the remanining space, only write the portion that fits
+            if (span.Length > spaceLeft)
+            {
+                surface.Write(x, y, span.Text.Substring(0, spaceLeft), span.Style);
+                x += spaceLeft; // Advance the x position by the amount of text that was actually rendered
+                break; // No more space to render additional spans
+            }
+            // Otherwise, render the entire span
+            else
+            {
+                surface.Write(x, y, span.Text, span.Style);
+                x += span.Length; // Advance the x position based on the length of the span's text
+            }
         }
 
         // Handle overflow behavior
         if (isOverflowing && _overflow == TextOverflow.Ellipsis)
         {
-            // Place the ellipsis at the end of the actually rendered text, not always at the far right
-            int ellipsisX = Math.Max(0, Math.Min(surface.Width - 1, x - 1));
+            int ellipsisX = Math.Min(x, surface.Width - 1); // Ensure the ellipsis is rendered within the surface bounds
             surface.Write(ellipsisX, y, "…", Style.Default);
         }
     }
