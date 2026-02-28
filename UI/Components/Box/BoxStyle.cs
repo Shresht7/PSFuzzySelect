@@ -42,7 +42,7 @@ public record BoxStyle
     /// Any properties that are not specified will default to the values from the current style.
     /// </summary>
     /// <param name="padding">The padding to apply to the box</param>
-    /// <returns>A new <see cref="BoxStyle"/> with the specified padding</returns
+    /// <returns>A new <see cref="BoxStyle"/> with the specified padding</returns>
     public BoxStyle WithPadding(Spacing padding) => this with { Padding = padding };
 
     /// <summary>

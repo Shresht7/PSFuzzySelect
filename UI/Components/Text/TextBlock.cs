@@ -109,7 +109,7 @@ public class TextBlock : IComponent
             int spaceLeft = totalWidth - x;
             if (spaceLeft <= 0) break; // No more space to render text
 
-            // If the span is longer than the remanining space, only write the portion that fits
+            // If the span is longer than the remaining space, only write the portion that fits
             if (span.Length > spaceLeft)
             {
                 surface.Write(x, y, span.Text.Substring(0, spaceLeft), span.Style);
