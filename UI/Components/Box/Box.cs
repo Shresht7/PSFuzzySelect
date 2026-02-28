@@ -85,21 +85,21 @@ public class Box(IComponent component) : IComponent
         // Draw top and bottom borders
         for (int x = 1; x < surface.Width - 1; x++)
         {
-            surface.Write(x, 0, new Cell(border.Top, Style.Style));
-            surface.Write(x, surface.Height - 1, new Cell(border.Bottom, Style.Style));
+            surface.Write(x, 0, border.Top, Style.Style);
+            surface.Write(x, surface.Height - 1, border.Bottom, Style.Style);
         }
 
         // Draw left and right borders
         for (int y = 1; y < surface.Height - 1; y++)
         {
-            surface.Write(0, y, new Cell(border.Left, Style.Style));
-            surface.Write(surface.Width - 1, y, new Cell(border.Right, Style.Style));
+            surface.Write(0, y, border.Left, Style.Style);
+            surface.Write(surface.Width - 1, y, border.Right, Style.Style);
         }
 
         // Draw corners
-        surface.Write(0, 0, new Cell(border.TopLeft, Style.Style));
-        surface.Write(surface.Width - 1, 0, new Cell(border.TopRight, Style.Style));
-        surface.Write(0, surface.Height - 1, new Cell(border.BottomLeft, Style.Style));
-        surface.Write(surface.Width - 1, surface.Height - 1, new Cell(border.BottomRight, Style.Style));
+        surface.Write(0, 0, border.TopLeft, Style.Style);
+        surface.Write(surface.Width - 1, 0, border.TopRight, Style.Style);
+        surface.Write(0, surface.Height - 1, border.BottomLeft, Style.Style);
+        surface.Write(surface.Width - 1, surface.Height - 1, border.BottomRight, Style.Style);
     }
 }
