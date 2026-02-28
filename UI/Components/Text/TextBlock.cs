@@ -83,10 +83,15 @@ public class TextBlock : IComponent
     public void Render(ISurface surface)
     {
         // Calculate the total width to determine the starting x position
-        int totalWidth = _spans.Sum(span => span.Length);
+        int totalContentWidth = _spans.Sum(span => span.Length);
 
         // Determine if the text exceeds the available space on the surface
-        bool isOverflowing = totalWidth > surface.Width;
+        bool isOverflowing = totalContentWidth > surface.Width;
+
+        // If the text is overflowing and the overflow behavior is set to Ellipsis, reserve space for the ellipsis character
+        int totalWidth = isOverflowing && _overflow == TextOverflow.Ellipsis
+            ? Math.Max(0, surface.Width - 1) // Reserve space for the ellipsis
+            : totalContentWidth;
 
         // Determine the starting x position based on alignment
         int x = _alignment switch
