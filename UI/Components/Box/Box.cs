@@ -3,28 +3,56 @@ using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI.Components.Box;
 
+/// <summary>
+/// A container component that can wrap any other component and apply margin, padding, and borders around it.
+/// The box will render the wrapped component within the available space after accounting for the specified margin, padding, and border styles.
+/// </summary>
+/// <param name="component">The component to be wrapped inside the box</param>
 public class Box(IComponent component) : IComponent
 {
+    /// <summary>
+    /// The style properties for the box, including margin, padding, border style, and text style.
+    /// </summary>
     public BoxStyle Style { get; private set; } = BoxStyle.Default;
 
+
+    /// <summary>
+    /// Sets the border style for the box. This will determine the characters used to draw the borders around the box when rendered on a surface.
+    /// </summary>
+    /// <param name="border">The border style to apply to the box</param>
+    /// <returns>The current <see cref="Box"/> instance with the updated border style</returns>
     public Box Border(BorderStyle border)
     {
         Style = Style.WithBorder(border);
         return this;
     }
 
+    /// <summary>
+    /// Sets the padding for the box. This will determine the spacing inside the box borders around the content.
+    /// </summary>
+    /// <param name="padding">The padding to apply to the box</param>
+    /// <returns>The current <see cref="Box"/> instance with the updated padding</returns>
     public Box Padding(Spacing padding)
     {
         Style = Style.WithPadding(padding);
         return this;
     }
 
+    /// <summary>
+    /// Sets the margin for the box. This will determine the spacing outside the box borders.
+    /// </summary>
+    /// <param name="margin">The margin to apply to the box</param>
+    /// <returns>The current <see cref="Box"/> instance with the updated margin</returns>
     public Box Margin(Spacing margin)
     {
         Style = Style.WithMargin(margin);
         return this;
     }
 
+    /// <summary>
+    /// Renders the box on the provided surface, applying the specified margin, padding, and border styles around the wrapped component.
+    /// </summary>
+    /// <param name="surface">The surface on which to render the box</param>
     public void Render(ISurface surface)
     {
         // Apply Margin
