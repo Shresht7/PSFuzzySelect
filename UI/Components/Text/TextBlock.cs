@@ -1,7 +1,7 @@
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Text;
+namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
 /// A text component that can render multiple spans of text with different styles on a render surface.
@@ -83,10 +83,15 @@ public class TextBlock : IComponent
     public void Render(ISurface surface)
     {
         // Calculate the total width to determine the starting x position
-        int totalWidth = _spans.Sum(span => span.Length);
+        int totalContentWidth = _spans.Sum(span => span.Length);
 
         // Determine if the text exceeds the available space on the surface
-        bool isOverflowing = totalWidth > surface.Width;
+        bool isOverflowing = totalContentWidth > surface.Width;
+
+        // If the text is overflowing and the overflow behavior is set to Ellipsis, reserve space for the ellipsis character
+        int totalWidth = isOverflowing && _overflow == TextOverflow.Ellipsis
+            ? Math.Max(0, surface.Width - 1) // Reserve space for the ellipsis
+            : totalContentWidth;
 
         // Determine the starting x position based on alignment
         int x = _alignment switch
@@ -100,18 +105,29 @@ public class TextBlock : IComponent
 
         foreach (var span in _spans)
         {
-            surface.Write(x, y, span.Text, span.Style);
-            x += span.Length; // Advance the x position based on the length of the span's text
+            // Calculate how much space is left for text on this surface
+            int spaceLeft = totalWidth - x;
+            if (spaceLeft <= 0) break; // No more space to render text
 
-            // If the x position exceeds the surface width, stop rendering this line
-            if (x >= surface.Width) break;
+            // If the span is longer than the remaining space, only write the portion that fits
+            if (span.Length > spaceLeft)
+            {
+                surface.Write(x, y, span.Text.Substring(0, spaceLeft), span.Style);
+                x += spaceLeft; // Advance the x position by the amount of text that was actually rendered
+                break; // No more space to render additional spans
+            }
+            // Otherwise, render the entire span
+            else
+            {
+                surface.Write(x, y, span.Text, span.Style);
+                x += span.Length; // Advance the x position based on the length of the span's text
+            }
         }
 
         // Handle overflow behavior
         if (isOverflowing && _overflow == TextOverflow.Ellipsis)
         {
-            // Place the ellipsis at the end of the actually rendered text, not always at the far right
-            int ellipsisX = Math.Max(0, Math.Min(surface.Width - 1, x - 1));
+            int ellipsisX = Math.Min(x, surface.Width - 1); // Ensure the ellipsis is rendered within the surface bounds
             surface.Write(ellipsisX, y, "…", Style.Default);
         }
     }

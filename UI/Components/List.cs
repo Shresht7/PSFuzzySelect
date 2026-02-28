@@ -1,8 +1,7 @@
 using PSFuzzySelect.Core;
-using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Geometry;
-using PSFuzzySelect.UI.Text;
+using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;
@@ -23,7 +22,7 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));
 
             new TextBlock()
-                .Add(new TextSpan(cursorIndicator, Style.Default.WithForeground(Ansi.Color.Cyan)))
+                .Add(new TextSpan(cursorIndicator, Style.Default.WithForeground(Color.Cyan)))
                 .AddRange(GetHighlightedSpans(item, isSelected))
                 .Add(new TextSpan($" (Score: {item.Score})", Style.Default.Dim()))
                 .Overflow(TextOverflow.Ellipsis)
@@ -34,7 +33,7 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
     private static IEnumerable<TextSpan> GetHighlightedSpans(MatchResult item, bool isSelected)
     {
         var baseStyle = isSelected ? Style.Default.Inverse() : Style.Default;
-        var highlightStyle = baseStyle.WithForeground(Ansi.Color.Yellow).Bold();
+        var highlightStyle = baseStyle.WithForeground(Color.Yellow).Bold();
 
         // If there are no highlighted positions, return the entire string as a single span
         if (item.Positions.Length == 0)

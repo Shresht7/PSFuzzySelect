@@ -49,6 +49,13 @@ public interface ISurface
     /// <param name="character">The character to draw at the specified position</param>
     void Write(int x, int y, char character) => Write(x, y, new Cell(character, Style.Default));
 
+    /// <summary>Draws a single character with the specified style at the specified position on the render surface</summary>
+    /// <param name="x">The X coordinate of the character to draw</param>
+    /// <param name="y">The Y coordinate of the character to draw</param>
+    /// <param name="character">The character to draw at the specified position</param>
+    /// <param name="style">The style to apply to the character being drawn</param>
+    void Write(int x, int y, char character, Style style) => Write(x, y, new Cell(character, style));
+
     /// <summary>Draws a single cell at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the cell to draw</param>
     /// <param name="y">The Y coordinate of the cell to draw</param>

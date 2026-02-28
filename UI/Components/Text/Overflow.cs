@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Text;
+namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
 /// Defines the behavior for handling text that exceeds the available space when rendering a <see cref="TextBlock"/> component on a surface
