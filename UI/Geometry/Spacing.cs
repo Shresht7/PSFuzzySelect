@@ -60,4 +60,24 @@ public readonly struct Spacing(int left, int top, int right, int bottom)
     /// <param name="values">A tuple containing the left, top, right, and bottom spacing values</param>
     public static implicit operator Spacing((int left, int top, int right, int bottom) values) =>
         new(values.left, values.top, values.right, values.bottom);
+
+    /// <summary>
+    /// Adds two Spacing instances together, resulting in a new Spacing instance where each side
+    /// is the sum of the corresponding sides of the input instances
+    /// </summary>
+    /// <param name="a">The first Spacing instance</param>
+    /// <param name="b">The second Spacing instance</param>
+    /// <returns>A new Spacing instance with each side being the sum of the corresponding sides of the input instances</returns>
+    public static Spacing operator +(Spacing a, Spacing b) =>
+        new(a.Left + b.Left, a.Top + b.Top, a.Right + b.Right, a.Bottom + b.Bottom);
+
+    /// <summary>
+    /// Subtracts one Spacing instance from another, resulting in a new Spacing instance where each side
+    /// is the difference of the corresponding sides of the input instances
+    /// </summary>
+    /// <param name="a">The first Spacing instance</param>
+    /// <param name="b">The second Spacing instance</param>
+    /// <returns>A new Spacing instance with each side being the difference of the corresponding sides of the input instances</returns>
+    public static Spacing operator -(Spacing a, Spacing b) =>
+        new(a.Left - b.Left, a.Top - b.Top, a.Right - b.Right, a.Bottom - b.Bottom);
 }
