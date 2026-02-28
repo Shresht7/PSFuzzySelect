@@ -8,9 +8,9 @@ public readonly record struct BorderStyle(
 )
 {
     public static BorderStyle None => default;
-    public static BorderStyle Single => new BorderStyle('┌', '─', '┐', '│', '│', '└', '─', '┘');
-    public static BorderStyle Double => new BorderStyle('╔', '═', '╗', '║', '║', '╚', '═', '╝');
-    public static BorderStyle Rounded => new BorderStyle('╭', '─', '╮', '│', '│', '╰', '─', '╯');
-    public static BorderStyle Thick => new BorderStyle('┏', '━', '┓', '┃', '┃', '┗', '━', '┛');
-    public static BorderStyle Hidden => new BorderStyle(' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
+    public static BorderStyle Single => new('┌', '─', '┐', '│', '│', '└', '─', '┘');
+    public static BorderStyle Double => new('╔', '═', '╗', '║', '║', '╚', '═', '╝');
+    public static BorderStyle Rounded => new('╭', '─', '╮', '│', '│', '╰', '─', '╯');
+    public static BorderStyle Thick => new('┏', '━', '┓', '┃', '┃', '┗', '━', '┛');
+    public static BorderStyle Hidden => new(' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ');
 }
