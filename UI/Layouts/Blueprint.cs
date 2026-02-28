@@ -88,12 +88,10 @@ public class Frame(Size[] sections, IComponent[] components, bool isVertical, in
         // Distribute leftovers
         int allocatedSpace = sizes.Sum();
         int leftover = space - allocatedSpace;
-        for (int i = 0; i < sizes.Length; i++)
-        {
-            if (leftover <= 0) break; // No more space to distribute
 
-            // Preferentially allocate leftover space to flexible sections, then fractional, then fixed
-            for (int pass = 0; leftover > 0 && pass < 3; pass++)
+        for (int pass = 0; leftover > 0 && pass < 3; pass++)
+        {
+            for (int i = 0; i < sizes.Length && leftover > 0; i++)
             {
                 bool wants = pass switch
                 {
