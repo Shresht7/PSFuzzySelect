@@ -1,7 +1,7 @@
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Geometry;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 /// <summary>
 /// Represents a 2D cell-based surface that can be read from and written to

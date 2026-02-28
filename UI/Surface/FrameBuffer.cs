@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Geometry;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 /// <summary>A rectangular frame buffer for rendering characters to the console</summary>
 public class FrameBuffer : ISurface

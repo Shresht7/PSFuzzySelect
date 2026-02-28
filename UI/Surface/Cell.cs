@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 /// <summary>
 /// Represents a single cell in the terminal output, containing a character and its associated styles

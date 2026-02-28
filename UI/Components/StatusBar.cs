@@ -1,3 +1,4 @@
+using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Text;
 

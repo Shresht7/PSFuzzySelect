@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Geometry;
 
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Surface;
 
 /// <summary>
 /// Represents a sub-region of a parent render surface, allowing for drawing operations
