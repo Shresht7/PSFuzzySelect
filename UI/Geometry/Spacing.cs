@@ -87,4 +87,6 @@ public readonly struct Spacing(int left, int top, int right, int bottom) : IEqua
     public override bool Equals(object? obj) => obj is Spacing other && Equals(other);
     public bool Equals(Spacing other) => Left == other.Left && Top == other.Top && Right == other.Right && Bottom == other.Bottom;
     public override int GetHashCode() => HashCode.Combine(Left, Top, Right, Bottom);
+    public static bool operator ==(Spacing left, Spacing right) => left.Equals(right);
+    public static bool operator !=(Spacing left, Spacing right) => !left.Equals(right);
 }

@@ -128,4 +128,6 @@ public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Re
     public override bool Equals(object? obj) => obj is Rect other && Equals(other);
     public bool Equals(Rect other) => X == other.X && Y == other.Y && Width == other.Width && Height == other.Height;
     public override int GetHashCode() => HashCode.Combine(X, Y, Width, Height);
+    public static bool operator ==(Rect left, Rect right) => left.Equals(right);
+    public static bool operator !=(Rect left, Rect right) => !left.Equals(right);
 }
