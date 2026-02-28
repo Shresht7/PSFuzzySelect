@@ -14,11 +14,9 @@ public interface ISurface
     /// <summary>The height of the render surface in cells</summary>
     int Height { get; }
 
-    /// <summary>
-    /// The area of the render surface represented as a rectangle, 
-    /// where the top-left corner is at (0, 0) and the size is defined by the Width and Height properties
-    /// </summary>
-    Rect Area { get; }
+    /// <summary>Gets the rectangular area of the render surface, starting at (0, 0) and extending to the width and height of the surface</summary>
+    /// <returns>A Rect struct representing the area of the render surface</returns>
+    Rect Area => new(0, 0, Width, Height);
 
     /// <summary>Retrieves the cell at the specified position on the render surface</summary>
     /// <param name="x">The X coordinate of the cell to retrieve</param>
