@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Geometry;
 
 /// <summary>
 /// Defines a rectangle area in the console with a specified position (X, Y) and size (Width, Height)

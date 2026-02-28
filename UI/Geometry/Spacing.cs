@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Renderer;
+namespace PSFuzzySelect.UI.Geometry;
 
 /// <summary>
 /// Represents the spacing around a UI component, defining the amount of space on each side (left, top, right, bottom) 

@@ -1,3 +1,4 @@
+using PSFuzzySelect.UI.Geometry;
 using PSFuzzySelect.UI.Renderer;
 
 namespace PSFuzzySelect.UI.Box;

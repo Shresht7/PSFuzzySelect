@@ -1,5 +1,6 @@
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Renderer;
+using PSFuzzySelect.UI.Geometry;
 using PSFuzzySelect.UI.Text;
 using PSFuzzySelect.UI.Styles;
 
