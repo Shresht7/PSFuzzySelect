@@ -84,6 +84,13 @@ public readonly struct Rect(int x, int y, int width, int height)
     }
 
     /// <summary>
+    /// Returns a new rectangle that is inset by the specified spacing from all edges of the original rectangle
+    /// </summary>
+    /// <param name="spacing">The spacing to inset from all edges</param>
+    /// <returns>A new rectangle that is inset by the specified spacing from all edges</returns>
+    public Rect Inset(Spacing spacing) => Inset(spacing.Left, spacing.Top, spacing.Right, spacing.Bottom);
+
+    /// <summary>
     /// Returns a new rectangle that is offset by the specified amount from all edges of the original rectangle
     /// </summary>
     /// <param name="delta">The amount to offset from all edges</param>
@@ -110,4 +117,11 @@ public readonly struct Rect(int x, int y, int width, int height)
     {
         return new Rect(X + left, Y + top, Width + left + right, Height + top + bottom);
     }
+
+    /// <summary>
+    /// Returns a new rectangle that is offset by the specified spacing from all edges of the original rectangle
+    /// </summary>
+    /// <param name="spacing">The spacing to offset from all edges</param>
+    /// <returns>A new rectangle that is offset by the specified spacing from all edges</returns>
+    public Rect Offset(Spacing spacing) => Offset(spacing.Left, spacing.Top, spacing.Right, spacing.Bottom);
 }
