@@ -125,6 +125,14 @@ public readonly struct Rect(int x, int y, int width, int height) : IEquatable<Re
     /// <returns>A new rectangle that is offset by the specified spacing from all edges</returns>
     public Rect Offset(Spacing spacing) => Offset(spacing.Left, spacing.Top, spacing.Right, spacing.Bottom);
 
+    /// <summary>
+    /// Returns a new rectangle that is translated by the specified amounts in the X and Y directions
+    /// </summary>
+    /// <param name="deltaX">The amount to translate in the X direction</param>
+    /// <param name="deltaY">The amount to translate in the Y direction</param>
+    /// <returns>A new rectangle that is translated by the specified amounts</returns>
+    public Rect Translate(int deltaX, int deltaY) => new(X + deltaX, Y + deltaY, Width, Height);
+
     public override bool Equals(object? obj) => obj is Rect other && Equals(other);
     public bool Equals(Rect other) => X == other.X && Y == other.Y && Width == other.Width && Height == other.Height;
     public override int GetHashCode() => HashCode.Combine(X, Y, Width, Height);
