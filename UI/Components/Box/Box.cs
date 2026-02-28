@@ -56,8 +56,7 @@ public class Box(IComponent component) : IComponent
     public void Render(ISurface surface)
     {
         // Apply Margin
-        var borderRect = surface.Area
-            .Inset(Style.Margin.Left, Style.Margin.Top, Style.Margin.Right, Style.Margin.Bottom);
+        var borderRect = surface.Area.Inset(Style.Margin);
 
         // Apply Border
         if (borderRect.IsEmpty) return; // Not enough space to render
@@ -69,9 +68,9 @@ public class Box(IComponent component) : IComponent
         }
 
         // Apply Padding
-        int b = hasBorder ? 1 : 0;
-        var contentRect = borderSurface.Area
-            .Inset(b + Style.Padding.Left, b + Style.Padding.Top, b + Style.Padding.Right, b + Style.Padding.Bottom);
+        int borderOffset = hasBorder ? 1 : 0;
+        Spacing innerOffset = borderOffset + Style.Padding;
+        var contentRect = borderSurface.Area.Inset(innerOffset);
 
         // Render Content
         if (contentRect.IsEmpty) return; // Not enough space to render
