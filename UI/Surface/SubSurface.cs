@@ -15,7 +15,7 @@ public class SubSurface(ISurface parent, Rect rect) : ISurface
 
     public int Width => _rect.Width;
     public int Height => _rect.Height;
-    public Rect Area => _rect;
+    public Rect Area => new(0, 0, Width, Height);
 
     public Cell GetCell(int x, int y)
     {
@@ -33,28 +33,13 @@ public class SubSurface(ISurface parent, Rect rect) : ISurface
         _parent.Write(_rect.X + x, _rect.Y + y, cell);
     }
 
-    public void Clear()
-    {
-        // To clear out the sub-surface, we fill the entire area with empty cells
-        for (int y = 0; y < Height; y++)
-        {
-            for (int x = 0; x < Width; x++)
-            {
-                Write(x, y, Cell.Empty);
-            }
-        }
-    }
-
     /// <summary>
     /// Determines if the given coordinates are outside the bounds of the sub-surface
     /// </summary>
     /// <param name="x">The x-coordinate to check</param>
     /// <param name="y">The y-coordinate to check</param>
     /// <returns>True if the coordinates are outside the bounds, otherwise false</returns>
-    bool IsOutOfBounds(int x, int y)
-    {
-        return x < 0 || x >= Width || y < 0 || y >= Height;
-    }
+    bool IsOutOfBounds(int x, int y) => !Area.Contains(x, y);
 
 
     /// <summary>
