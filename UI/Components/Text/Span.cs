@@ -1,6 +1,6 @@
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Text;
+namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
 /// Represents a span of text with an associated style that can be applied to characters drawn on a render surface

@@ -1,7 +1,7 @@
 using PSFuzzySelect.UI.Geometry;
 using PSFuzzySelect.UI.Surface;
 
-namespace PSFuzzySelect.UI.Box;
+namespace PSFuzzySelect.UI.Components.Box;
 
 public class Box(IComponent component) : IComponent
 {

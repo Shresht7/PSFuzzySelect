@@ -1,7 +1,7 @@
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Geometry;
-using PSFuzzySelect.UI.Text;
+using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;

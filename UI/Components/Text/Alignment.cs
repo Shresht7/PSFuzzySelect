@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI.Text;
+namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
 /// Defines the horizontal alignment of text within its allocated surface.

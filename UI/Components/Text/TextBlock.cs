@@ -1,7 +1,7 @@
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Text;
+namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
 /// A text component that can render multiple spans of text with different styles on a render surface.
