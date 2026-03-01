@@ -39,9 +39,9 @@ public class Engine(IInteractiveComponent Root)
             // The Main Loop of the Application
             while (!_shouldQuit)
             {
-                Render();                   // Render the current state of the UI components to the console
-                var msg = HandleInput();    // Handle user input and get the resulting message representing the user action
-                Update(msg);                // Update the state of the fuzzy selector based on the message
+                Render();                           // Render the current state of the UI components to the console
+                var message = CaptureEvents();      // Handle user input and get the resulting message representing the user action
+                Update(message);                    // Update the state of the fuzzy selector based on the message
             }
         }
         finally
@@ -51,11 +51,11 @@ public class Engine(IInteractiveComponent Root)
     }
 
     /// <summary>
-    /// Handles user input by reading a key press from the console and converting it into a Message
-    /// that can be processed by the main loop to update the state of the fuzzy selector.
-    /// This method is called on each iteration of the main loop after rendering the UI to capture user interactions.
+    /// Captures user input from the console and translates it into a Message that can be processed
+    /// by the main loop to update the state of the fuzzy selector.
+    /// This method is called on each iteration of the main loop after rendering to handle user interactions.
     /// </summary>
-    private Message? HandleInput()
+    private static Message? CaptureEvents()
     {
         // Handle User Input
         var key = Console.ReadKey(intercept: true);
@@ -66,8 +66,7 @@ public class Engine(IInteractiveComponent Root)
             return new Quit();
         }
 
-        // Delegate key handling to the root component, which will propagate it to its children as needed   
-        return Root.HandleKey(key);
+        return new KeyEvent(key); // Wrap the raw key press event in a KeyEvent
     }
 
     /// <summary>
