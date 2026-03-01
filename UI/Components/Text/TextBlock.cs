@@ -103,31 +103,32 @@ public class TextBlock : IComponent
         };
         int y = 0; // Vertical alignment is usually handled by layout containers
 
+        int currentX = x; // Track the current x position as we render spans
         foreach (var span in _spans)
         {
             // Calculate how much space is left for text on this surface
-            int spaceLeft = totalWidth - x;
+            int spaceLeft = totalWidth - currentX + x;
             if (spaceLeft <= 0) break; // No more space to render text
 
             // If the span is longer than the remaining space, only write the portion that fits
             if (span.Length > spaceLeft)
             {
-                surface.Write(x, y, span.Text.Substring(0, spaceLeft), span.Style);
-                x += spaceLeft; // Advance the x position by the amount of text that was actually rendered
+                surface.Write(currentX, y, span.Text.Substring(0, spaceLeft), span.Style);
+                currentX += spaceLeft; // Advance the x position by the amount of text that was actually rendered
                 break; // No more space to render additional spans
             }
             // Otherwise, render the entire span
             else
             {
-                surface.Write(x, y, span.Text, span.Style);
-                x += span.Length; // Advance the x position based on the length of the span's text
+                surface.Write(currentX, y, span.Text, span.Style);
+                currentX += span.Length; // Advance the x position based on the length of the span's text
             }
         }
 
         // Handle overflow behavior
         if (isOverflowing && _overflow == TextOverflow.Ellipsis)
         {
-            int ellipsisX = Math.Min(x, surface.Width - 1); // Ensure the ellipsis is rendered within the surface bounds
+            int ellipsisX = Math.Min(currentX, surface.Width - 1); // Ensure the ellipsis is rendered within the surface bounds
             surface.Write(ellipsisX, y, "…", Style.Default);
         }
     }
