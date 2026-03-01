@@ -6,6 +6,12 @@
 public abstract record Message;
 
 /// <summary>
+/// Message indicating that the user has pressed a key, containing the details of the key event (e.g., which key was pressed).
+/// </summary>
+/// <param name="Key">The key event information, including the key that was pressed and any modifier keys</param>
+record class KeyEvent(ConsoleKeyInfo Key) : Message;
+
+/// <summary>
 /// Message indicating that the search query has changed. Contains the new query string entered by the user
 /// </summary>
 /// <param name="Query">The new search query entered by the user</param>
