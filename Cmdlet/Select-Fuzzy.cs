@@ -25,6 +25,12 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [ValidateNotNullOrEmpty]
     public string[]? Property { get; set; }
 
+    /// <summary>
+    /// The prompt message to display in the fuzzy selector UI.
+    /// </summary>
+    [Parameter]
+    public string Prompt { get; set; } = "Search:";
+
     /// <summary>A list to hold all input objects received from the pipeline</summary>
     private readonly List<PSObject> _inputObjects = new();
 
@@ -51,7 +57,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
         var items = _inputObjects.Select(obj => ((object)obj, displayAdapter.GetDisplayString(obj)));
 
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(items);
+        var selected = FuzzySelector.Show(Prompt, items);
 
         // Write the selected object to the pipeline if a selection was made
         if (selected != null)
