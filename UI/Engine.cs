@@ -4,21 +4,36 @@ using PSFuzzySelect.UI.Components;
 namespace PSFuzzySelect.UI;
 
 /// <summary>
+/// Defines the contract for an interactive application that can be rendered on the console and can update its state based on user interactions.
+/// </summary>
+public interface IApplication : IComponent
+{
+    /// <summary>
+    /// Updates the state of the application based on the received message, which can represent various
+    /// user actions such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
+    /// This method is called after handling user input to process the resulting message and update the state of the UI components accordingly.
+    /// </summary>
+    /// <param name="message">The message representing a user action.</param>
+    /// <returns>A follow-up Message object representing the result of the update, or null if no action should be taken</returns>
+    Message? Update(Message? message);
+}
+
+/// <summary>
 /// The Engine class is responsible for managing the main loop of the fuzzy selector application,
 /// including rendering the UI components, handling user input, and updating the state of the application based on user interactions.
 /// </summary>
-/// <param name="Root">The root interactive component of the UI, which will handle input and update its state based on user actions</param>
-public class Engine(IInteractiveComponent Root)
+/// <param name="App">The root component of the application, which will be rendered and updated by the engine</param>
+public class Engine(IApplication App)
 {
-    /// <summary>The renderer responsible for drawing the UI components of the fuzzy selector on the console</summary>
+    /// <summary>The renderer responsible for drawing the UI components of the fuzzy selector application on the console</summary>
     private readonly ConsoleRenderer _renderer = new(Console.WindowWidth, Console.WindowHeight);
 
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool _shouldQuit = false;
 
     /// <summary>
-    /// Sets up the console UI for the fuzzy selector, including hiding the cursor and preparing any necessary state before entering the main loop.
-    /// This method is called once at the beginning of the Show() method to ensure that the console is in the correct state for rendering the fuzzy selector interface.
+    /// Performs initial setup for the console, such as hiding the cursor and clearing the console
+    /// to prepare for rendering the UI components of the fuzzy selector application.
     /// </summary>
     private static void Setup()
     {
@@ -27,8 +42,8 @@ public class Engine(IInteractiveComponent Root)
     }
 
     /// <summary>
-    /// Runs the main loop of the fuzzy selector, which continuously renders the UI,
-    /// handles user input, and updates the state of the fuzzy selector until the user decides to quit (e.g., by pressing the Escape key).
+    /// Runs the main loop of the fuzzy selector application, which includes rendering the UI components, capturing user input,
+    /// and updating the state of the application based on the captured input until the user decides to quit the application.
     /// </summary>
     public void Run()
     {
@@ -86,7 +101,7 @@ public class Engine(IInteractiveComponent Root)
         }
 
         // Let the root component (and its children) process the message to update their state as needed
-        Root.Update(message);
+        App.Update(message);
     }
 
     /// <summary>
@@ -97,7 +112,7 @@ public class Engine(IInteractiveComponent Root)
     private void Render()
     {
         var buffer = _renderer.GetBackBuffer();     // Get a fresh buffer for rendering the current frame
-        Root.Render(buffer);                        // Render the root component (and its children) to the buffer surface
+        App.Render(buffer);                        // Render the root component (and its children) to the buffer surface
         _renderer.Render();                         // Render the current buffer to the console
     }
 

@@ -6,7 +6,7 @@ using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI;
 
-public class FuzzySelector : IInteractiveComponent
+public class FuzzySelector : IApplication
 {
     /// <summary>
     /// The collection of items to be displayed and matched in the fuzzy selector.

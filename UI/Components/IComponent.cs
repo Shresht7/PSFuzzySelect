@@ -11,14 +11,3 @@ public interface IComponent
     /// <param name="surface">The surface to render the component on</param>
     void Render(ISurface surface);
 }
-
-public interface IInteractiveComponent : IComponent
-{
-    /// <summary>
-    /// Updates the state of the component based on the received message, which can represent various
-    /// user actions such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
-    /// </summary>
-    /// <param name="message">The message representing a user action.</param>
-    /// <returns>A Message object representing the result of the update, or null if no action should be taken</returns>
-    Message? Update(Message? message);
-}
