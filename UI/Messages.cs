@@ -1,3 +1,5 @@
+namespace PSFuzzySelect.UI;
+
 /// <summary>
 /// Defines the various messages that can be sent from the UI to the main loop of the fuzzy selector.
 /// These messages represent user actions such as changing the search query, moving the cursor, or selecting an item.
