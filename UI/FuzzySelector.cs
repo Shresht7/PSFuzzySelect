@@ -122,7 +122,7 @@ public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IA
         var blueprint = Layout.Vertical(
             Size.Fixed(1),          // Search input at the top
             Size.Flexible(1),       // List takes up the remaining space
-            Size.Fixed(2)           // Status bar at the bottom
+            Size.Fixed(1)           // Status bar at the bottom
         ).Gap(1);                       // Add a gap between sections
 
         // Compose the UI components according to the blueprint and render them to the buffer
