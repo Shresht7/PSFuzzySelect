@@ -5,7 +5,10 @@ using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI;
 
-public class FuzzySelector : IApplication
+/// <summary>The main fuzzy selector application component. It manages the application state and user interactions.</summary>
+/// <remarks>Initializes a new instance of the FuzzySelector class</remarks>
+/// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
+public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IApplication
 {
     #region Input State
 
@@ -20,16 +23,16 @@ public class FuzzySelector : IApplication
     /// The collection of items to be displayed and matched in the fuzzy selector.
     /// Each item is represented as a tuple containing the original object and its corresponding display string.
     /// </summary>
-    private readonly IEnumerable<(object obj, string display)> _items;
+    private readonly IEnumerable<(object obj, string display)> _items = items;
 
     /// <summary>The fuzzy matcher used to match items against the search query</summary>
-    private FuzzyMatcher _matcher = new();
+    private readonly FuzzyMatcher _matcher = new();
 
     /// <summary>
     /// The current list of match results based on the search query.
     /// This list is updated on each render to reflect the items that match the current search query.
     /// </summary>
-    private List<MatchResult> _currentMatches = new();
+    private List<MatchResult> _currentMatches = [];
 
     /// <summary>A cursor index to keep track of the currently selected item in the list of matches</summary>
     private int _cursor = 0;
@@ -41,10 +44,6 @@ public class FuzzySelector : IApplication
     private int _selectedIndex = -1;
 
     #endregion List State
-
-    /// <summary>Initializes a new instance of the FuzzySelector class</summary>
-    /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
-    public FuzzySelector(IEnumerable<(object obj, string display)> items) => _items = items;
 
     #region Show
 
