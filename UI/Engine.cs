@@ -9,12 +9,11 @@ namespace PSFuzzySelect.UI;
 public interface IApplication : IComponent
 {
     /// <summary>
-    /// Updates the state of the application based on the received message, which can represent various
-    /// user actions such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
-    /// This method is called after handling user input to process the resulting message and update the state of the UI components accordingly.
+    /// Updates the state of the application based on the received message.
+    /// This method is called by the Engine to process user actions and internal notifications.
     /// </summary>
-    /// <param name="message">The message representing a user action.</param>
-    /// <returns>A follow-up Message object representing the result of the update, or null if no action should be taken</returns>
+    /// <param name="message">The message representing an action or event.</param>
+    /// <returns>A follow-up Message object to be processed in the same frame, or null if processing is complete.</returns>
     Message? Update(Message? message);
 }
 
@@ -85,23 +84,26 @@ public class Engine(IApplication App)
     }
 
     /// <summary>
-    /// Updates the state of the fuzzy selector based on the received message, which can represent various
-    /// user actions such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
-    /// This method is called after handling user input to process the resulting message and update the state of the UI components accordingly.
+    /// Updates the state of the application based on the received message.
+    /// It processes messages in a loop, feeding returned messages back into the application 
+    /// until no more messages are produced or a Quit command is received.
     /// </summary>
-    /// <param name="message">The message representing a user action, which will be processed to update the state of the fuzzy selector</param>
+    /// <param name="message">The initial message representing a user action or event.</param>
     private void Update(Message? message)
     {
-        if (message == null) return; // No message to process, skip the update step
-
-        if (message is Quit)
+        // Process messages until the application returns null or requests to quit
+        while (message != null)
         {
-            Quit(); // Set the flag to quit the fuzzy selector
-            return;
-        }
+            // Check if the message is a Quit command, and if so, set the quit flag and exit the loop
+            if (message is Quit)
+            {
+                Quit();
+                break;
+            }
 
-        // Let the root component (and its children) process the message to update their state as needed
-        App.Update(message);
+            // Let the application process the message and return any follow-up message to be processed in the same frame
+            message = App.Update(message);
+        }
     }
 
     /// <summary>
