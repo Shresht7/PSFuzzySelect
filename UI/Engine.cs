@@ -1,5 +1,6 @@
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;
+using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI;
 
@@ -31,13 +32,18 @@ public class Engine(IApplication App)
     private bool _shouldQuit = false;
 
     /// <summary>
-    /// Performs initial setup for the console, such as hiding the cursor and clearing the console
+    /// Performs initial setup for the console, such as hiding the cursor and entering the alternate screen buffer
     /// to prepare for rendering the UI components of the fuzzy selector application.
     /// </summary>
     private static void Setup()
     {
-        Console.CursorVisible = false;  // Hide the cursor for a cleaner UI experience
-        Console.Clear();                // Clear the console to prepare for the first-paint
+        string ansi = string.Concat([
+            Ansi.AltBufferEnter,      // Switch to the alternate screen buffer
+            Ansi.CursorHide,          // Hide the cursor for a cleaner UI experience
+            Ansi.ClearScreen,         // Ensure the alternate buffer is completely clear
+            Ansi.CursorPosition(0, 0) // Reset cursor to the top-left corner
+        ]);
+        Console.Write(ansi);          // Write the ANSI escape codes to the console to apply the setup
     }
 
     /// <summary>
@@ -119,13 +125,16 @@ public class Engine(IApplication App)
     }
 
     /// <summary>
-    /// Cleans up the console UI by making the cursor visible, resetting the console colors, and clearing any residual UI elements
+    /// Cleans up the console UI by making the cursor visible, resetting the console colors, and exiting the alternate screen buffer.
     /// </summary>
     private static void Cleanup()
     {
-        Console.ResetColor();           // Reset console colors to default
-        Console.CursorVisible = true;   // Ensure the cursor is visible again when exiting
-        Console.Clear();                // Clear the console to remove any residual UI elements
+        string ansi = string.Concat([
+             Ansi.Reset,          // Reset console colors and styles to default
+             Ansi.CursorShow,     // Ensure the cursor is visible again when exiting
+             Ansi.AltBufferExit   // Switch back to the main screen buffer, restoring the previous screen state
+        ]);
+        Console.Write(ansi);      // Write the ANSI escape codes to the console to apply the cleanup
     }
 
     /// <summary>
