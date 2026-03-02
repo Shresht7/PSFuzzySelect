@@ -7,14 +7,20 @@ namespace PSFuzzySelect.UI;
 
 public class FuzzySelector : IApplication
 {
+    #region Input State
+
+    /// <summary>The current search query entered by the user</summary>
+    private string _searchQuery = string.Empty;
+
+    #endregion Input State
+
+    #region List State
+
     /// <summary>
     /// The collection of items to be displayed and matched in the fuzzy selector.
     /// Each item is represented as a tuple containing the original object and its corresponding display string.
     /// </summary>
     private readonly IEnumerable<(object obj, string display)> _items;
-
-    /// <summary>The current search query entered by the user</summary>
-    private string _searchQuery = string.Empty;
 
     /// <summary>The fuzzy matcher used to match items against the search query</summary>
     private FuzzyMatcher _matcher = new();
@@ -34,10 +40,13 @@ public class FuzzySelector : IApplication
     /// </summary>
     private int _selectedIndex = -1;
 
+    #endregion List State
 
     /// <summary>Initializes a new instance of the FuzzySelector class</summary>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
     public FuzzySelector(IEnumerable<(object obj, string display)> items) => _items = items;
+
+    #region Show
 
     /// <summary>
     /// Shows the fuzzy selector interface to the user, allowing them to enter a search query and view matching items
@@ -49,7 +58,7 @@ public class FuzzySelector : IApplication
         var engine = new Engine(this);
 
         // Initial refresh to populate matches before the first render
-        RefreshMatches();
+        RefreshList();
 
         // Run the main loop of the fuzzy selector
         engine.Run();
@@ -57,6 +66,10 @@ public class FuzzySelector : IApplication
         // Return the selected item if any, otherwise null
         return _selectedIndex >= 0 ? _currentMatches[_selectedIndex].Item : null;
     }
+
+    #endregion Show
+
+    #region Update
 
     /// <summary>
     /// Updates the state of the fuzzy selector based on the received message, which can represent various user actions
@@ -68,7 +81,7 @@ public class FuzzySelector : IApplication
         switch (message)
         {
             case Select:
-                SelectItem();
+                SelectItem(_cursor);
                 return new Quit(); // Exit after selection. At least until we setup multi-select
             case QueryChange msg:
                 UpdateQuery(msg.Query);
@@ -85,6 +98,10 @@ public class FuzzySelector : IApplication
         }
         return null;
     }
+
+    #endregion Update
+
+    #region Render
 
     /// <summary>
     /// Renders the user interface for the fuzzy selector,
@@ -108,6 +125,10 @@ public class FuzzySelector : IApplication
         ).Render(surface);
     }
 
+    #endregion Render
+
+    #region Key Handlers
+
     /// <summary>
     /// Handles user input for the fuzzy selector, including character input for the search query,
     /// backspace for editing, and special keys for selection and exit.
@@ -117,56 +138,69 @@ public class FuzzySelector : IApplication
     {
         // Handle list navigation and selection keys
         var listMessage = List.HandleKey(key);
-        if (listMessage != null)
-        {
-            return listMessage;
-        }
+        if (listMessage != null) return listMessage;
+
 
         // Handle character input for search query
         var inputMessage = Input.HandleKey(key, _searchQuery);
-        if (inputMessage != null)
-        {
-            return inputMessage;
-        }
+        if (inputMessage != null) return inputMessage;
 
         return null;
     }
 
+    #endregion Key Handlers
+
+    #region Actions
 
     /// <summary>
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshMatches()
+    private void RefreshList()
     {
         _currentMatches = _matcher.Match(_items, _searchQuery);
         _cursor = 0;
         _selectedIndex = -1;
     }
 
+    /// <summary>
+    /// Updates the search query with the new value entered by the user and refreshes the list of matches accordingly.
+    /// </summary>
+    /// <param name="newQuery">The updated search query</param>
     private void UpdateQuery(string newQuery)
     {
         _searchQuery = newQuery;
-        RefreshMatches();
+        RefreshList();
     }
 
+    /// <summary>
+    /// Moves the cursor up or down in the list of matches based on the provided delta value,
+    /// ensuring that the cursor stays within the bounds of the current matches.
+    /// </summary>
+    /// <param name="delta">The number of positions to move the cursor. Positive values move the cursor down, negative values move it up.</param>
     private void CursorMove(int delta)
     {
+        // If there are no matches, reset the cursor to an invalid position
         if (_currentMatches.Count == 0)
         {
             _cursor = -1;
             return;
         }
+        // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
         _cursor = Math.Clamp(_cursor + delta, 0, _currentMatches.Count - 1);
     }
 
-    private void SelectItem()
+    /// <summary>
+    /// Selects the currently highlighted item in the list of matches based on the cursor position and updates the selected index accordingly.
+    /// </summary>
+    /// <param name="index">The index of the item to select.</param>
+    private void SelectItem(int index)
     {
-        if (_cursor >= 0 && _cursor < _currentMatches.Count)
+        if (index >= 0 && index < _currentMatches.Count)
         {
-            _selectedIndex = _cursor;
+            _selectedIndex = index;
         }
     }
 
-
+    #endregion Actions
 }
