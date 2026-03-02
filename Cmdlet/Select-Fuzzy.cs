@@ -46,14 +46,14 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void EndProcessing()
     {
+        // Generate display strings for each input object based on the specified properties or default display logic
         var displayAdapter = new ObjectDisplayAdapter(Property);
         var items = _inputObjects.Select(obj => ((object)obj, displayAdapter.GetDisplayString(obj)));
 
-        // Show the fuzzy selector and get the selected object
-        var selector = new FuzzySelector(items);
-        var selected = selector.Show();
+        // Show the fuzzy selector UI and get the selected item
+        var selected = FuzzySelector.Show(items);
 
-        // Write the selected object back to the pipeline
+        // Write the selected object to the pipeline if a selection was made
         if (selected != null)
         {
             WriteObject(selected);

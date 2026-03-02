@@ -37,33 +37,42 @@ public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IA
     /// <summary>A cursor index to keep track of the currently selected item in the list of matches</summary>
     private int _cursor = 0;
 
+    #endregion List State
+
+    #region Result
+
     /// <summary>
     /// A selected index to keep track of the item
     /// that the user has selected (e.g., by pressing Enter)
     /// </summary>
     private int _selectedIndex = -1;
 
-    #endregion List State
+    /// <summary>Gets the currently selected item, or null if no selection has been made.</summary>
+    public object? SelectedValue => _selectedIndex >= 0 && _selectedIndex < _currentMatches.Count
+        ? _currentMatches[_selectedIndex].Item
+        : null;
+
+    #endregion Result
 
     #region Show
 
     /// <summary>
-    /// Shows the fuzzy selector interface to the user, allowing them to enter a search query and view matching items
+    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
     /// </summary>
-    /// <returns>The selected value, if any.</returns>
-    public object? Show()
+    /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
+    /// <returns>The selected item, or null if no selection was made.</returns>
+    public static object? Show(IEnumerable<(object obj, string display)> items)
     {
-        // Instantiate the TUI Engine with the FuzzySelector as the root component
-        var engine = new Engine(this);
+        var selector = new FuzzySelector(items);
+        var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
-        RefreshList();
+        selector.RefreshList();
 
         // Run the main loop of the fuzzy selector
         engine.Run();
 
-        // Return the selected item if any, otherwise null
-        return _selectedIndex >= 0 ? _currentMatches[_selectedIndex].Item : null;
+        return selector.SelectedValue;
     }
 
     #endregion Show
