@@ -7,8 +7,9 @@ namespace PSFuzzySelect.UI;
 
 /// <summary>The main fuzzy selector application component. It manages the application state and user interactions.</summary>
 /// <remarks>Initializes a new instance of the FuzzySelector class</remarks>
+/// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
-public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IApplication
+public class FuzzySelector(string prompt, IEnumerable<(object obj, string display)> items) : IApplication
 {
     #region Input State
 
@@ -59,11 +60,12 @@ public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IA
     /// <summary>
     /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
     /// </summary>
+    /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(IEnumerable<(object obj, string display)> items)
+    public static object? Show(string prompt, IEnumerable<(object obj, string display)> items)
     {
-        var selector = new FuzzySelector(items);
+        var selector = new FuzzySelector(prompt, items);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
@@ -127,7 +129,7 @@ public class FuzzySelector(IEnumerable<(object obj, string display)> items) : IA
 
         // Compose the UI components according to the blueprint and render them to the buffer
         blueprint.Compose(
-            new Input(_searchQuery),
+            new Input(prompt, _searchQuery),
             new List(_currentMatches, _cursor),
             new StatusBar(_currentMatches.Count, _cursor)
         ).Render(surface);

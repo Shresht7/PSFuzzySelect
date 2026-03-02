@@ -4,12 +4,12 @@ using PSFuzzySelect.UI.Components.Text;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class Input(string query) : IComponent
+public class Input(string prompt, string query) : IComponent
 {
     public void Render(ISurface surface)
     {
         new TextBlock(
-            new TextSpan("Search: ", Style.Default.WithForeground(Color.Blue)),
+            new TextSpan(prompt + " ", Style.Default.WithForeground(Color.Blue)),
             new TextSpan(query, Style.Default.WithForeground(Color.White))
         ).Render(surface);
     }
