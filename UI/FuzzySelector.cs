@@ -98,6 +98,8 @@ public class FuzzySelector : IInteractiveComponent
     {
         switch (message)
         {
+            case KeyEvent keyEvent:
+                return HandleKey(keyEvent.Key);
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
