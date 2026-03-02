@@ -1,6 +1,5 @@
 using PSFuzzySelect.UI.Geometry;
 using PSFuzzySelect.UI.Surface;
-using PSFuzzySelect.UI.Components;
 
 namespace PSFuzzySelect.UI.Components.Box;
 
