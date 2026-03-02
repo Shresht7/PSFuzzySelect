@@ -60,36 +60,6 @@ public class FuzzySelector : IInteractiveComponent
     }
 
     /// <summary>
-    /// Handles user input for the fuzzy selector, including character input for the search query,
-    /// backspace for editing, and special keys for selection and exit.
-    /// </summary>
-    /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
-    public Message? HandleKey(ConsoleKeyInfo key)
-    {
-        if (key.Key == ConsoleKey.Enter)
-        {
-            Select();
-            return new Quit(); // Exit after selection. At least until we setup multi-select
-        }
-
-        // Handle list navigation and selection keys
-        var listMessage = List.HandleKey(key);
-        if (listMessage != null)
-        {
-            return listMessage;
-        }
-
-        // Handle character input for search query
-        var inputMessage = Input.HandleKey(key, _searchQuery);
-        if (inputMessage != null)
-        {
-            return inputMessage;
-        }
-
-        return null;
-    }
-
-    /// <summary>
     /// Updates the state of the fuzzy selector based on the received message, which can represent various user actions
     /// such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
     /// </summary>
@@ -98,14 +68,17 @@ public class FuzzySelector : IInteractiveComponent
     {
         switch (message)
         {
-            case KeyEvent keyEvent:
-                return HandleKey(keyEvent.Key);
+            case Select:
+                SelectItem();
+                return new Quit(); // Exit after selection. At least until we setup multi-select
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
             case CursorMove msg:
                 CursorMove(msg.Delta);
                 break;
+            case KeyEvent keyEvent:
+                return HandleKey(keyEvent.Key);
             case null:
             default:
                 // No message to process, do nothing
@@ -137,6 +110,31 @@ public class FuzzySelector : IInteractiveComponent
     }
 
     /// <summary>
+    /// Handles user input for the fuzzy selector, including character input for the search query,
+    /// backspace for editing, and special keys for selection and exit.
+    /// </summary>
+    /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
+    public Message? HandleKey(ConsoleKeyInfo key)
+    {
+        // Handle list navigation and selection keys
+        var listMessage = List.HandleKey(key);
+        if (listMessage != null)
+        {
+            return listMessage;
+        }
+
+        // Handle character input for search query
+        var inputMessage = Input.HandleKey(key, _searchQuery);
+        if (inputMessage != null)
+        {
+            return inputMessage;
+        }
+
+        return null;
+    }
+
+
+    /// <summary>
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
@@ -163,7 +161,7 @@ public class FuzzySelector : IInteractiveComponent
         _cursor = Math.Clamp(_cursor + delta, 0, _currentMatches.Count - 1);
     }
 
-    private void Select()
+    private void SelectItem()
     {
         if (_cursor >= 0 && _cursor < _currentMatches.Count)
         {
