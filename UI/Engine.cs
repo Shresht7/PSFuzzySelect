@@ -77,16 +77,24 @@ public class Engine(IApplication App)
     /// </summary>
     private static Message? CaptureEvents()
     {
-        // Handle User Input
-        var key = Console.ReadKey(intercept: true);
+        // Initialize a variable to hold the captured message, which will be set when a user input is detected
+        Message? message = null;
 
-        // Exit on Escape key
-        if (key.Key == ConsoleKey.Escape)
+        // Event Loop: Continuously check for user input until a message is captured.
+        while (message == null)
         {
-            return new Quit();
+            // Check if a key is available in the input buffer. If so, read it and create a KeyEvent message.
+            if (Console.KeyAvailable)
+            {
+                var key = Console.ReadKey(intercept: true);
+                message = new KeyEvent(key);
+            }
+
+            // If no key is available, we can briefly sleep to avoid busy-waiting and reduce CPU usage while waiting for input
+            if (message == null) Thread.Sleep(16);
         }
 
-        return new KeyEvent(key); // Wrap the raw key press event in a KeyEvent
+        return message; // Return the captured message, or null if no input was captured
     }
 
     /// <summary>

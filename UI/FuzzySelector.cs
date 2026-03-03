@@ -146,6 +146,9 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
     public Message? HandleKey(ConsoleKeyInfo key)
     {
+        // Handle Quit
+        if (key.Key == ConsoleKey.Escape) return new Quit();
+
         // Handle list navigation and selection keys
         var listMessage = List.HandleKey(key);
         if (listMessage != null) return listMessage;
