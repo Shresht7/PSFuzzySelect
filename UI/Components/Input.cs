@@ -23,7 +23,20 @@ public class Input(string prompt, string query) : IComponent
         }
         else if (key.Key == ConsoleKey.Backspace && currentQuery.Length > 0)
         {
-            return new QueryChange(currentQuery[..^1]);
+            var countToRemove = 1; // Number of characters to remove
+
+            // If Ctrl is held, remove the last word instead of just one character
+            if (key.Modifiers.HasFlag(ConsoleModifiers.Control))
+            {
+                var words = currentQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (words.Length > 0)
+                {
+                    countToRemove = words.Last().Length;
+                }
+            }
+
+            // Remove the appropriate number of characters from the end of the query
+            return new QueryChange(currentQuery.TrimEnd()[..^countToRemove]);
         }
 
         return null; // No relevant input to handle
