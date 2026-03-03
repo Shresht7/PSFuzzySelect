@@ -96,7 +96,8 @@ public class Engine(IApplication App)
                 }
             }
 
-            Thread.Sleep(16); // Sleep briefly to avoid busy-waiting and reduce CPU usage while waiting for input
+            // If no key is available, we can briefly sleep to avoid busy-waiting and reduce CPU usage while waiting for input
+            if (message == null) Thread.Sleep(16);
         }
 
         return message; // Return the captured message, or null if no input was captured
