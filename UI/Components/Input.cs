@@ -21,8 +21,10 @@ public class Input(string prompt, string query) : IComponent
         {
             return new QueryChange(currentQuery + key.KeyChar);
         }
-        else if (key.Key == ConsoleKey.Backspace && currentQuery.Length > 0)
+        else if (key.Key == ConsoleKey.Backspace)
         {
+            if (currentQuery.Length == 0) return null; // Nothing to remove
+
             var countToRemove = 1; // Number of characters to remove
 
             // If Ctrl is held, remove the last word instead of just one character
