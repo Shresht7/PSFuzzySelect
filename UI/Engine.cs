@@ -62,6 +62,7 @@ public class Engine(IApplication App)
                 Render();                           // Render the current state of the UI components to the console
                 var message = CaptureEvents();      // Handle user input and get the resulting message representing the user action
                 Update(message);                    // Update the state of the fuzzy selector based on the message
+                Thread.Sleep(16);                    // Sleep for a short duration to limit the frame rate and reduce CPU usage
             }
         }
         finally
@@ -77,6 +78,11 @@ public class Engine(IApplication App)
     /// </summary>
     private static Message? CaptureEvents()
     {
+        if (!Console.KeyAvailable)
+        {
+            return null; // No key press detected, return null to indicate no message to process
+        }
+
         // Handle User Input
         var key = Console.ReadKey(intercept: true);
 
