@@ -6,8 +6,11 @@ namespace PSFuzzySelect.UI.Components;
 
 public class Input(string prompt, string query) : IComponent
 {
-    private string Prompt { get; } = prompt;
+    private string Prompt { get; } = prompt + ' ';
     public string Query { get; private set; } = query;
+
+    /// <summary>The position of the cursor within the query</summary>
+    private int _cursor = 0;
 
     public void Render(ISurface surface)
     {
@@ -15,6 +18,9 @@ public class Input(string prompt, string query) : IComponent
             new TextSpan(Prompt, Style.Default.WithForeground(Color.Blue)),
             new TextSpan(Query, Style.Default.WithForeground(Color.White))
         ).Render(surface);
+
+        var cursorCell = surface.GetCell(Prompt.Length + _cursor, 0) with { Style = Style.Default.WithTextStyle(TextStyle.Inverse) };
+        surface.Write(Prompt.Length + _cursor, 0, cursorCell);
     }
 
     public Message? HandleKey(ConsoleKeyInfo key)
@@ -23,6 +29,7 @@ public class Input(string prompt, string query) : IComponent
         if (!char.IsControl(key.KeyChar))
         {
             Query += key.KeyChar;
+            _cursor++;  // Advance the cursor by 1 character
             return new QueryChange(Query);
         }
         else if (key.Key == ConsoleKey.Backspace)
@@ -34,18 +41,33 @@ public class Input(string prompt, string query) : IComponent
             // If Ctrl is held, remove the last word instead of just one character
             if (key.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                var words = Query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (words.Length > 0)
-                {
-                    countToRemove = words.Last().Length;
-                }
+                var lastWordBoundary = FindLastWordBoundary();
+                countToRemove = Query.Length - lastWordBoundary - 1;
             }
 
             // Remove the appropriate number of characters from the end of the query
-            Query = Query.TrimEnd()[..^countToRemove];
+            Query = Query[..^countToRemove];
+            _cursor = Query.Length;  // Move the cursor to the end of the query
             return new QueryChange(Query);
         }
 
         return null; // No relevant input to handle
     }
+
+    private int FindLastWordBoundary()
+    {
+        var target = _cursor - 1;
+        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Move left until we find a whitespace character or reach the start of the string
+        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Continue moving left until we find a non-whitespace character or reach the start of the string
+        return target;
+    }
+
+    private int FindNextWordBoundary()
+    {
+        var target = _cursor;
+        while (target < Query.Length && !char.IsWhiteSpace(Query[target])) target++; // Move right until we find a whitespace character or reach the end of the string
+        while (target < Query.Length && char.IsWhiteSpace(Query[target])) target++; // Continue moving right until we find a non-whitespace character or reach the end of the string
+        return target;
+    }
+
 }
