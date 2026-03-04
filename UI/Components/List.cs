@@ -6,11 +6,16 @@ using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class List(List<MatchResult> matches, int cursor) : IComponent
+public class List(List<MatchResult> matches) : IComponent
 {
-    public IReadOnlyList<MatchResult> Matches => matches;
+    /// <summary>The current list of matches to show in the UI</summary>
+    public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
 
-    public int Cursor => cursor;
+    /// <summary>
+    /// The current index of the highlighted item in the list of matches.
+    /// This is updated in response to user input and is used to track the user's selection.
+    /// </summary>
+    public int Cursor { get; private set; } = 0;
 
     /// <summary>A scroll offset to determine which portion of the matches list is currently visible in the UI</summary>
     private int _scrollOffset = 0;
@@ -21,28 +26,28 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
     /// <param name="newMatches">The new list of match results to display.</param>
     public void SetMatches(List<MatchResult> newMatches)
     {
-        matches = newMatches;
-        cursor = 0; // Reset cursor to the top of the list whenever matches are updated
+        Matches = newMatches;
+        Cursor = 0; // Reset cursor to the top of the list whenever matches are updated
         _scrollOffset = 0; // Reset scroll offset to ensure the top of the list is visible
     }
 
     public void Render(ISurface surface)
     {
-        if (matches.Count == 0) return; // Don't render anything if there are no matches to display
+        if (Matches.Count == 0) return; // Don't render anything if there are no matches to display
 
         // Scroll the list if the cursor moves outside the visible area
-        if (cursor < _scrollOffset)
-            _scrollOffset = cursor;
-        else if (cursor >= _scrollOffset + surface.Height)
-            _scrollOffset = cursor - surface.Height + 1;
+        if (Cursor < _scrollOffset)
+            _scrollOffset = Cursor;
+        else if (Cursor >= _scrollOffset + surface.Height)
+            _scrollOffset = Cursor - surface.Height + 1;
 
         // Use surface.Height to determine how many items to display
-        var visibleMatches = matches.Skip(_scrollOffset).Take(surface.Height).ToList();
+        var visibleMatches = Matches.Skip(_scrollOffset).Take(surface.Height).ToList();
 
         for (var i = 0; i < visibleMatches.Count; i++)
         {
             var item = visibleMatches[i];
-            bool isSelected = i + _scrollOffset == cursor;
+            bool isSelected = i + _scrollOffset == Cursor;
             var cursorIndicator = isSelected ? "> " : "  ";
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
@@ -96,9 +101,9 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
         return key.Key switch
         {
             ConsoleKey.Enter => new Select(),
-            ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-cursor),
+            ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
-            ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(matches.Count - cursor - 1),
+            ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
             ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
@@ -112,13 +117,13 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
     private Message? CursorMove(int delta)
     {
         // If there are no matches, reset the cursor to an invalid position
-        if (matches.Count == 0)
+        if (Matches.Count == 0)
         {
-            cursor = -1;
+            Cursor = -1;
             return null;
         }
         // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
-        cursor = Math.Clamp(cursor + delta, 0, matches.Count - 1);
+        Cursor = Math.Clamp(Cursor + delta, 0, Matches.Count - 1);
 
         return null;
     }

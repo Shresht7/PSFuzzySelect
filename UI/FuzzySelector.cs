@@ -21,7 +21,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     #region List State
 
     /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
-    private readonly List _list = new([], 0);
+    private readonly List _list = new([]);
 
     /// <summary>
     /// The collection of items to be displayed and matched in the fuzzy selector.
