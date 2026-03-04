@@ -75,7 +75,7 @@ public class Engine(IApplication App)
     /// by the main loop to update the state of the fuzzy selector.
     /// This method is called on each iteration of the main loop after rendering to handle user interactions.
     /// </summary>
-    private static Message? CaptureEvents()
+    private Message? CaptureEvents()
     {
         // Initialize a variable to hold the captured message, which will be set when a user input is detected
         Message? message = null;
@@ -83,6 +83,12 @@ public class Engine(IApplication App)
         // Event Loop: Continuously check for user input until a message is captured.
         while (message == null)
         {
+            // Check for a resize event by comparing the current console dimensions with the renderer's dimensions
+            if (Console.WindowWidth != _renderer.Width || Console.WindowHeight != _renderer.Height)
+            {
+                return new Resize(Console.WindowWidth, Console.WindowHeight);
+            }
+
             // Check if a key is available in the input buffer. If so, read it and create a KeyEvent message.
             if (Console.KeyAvailable)
             {
@@ -108,8 +114,13 @@ public class Engine(IApplication App)
         // Process messages until the application returns null or requests to quit
         while (message != null)
         {
+            // Check for resize events and update the renderer's dimensions accordingly
+            if (message is Resize msg)
+            {
+                _renderer.Resize(msg.Width, msg.Height);
+            }
             // Check if the message is a Quit command, and if so, set the quit flag and exit the loop
-            if (message is Quit)
+            else if (message is Quit)
             {
                 Quit();
                 break;

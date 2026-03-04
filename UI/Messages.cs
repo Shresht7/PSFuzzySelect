@@ -25,6 +25,13 @@ record class QueryChange(string Query) : Message;
 record class Select : Message;
 
 /// <summary>
+/// Message indicating that the console window has been resized, containing the new width and height of the console
+/// </summary>
+/// <param name="Width">The new width of the console window</param>
+/// <param name="Height">The new height of the console window</param>
+record class Resize(int Width, int Height) : Message;
+
+/// <summary>
 /// Message indicating that the user has requested to quit the fuzzy selector without making a selection
 /// </summary>
 record class Quit : Message;

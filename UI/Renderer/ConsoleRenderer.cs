@@ -9,8 +9,8 @@ public class ConsoleRenderer
 {
     private FrameBuffer _frontBuffer;
     private FrameBuffer _backBuffer;
-    private readonly int _width;
-    private readonly int _height;
+    public int Width { get; private set; }
+    public int Height { get; private set; }
 
     // Track the terminal's current cursor position and style
     // to optimize rendering by minimizing unnecessary cursor movements and style changes
@@ -20,11 +20,23 @@ public class ConsoleRenderer
 
     public ConsoleRenderer(int width, int height)
     {
-        _width = width;
-        _height = height;
+        Width = width;
+        Height = height;
         _backBuffer = new FrameBuffer(width, height);
         _frontBuffer = new FrameBuffer(width, height);
     }
+
+    public void Resize(int width, int height)
+    {
+        Width = width;
+        Height = height;
+        _backBuffer = new FrameBuffer(width, height);
+        _frontBuffer = new FrameBuffer(width, height);
+
+        // Force a full re-render on the next frame by clearing the front buffer
+        Console.Write(Ansi.ClearScreen + Ansi.CursorPosition(0, 0));
+    }
+
 
     public ISurface GetBackBuffer()
     {
@@ -43,9 +55,9 @@ public class ConsoleRenderer
         var frame = new StringBuilder();
         frame.Append(Ansi.Reset); // Ensure we start with a clean slate for styles
 
-        for (int y = 0; y < _height; y++)
+        for (int y = 0; y < Height; y++)
         {
-            for (int x = 0; x < _width; x++)
+            for (int x = 0; x < Width; x++)
             {
                 Cell currentCell = _backBuffer.GetCell(x, y);
                 Cell previousCell = _frontBuffer.GetCell(x, y);
