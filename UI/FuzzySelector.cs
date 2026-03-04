@@ -11,8 +11,12 @@ namespace PSFuzzySelect.UI;
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
 public class FuzzySelector(string prompt, IEnumerable<(object obj, string display)> items) : IApplication
 {
+    #region Input State
+
     /// <summary>An instance of the Input component that manages the search query input</summary>
     private readonly Input _input = new(prompt, string.Empty);
+
+    #endregion Input State
 
     #region List State
 
