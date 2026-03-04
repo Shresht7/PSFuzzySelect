@@ -8,6 +8,16 @@ namespace PSFuzzySelect.UI.Components;
 
 public class List(List<MatchResult> matches, int cursor) : IComponent
 {
+    /// <summary>
+    /// Updates the list of matches and ensures the cursor remains within valid bounds.
+    /// </summary>
+    /// <param name="newMatches">The new list of match results to display.</param>
+    public void SetMatches(List<MatchResult> newMatches)
+    {
+        matches = newMatches;
+        cursor = Math.Clamp(cursor, 0, Math.Max(0, matches.Count - 1));
+    }
+
     public void Render(ISurface surface)
     {
         var visibleMatches = matches.Take(surface.Height).ToList(); // Use surface.Height to determine how many items to display
