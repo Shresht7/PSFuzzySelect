@@ -41,6 +41,7 @@ public class ConsoleRenderer
 
         // The final string representation of the frame to be rendered to the console
         var frame = new StringBuilder();
+        frame.Append(Ansi.Reset); // Ensure we start with a clean slate for styles
 
         for (int y = 0; y < _height; y++)
         {
