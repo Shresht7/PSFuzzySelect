@@ -25,49 +25,52 @@ public class Input(string prompt, string query) : IComponent
 
     public Message? HandleKey(ConsoleKeyInfo key)
     {
-        // Handle cursor navigation
-        _cursor = key.Key switch
+        switch (key.Key)
         {
-            // Move cursor to the start of the previous word
-            ConsoleKey.LeftArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => FindLastWordBoundary() + 1,
+            // Cursor Navigation
+            case ConsoleKey.LeftArrow:
+                _cursor = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? Math.Max(0, FindLastWordBoundary() + 1)
+                    : Math.Max(0, _cursor - 1);
+                break;
+            case ConsoleKey.RightArrow:
+                _cursor = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? Math.Min(Query.Length, FindNextWordBoundary())
+                    : Math.Min(Query.Length, _cursor + 1);
+                break;
 
-            // Move cursor left by 1 character
-            ConsoleKey.LeftArrow => Math.Max(0, _cursor - 1),
+            // Deletion
+            case ConsoleKey.Backspace:
+                if (Query.Length == 0 || _cursor == 0) break; // Nothing to remove
 
-            // Move cursor to the start of the next word
-            ConsoleKey.RightArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => FindNextWordBoundary(),
+                // Determine how many characters to remove based on whether Ctrl is held
+                var countToRemove = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? Query.Length - FindLastWordBoundary() - 1
+                    : 1;
 
-            // Move cursor right by 1 character
-            ConsoleKey.RightArrow => Math.Min(Query.Length, _cursor + 1),
-            _ => _cursor
-        };
+                Query = Query[..^countToRemove]; // Remove the appropriate number of characters from the end of the query
+                _cursor = Math.Max(0, _cursor - countToRemove); // Move the cursor left by the number of characters removed
+                return new QueryChange(Query);
+            case ConsoleKey.Delete:
+                if (Query.Length == 0 || _cursor >= Query.Length) break; // Nothing to remove
 
-        // Handle character input for search query
-        if (!char.IsControl(key.KeyChar))
-        {
-            Query += key.KeyChar;
-            _cursor++;  // Advance the cursor by 1 character
-            return new QueryChange(Query);
-        }
+                // Determine how many characters to remove based on whether Ctrl is held
+                countToRemove = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? FindNextWordBoundary() - _cursor
+                    : 1;
 
-        // Handle delete and backspace
-        else if (key.Key == ConsoleKey.Backspace)
-        {
-            if (Query.Length == 0) return null; // Nothing to remove
+                Query = Query.Remove(_cursor, Math.Min(countToRemove, Query.Length - _cursor)); // Remove the appropriate number of characters starting from the cursor position
+                return new QueryChange(Query);
 
-            var countToRemove = 1; // Number of characters to remove
-
-            // If Ctrl is held, remove the last word instead of just one character
-            if (key.Modifiers.HasFlag(ConsoleModifiers.Control))
-            {
-                var lastWordBoundary = FindLastWordBoundary();
-                countToRemove = Query.Length - lastWordBoundary - 1;
-            }
-
-            // Remove the appropriate number of characters from the end of the query
-            Query = Query[..^countToRemove];
-            _cursor = Query.Length;  // Move the cursor to the end of the query
-            return new QueryChange(Query);
+            // Character Input
+            default:
+                if (!char.IsControl(key.KeyChar))
+                {
+                    Query = Query.Insert(_cursor, key.KeyChar.ToString()); // Insert the character at the cursor position
+                    _cursor++; // Advance the cursor by 1 character
+                    return new QueryChange(Query);
+                }
+                break;
         }
 
         return null; // No relevant input to handle
