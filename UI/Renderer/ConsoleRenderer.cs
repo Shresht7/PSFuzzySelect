@@ -9,8 +9,8 @@ public class ConsoleRenderer
 {
     private FrameBuffer _frontBuffer;
     private FrameBuffer _backBuffer;
-    public int Width;
-    public int Height;
+    public int Width { get; private set; }
+    public int Height { get; private set; }
 
     // Track the terminal's current cursor position and style
     // to optimize rendering by minimizing unnecessary cursor movements and style changes
