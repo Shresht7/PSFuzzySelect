@@ -76,14 +76,24 @@ public class Input(string prompt, string query) : IComponent
         return null; // No relevant input to handle
     }
 
+    /// <summary>
+    /// Finds the index of the last word boundary to the left of the cursor.
+    /// A word boundary is defined as a transition between a whitespace character and a non-whitespace character.
+    /// </summary>
+    /// <returns>The index of the last word boundary to the left of the cursor (or -1 if none is found)</returns>
     private int FindLastWordBoundary()
     {
         var target = _cursor - 1;
-        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Move left until we find a whitespace character or reach the start of the string
-        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Continue moving left until we find a non-whitespace character or reach the start of the string
+        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Skip any whitespace immediately to the left of the cursor
+        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Skip the word itself
         return target;
     }
 
+    /// <summary>
+    /// Finds the index of the next word boundary to the right of the cursor.
+    /// A word boundary is defined as a transition between a whitespace character and a non-whitespace character.
+    /// </summary>
+    /// <returns>The index of the next word boundary to the right of the cursor (or the length of the query if none is found)</returns>
     private int FindNextWordBoundary()
     {
         var target = _cursor;
