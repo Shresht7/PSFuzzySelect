@@ -29,7 +29,7 @@ public class Input(string prompt, string query) : IComponent
                 block.Add(new TextSpan(before, Style.Default.WithForeground(Color.White)));
 
             // Highlight the cursor
-            block.Add(new TextSpan(at.ToString(), Style.Default.WithTextStyle(TextStyle.Inverse)));
+            block.Add(new TextSpan(at.ToString(), Style.Default.WithForeground(Color.White).WithTextStyle(TextStyle.Inverse)));
 
             // Add the "after" with normal styling
             if (after.Length > 0)
