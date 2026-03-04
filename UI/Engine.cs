@@ -118,11 +118,9 @@ public class Engine(IApplication App)
             if (message is Resize msg)
             {
                 _renderer.Resize(msg.Width, msg.Height);
-                message = null; // After handling the resize, we can set message to null to exit the loop and re-render with the new dimensions
             }
-
             // Check if the message is a Quit command, and if so, set the quit flag and exit the loop
-            if (message is Quit)
+            else if (message is Quit)
             {
                 Quit();
                 break;
