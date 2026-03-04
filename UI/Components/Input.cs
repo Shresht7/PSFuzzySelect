@@ -14,13 +14,35 @@ public class Input(string prompt, string query) : IComponent
 
     public void Render(ISurface surface)
     {
-        new TextBlock(
-            new TextSpan(Prompt, Style.Default.WithForeground(Color.Blue)),
-            new TextSpan(Query, Style.Default.WithForeground(Color.White))
-        ).Render(surface);
+        var block = new TextBlock()
+            .Add(new TextSpan(Prompt, Style.Default.WithForeground(Color.Blue)));
 
-        var cursorCell = surface.GetCell(Prompt.Length + _cursor, 0) with { Style = Style.Default.WithTextStyle(TextStyle.Inverse) };
-        surface.Write(Prompt.Length + _cursor, 0, cursorCell);
+        if (_cursor < Query.Length)
+        {
+            // Split Query: [Before][AtCursor][After]
+            string before = Query[.._cursor];
+            char at = Query[_cursor];
+            string after = Query[(_cursor + 1)..];
+
+            // Add the "before" with normal styling
+            if (before.Length > 0)
+                block.Add(new TextSpan(before, Style.Default.WithForeground(Color.White)));
+
+            // Highlight the cursor
+            block.Add(new TextSpan(at.ToString(), Style.Default.WithTextStyle(TextStyle.Inverse)));
+
+            // Add the "after" with normal styling
+            if (after.Length > 0)
+                block.Add(new TextSpan(after, Style.Default.WithForeground(Color.White)));
+        }
+        else
+        {
+            // Cursor is at the end of the query, so just render the whole query with normal styling
+            block.Add(new TextSpan(Query, Style.Default.WithForeground(Color.White)));
+        }
+
+        // Render the text block to the surface
+        block.Render(surface);
     }
 
     public Message? HandleKey(ConsoleKeyInfo key)
