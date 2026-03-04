@@ -11,12 +11,8 @@ namespace PSFuzzySelect.UI;
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
 public class FuzzySelector(string prompt, IEnumerable<(object obj, string display)> items) : IApplication
 {
-    #region Input State
-
-    /// <summary>The current search query entered by the user</summary>
-    private string _searchQuery = string.Empty;
-
-    #endregion Input State
+    /// <summary>An instance of the Input component that manages the search query input</summary>
+    private Input _input = new(prompt, string.Empty);
 
     #region List State
 
@@ -129,7 +125,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
 
         // Compose the UI components according to the blueprint and render them to the buffer
         blueprint.Compose(
-            new Input(prompt, _searchQuery),
+            _input,
             new List(_currentMatches, _cursor),
             new StatusBar(_currentMatches.Count, _cursor)
         ).Render(surface);
@@ -155,7 +151,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
 
 
         // Handle character input for search query
-        var inputMessage = Input.HandleKey(key, _searchQuery);
+        var inputMessage = _input.HandleKey(key);
         if (inputMessage != null) return inputMessage;
 
         return null;
@@ -171,7 +167,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// </summary>
     private void RefreshList()
     {
-        _currentMatches = _matcher.Match(_items, _searchQuery);
+        _currentMatches = _matcher.Match(_items, _input.Query);
         _cursor = 0;
         _selectedIndex = -1;
     }
@@ -182,7 +178,6 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <param name="newQuery">The updated search query</param>
     private void UpdateQuery(string newQuery)
     {
-        _searchQuery = newQuery;
         RefreshList();
     }
 

@@ -4,28 +4,143 @@ using PSFuzzySelect.UI.Components.Text;
 
 namespace PSFuzzySelect.UI.Components;
 
+/// <summary>
+/// A component that allows the user to input a query string, which is used to filter the list of items.
+/// </summary>
+/// <param name="prompt">The prompt text displayed before the user's query input</param>
+/// <param name="query">The initial query string</param>
 public class Input(string prompt, string query) : IComponent
 {
+    /// <summary>The prompt text displayed before the user's query input</summary>
+    private string Prompt { get; } = prompt + ' ';
+
+    /// <summary>
+    /// The current query string entered by the user.
+    /// This is updated in response to user input and is used to filter the list of items.
+    /// </summary>
+    public string Query { get; private set; } = query;
+
+    /// <summary>The position of the cursor within the query</summary>
+    private int _cursor = query.Length;
+
     public void Render(ISurface surface)
     {
-        new TextBlock(
-            new TextSpan(prompt + " ", Style.Default.WithForeground(Color.Blue)),
-            new TextSpan(query, Style.Default.WithForeground(Color.White))
-        ).Render(surface);
+        var block = new TextBlock()
+            .Add(new TextSpan(Prompt, Style.Default.WithForeground(Color.Blue)));
+
+        if (_cursor < Query.Length)
+        {
+            // Split Query: [Before][AtCursor][After]
+            string before = Query[.._cursor];
+            char at = Query[_cursor];
+            string after = Query[(_cursor + 1)..];
+
+            // Add the "before" with normal styling
+            if (before.Length > 0)
+                block.Add(new TextSpan(before, Style.Default.WithForeground(Color.White)));
+
+            // Highlight the cursor
+            block.Add(new TextSpan(at.ToString(), Style.Default.WithForeground(Color.White).WithTextStyle(TextStyle.Inverse)));
+
+            // Add the "after" with normal styling
+            if (after.Length > 0)
+                block.Add(new TextSpan(after, Style.Default.WithForeground(Color.White)));
+        }
+        else
+        {
+            // Cursor is at the end of the query, so just render the whole query with normal styling
+            block
+                .Add(new TextSpan(Query, Style.Default.WithForeground(Color.White)))
+                .Add(new TextSpan(" ", Style.Default.WithForeground(Color.White).WithTextStyle(TextStyle.Inverse)));
+        }
+
+        // Render the text block to the surface
+        block.Render(surface);
     }
 
-    public static Message? HandleKey(ConsoleKeyInfo key, string currentQuery)
+    public Message? HandleKey(ConsoleKeyInfo key)
     {
-        // Handle character input for search query
-        if (!char.IsControl(key.KeyChar))
+        switch (key.Key)
         {
-            return new QueryChange(currentQuery + key.KeyChar);
-        }
-        else if (key.Key == ConsoleKey.Backspace && currentQuery.Length > 0)
-        {
-            return new QueryChange(currentQuery[..^1]);
+            // Cursor Navigation
+            case ConsoleKey.LeftArrow:
+                _cursor = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? Math.Max(0, FindLastWordBoundary() + 1)
+                    : Math.Max(0, _cursor - 1);
+                break;
+            case ConsoleKey.RightArrow:
+                _cursor = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? Math.Min(Query.Length, FindNextWordBoundary())
+                    : Math.Min(Query.Length, _cursor + 1);
+                break;
+            case ConsoleKey.Home:
+                _cursor = 0;
+                break;
+            case ConsoleKey.End:
+                _cursor = Query.Length;
+                break;
+
+            // Deletion
+            case ConsoleKey.Backspace:
+                if (Query.Length == 0 || _cursor == 0) break; // Nothing to remove
+
+                // Determine how many characters to remove based on whether Ctrl is held
+                var countToRemove = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? _cursor - FindLastWordBoundary() - 1
+                    : 1;
+
+                Query = Query.Remove(_cursor - countToRemove, countToRemove); // Remove the appropriate number of characters before the cursor position
+                _cursor = Math.Max(0, _cursor - countToRemove); // Move the cursor left by the number of characters removed
+                return new QueryChange(Query);
+            case ConsoleKey.Delete:
+                if (Query.Length == 0 || _cursor >= Query.Length) break; // Nothing to remove
+
+                // Determine how many characters to remove based on whether Ctrl is held
+                countToRemove = key.Modifiers.HasFlag(ConsoleModifiers.Control)
+                    ? FindNextWordBoundary() - _cursor
+                    : 1;
+
+                Query = Query.Remove(_cursor, Math.Min(countToRemove, Query.Length - _cursor)); // Remove the appropriate number of characters starting from the cursor position
+                return new QueryChange(Query);
+
+            // Character Input
+            default:
+                if (!char.IsControl(key.KeyChar))
+                {
+                    Query = Query.Insert(_cursor, key.KeyChar.ToString()); // Insert the character at the cursor position
+                    _cursor++; // Advance the cursor by 1 character
+                    return new QueryChange(Query);
+                }
+                break;
         }
 
         return null; // No relevant input to handle
     }
+
+    /// <summary>
+    /// Finds the index of the last word boundary to the left of the cursor.
+    /// A word boundary is defined as a transition between a whitespace character and a non-whitespace character.
+    /// </summary>
+    /// <returns>The index of the last word boundary to the left of the cursor (or -1 if none is found)</returns>
+    private int FindLastWordBoundary()
+    {
+        var target = _cursor - 1;
+        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Skip word
+        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Skip whitespace
+        return target;
+    }
+
+    /// <summary>
+    /// Finds the index of the next word boundary to the right of the cursor.
+    /// A word boundary is defined as a transition between a whitespace character and a non-whitespace character.
+    /// </summary>
+    /// <returns>The index of the next word boundary to the right of the cursor (or the length of the query if none is found)</returns>
+    private int FindNextWordBoundary()
+    {
+        var target = _cursor;
+        while (target < Query.Length && !char.IsWhiteSpace(Query[target])) target++; // Skip word
+        while (target < Query.Length && char.IsWhiteSpace(Query[target])) target++; // Skip whitespace
+        return target;
+    }
+
 }
