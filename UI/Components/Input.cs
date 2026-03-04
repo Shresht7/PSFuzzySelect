@@ -49,7 +49,9 @@ public class Input(string prompt, string query) : IComponent
         else
         {
             // Cursor is at the end of the query, so just render the whole query with normal styling
-            block.Add(new TextSpan(Query, Style.Default.WithForeground(Color.White)));
+            block
+                .Add(new TextSpan(Query, Style.Default.WithForeground(Color.White)))
+                .Add(new TextSpan(" ", Style.Default.WithForeground(Color.White).WithTextStyle(TextStyle.Inverse)));
         }
 
         // Render the text block to the surface
