@@ -162,8 +162,8 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// </summary>
     private void RefreshList()
     {
-        var _currentMatches = _matcher.Match(_items, _input.Query);
-        _list.SetMatches(_currentMatches);
+        var currentMatches = _matcher.Match(_items, _input.Query);
+        _list.SetMatches(currentMatches);
         _selectedIndex = -1;
     }
 
