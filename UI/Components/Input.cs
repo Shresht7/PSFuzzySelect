@@ -54,7 +54,7 @@ public class Input(string prompt, string query) : IComponent
                     ? _cursor - FindLastWordBoundary() - 1
                     : 1;
 
-                Query = Query[..^countToRemove]; // Remove the appropriate number of characters from the end of the query
+                Query = Query.Remove(_cursor - countToRemove, countToRemove); // Remove the appropriate number of characters before the cursor position
                 _cursor = Math.Max(0, _cursor - countToRemove); // Move the cursor left by the number of characters removed
                 return new QueryChange(Query);
             case ConsoleKey.Delete:
