@@ -6,31 +6,35 @@ namespace PSFuzzySelect.UI.Components;
 
 public class Input(string prompt, string query) : IComponent
 {
+    private string Prompt { get; } = prompt;
+    public string Query { get; private set; } = query;
+
     public void Render(ISurface surface)
     {
         new TextBlock(
-            new TextSpan(prompt + " ", Style.Default.WithForeground(Color.Blue)),
-            new TextSpan(query, Style.Default.WithForeground(Color.White))
+            new TextSpan(Prompt, Style.Default.WithForeground(Color.Blue)),
+            new TextSpan(Query, Style.Default.WithForeground(Color.White))
         ).Render(surface);
     }
 
-    public static Message? HandleKey(ConsoleKeyInfo key, string currentQuery)
+    public Message? HandleKey(ConsoleKeyInfo key)
     {
         // Handle character input for search query
         if (!char.IsControl(key.KeyChar))
         {
-            return new QueryChange(currentQuery + key.KeyChar);
+            Query += key.KeyChar;
+            return new QueryChange(Query);
         }
         else if (key.Key == ConsoleKey.Backspace)
         {
-            if (currentQuery.Length == 0) return null; // Nothing to remove
+            if (Query.Length == 0) return null; // Nothing to remove
 
             var countToRemove = 1; // Number of characters to remove
 
             // If Ctrl is held, remove the last word instead of just one character
             if (key.Modifiers.HasFlag(ConsoleModifiers.Control))
             {
-                var words = currentQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var words = Query.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (words.Length > 0)
                 {
                     countToRemove = words.Last().Length;
@@ -38,7 +42,8 @@ public class Input(string prompt, string query) : IComponent
             }
 
             // Remove the appropriate number of characters from the end of the query
-            return new QueryChange(currentQuery.TrimEnd()[..^countToRemove]);
+            Query = Query.TrimEnd()[..^countToRemove];
+            return new QueryChange(Query);
         }
 
         return null; // No relevant input to handle
