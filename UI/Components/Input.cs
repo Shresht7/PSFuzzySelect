@@ -45,7 +45,7 @@ public class Input(string prompt, string query) : IComponent
 
                 // Determine how many characters to remove based on whether Ctrl is held
                 var countToRemove = key.Modifiers.HasFlag(ConsoleModifiers.Control)
-                    ? Query.Length - FindLastWordBoundary() - 1
+                    ? _cursor - FindLastWordBoundary() - 1
                     : 1;
 
                 Query = Query[..^countToRemove]; // Remove the appropriate number of characters from the end of the query
