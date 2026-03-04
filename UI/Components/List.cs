@@ -22,7 +22,8 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
     public void SetMatches(List<MatchResult> newMatches)
     {
         matches = newMatches;
-        cursor = Math.Clamp(cursor, 0, Math.Max(0, matches.Count - 1));
+        cursor = 0; // Reset cursor to the top of the list whenever matches are updated
+        _scrollOffset = 0; // Reset scroll offset to ensure the top of the list is visible
     }
 
     public void Render(ISurface surface)
