@@ -74,14 +74,33 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
         }
     }
 
-    public static Message? HandleKey(ConsoleKeyInfo key)
+    public Message? HandleKey(ConsoleKeyInfo key)
     {
         return key.Key switch
         {
             ConsoleKey.Enter => new Select(),
-            ConsoleKey.UpArrow => new CursorMove(-1),
-            ConsoleKey.DownArrow => new CursorMove(1),
+            ConsoleKey.UpArrow => CursorMove(-1),
+            ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Moves the cursor up or down in the list of matches based on the provided delta value,
+    /// ensuring that the cursor stays within the bounds of the current matches.
+    /// </summary>
+    /// <param name="delta">The number of positions to move the cursor. Positive values move the cursor down, negative values move it up.</param>
+    private Message? CursorMove(int delta)
+    {
+        // If there are no matches, reset the cursor to an invalid position
+        if (matches.Count == 0)
+        {
+            cursor = -1;
+            return null;
+        }
+        // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
+        cursor = Math.Clamp(cursor + delta, 0, matches.Count - 1);
+
+        return null;
     }
 }

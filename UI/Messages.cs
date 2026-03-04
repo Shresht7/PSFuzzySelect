@@ -20,12 +20,6 @@ record class KeyEvent(ConsoleKeyInfo Key) : Message;
 record class QueryChange(string Query) : Message;
 
 /// <summary>
-/// Message indicating that the user has moved the cursor up or down in the list of matches
-/// </summary> 
-/// <param name="Delta">The amount to move the cursor. A positive value indicates moving down, a negative value indicates moving up</param>
-record class CursorMove(int Delta) : Message;
-
-/// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
 record class Select : Message;

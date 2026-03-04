@@ -16,6 +16,9 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
 
     #region List State
 
+    /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
+    private readonly List _list = new([], 0);
+
     /// <summary>
     /// The collection of items to be displayed and matched in the fuzzy selector.
     /// Each item is represented as a tuple containing the original object and its corresponding display string.
@@ -92,9 +95,6 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
-            case CursorMove msg:
-                CursorMove(msg.Delta);
-                break;
             case KeyEvent keyEvent:
                 return HandleKey(keyEvent.Key);
             case null:
@@ -126,7 +126,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
         // Compose the UI components according to the blueprint and render them to the buffer
         blueprint.Compose(
             _input,
-            new List(_currentMatches, _cursor),
+            _list,
             new StatusBar(_currentMatches.Count, _cursor)
         ).Render(surface);
     }
@@ -146,7 +146,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
         if (key.Key == ConsoleKey.Escape) return new Quit();
 
         // Handle list navigation and selection keys
-        var listMessage = List.HandleKey(key);
+        var listMessage = _list.HandleKey(key);
         if (listMessage != null) return listMessage;
 
 
@@ -181,22 +181,6 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
         RefreshList();
     }
 
-    /// <summary>
-    /// Moves the cursor up or down in the list of matches based on the provided delta value,
-    /// ensuring that the cursor stays within the bounds of the current matches.
-    /// </summary>
-    /// <param name="delta">The number of positions to move the cursor. Positive values move the cursor down, negative values move it up.</param>
-    private void CursorMove(int delta)
-    {
-        // If there are no matches, reset the cursor to an invalid position
-        if (_currentMatches.Count == 0)
-        {
-            _cursor = -1;
-            return;
-        }
-        // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
-        _cursor = Math.Clamp(_cursor + delta, 0, _currentMatches.Count - 1);
-    }
 
     /// <summary>
     /// Selects the currently highlighted item in the list of matches based on the cursor position and updates the selected index accordingly.
