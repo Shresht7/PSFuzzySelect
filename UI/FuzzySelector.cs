@@ -28,15 +28,6 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <summary>The fuzzy matcher used to match items against the search query</summary>
     private readonly FuzzyMatcher _matcher = new();
 
-    /// <summary>
-    /// The current list of match results based on the search query.
-    /// This list is updated on each render to reflect the items that match the current search query.
-    /// </summary>
-    private List<MatchResult> _currentMatches = [];
-
-    /// <summary>A cursor index to keep track of the currently selected item in the list of matches</summary>
-    private int _cursor = 0;
-
     #endregion List State
 
     #region Result
@@ -48,8 +39,8 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     private int _selectedIndex = -1;
 
     /// <summary>Gets the currently selected item, or null if no selection has been made.</summary>
-    public object? SelectedValue => _selectedIndex >= 0 && _selectedIndex < _currentMatches.Count
-        ? _currentMatches[_selectedIndex].Item
+    public object? SelectedValue => _selectedIndex >= 0 && _selectedIndex < _list.Matches.Count
+        ? _list.Matches[_selectedIndex].Item
         : null;
 
     #endregion Result
@@ -90,7 +81,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
         switch (message)
         {
             case Select:
-                SelectItem(_cursor);
+                SelectItem(_list.Cursor);
                 return new Quit(); // Exit after selection. At least until we setup multi-select
             case QueryChange msg:
                 UpdateQuery(msg.Query);
@@ -127,7 +118,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
         blueprint.Compose(
             _input,
             _list,
-            new StatusBar(_currentMatches.Count, _cursor)
+            new StatusBar(_list.Matches.Count, _list.Cursor)
         ).Render(surface);
     }
 
@@ -167,8 +158,8 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// </summary>
     private void RefreshList()
     {
-        _currentMatches = _matcher.Match(_items, _input.Query);
-        _cursor = 0;
+        var _currentMatches = _matcher.Match(_items, _input.Query);
+        _list.SetMatches(_currentMatches);
         _selectedIndex = -1;
     }
 
@@ -188,7 +179,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <param name="index">The index of the item to select.</param>
     private void SelectItem(int index)
     {
-        if (index >= 0 && index < _currentMatches.Count)
+        if (index >= 0 && index < _list.Matches.Count)
         {
             _selectedIndex = index;
         }

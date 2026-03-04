@@ -8,6 +8,10 @@ namespace PSFuzzySelect.UI.Components;
 
 public class List(List<MatchResult> matches, int cursor) : IComponent
 {
+    public IReadOnlyList<MatchResult> Matches => matches;
+
+    public int Cursor => cursor;
+
     /// <summary>
     /// Updates the list of matches and ensures the cursor remains within valid bounds.
     /// </summary>
