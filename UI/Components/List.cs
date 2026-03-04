@@ -6,16 +6,48 @@ using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class List(List<MatchResult> matches, int cursor) : IComponent
+public class List(List<MatchResult> matches) : IComponent
 {
+    /// <summary>The current list of matches to show in the UI</summary>
+    public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
+
+    /// <summary>
+    /// The current index of the highlighted item in the list of matches.
+    /// This is updated in response to user input and is used to track the user's selection.
+    /// </summary>
+    public int Cursor { get; private set; } = 0;
+
+    /// <summary>A scroll offset to determine which portion of the matches list is currently visible in the UI</summary>
+    private int _scrollOffset = 0;
+
+    /// <summary>
+    /// Updates the list of matches and ensures the cursor remains within valid bounds.
+    /// </summary>
+    /// <param name="newMatches">The new list of match results to display.</param>
+    public void SetMatches(List<MatchResult> newMatches)
+    {
+        Matches = newMatches;
+        Cursor = 0; // Reset cursor to the top of the list whenever matches are updated
+        _scrollOffset = 0; // Reset scroll offset to ensure the top of the list is visible
+    }
+
     public void Render(ISurface surface)
     {
-        var visibleMatches = matches.Take(surface.Height).ToList(); // Use surface.Height to determine how many items to display
+        if (Matches.Count == 0) return; // Don't render anything if there are no matches to display
+
+        // Scroll the list if the cursor moves outside the visible area
+        if (Cursor < _scrollOffset)
+            _scrollOffset = Cursor;
+        else if (Cursor >= _scrollOffset + surface.Height)
+            _scrollOffset = Cursor - surface.Height + 1;
+
+        // Use surface.Height to determine how many items to display
+        var visibleMatches = Matches.Skip(_scrollOffset).Take(surface.Height).ToList();
 
         for (var i = 0; i < visibleMatches.Count; i++)
         {
             var item = visibleMatches[i];
-            bool isSelected = i == cursor;
+            bool isSelected = i + _scrollOffset == Cursor;
             var cursorIndicator = isSelected ? "> " : "  ";
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
@@ -64,14 +96,35 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
         }
     }
 
-    public static Message? HandleKey(ConsoleKeyInfo key)
+    public Message? HandleKey(ConsoleKeyInfo key)
     {
         return key.Key switch
         {
             ConsoleKey.Enter => new Select(),
-            ConsoleKey.UpArrow => new CursorMove(-1),
-            ConsoleKey.DownArrow => new CursorMove(1),
+            ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
+            ConsoleKey.UpArrow => CursorMove(-1),
+            ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
+            ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Moves the cursor up or down in the list of matches based on the provided delta value,
+    /// ensuring that the cursor stays within the bounds of the current matches.
+    /// </summary>
+    /// <param name="delta">The number of positions to move the cursor. Positive values move the cursor down, negative values move it up.</param>
+    private Message? CursorMove(int delta)
+    {
+        // If there are no matches, reset the cursor to an invalid position
+        if (Matches.Count == 0)
+        {
+            Cursor = -1;
+            return null;
+        }
+        // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
+        Cursor = Math.Clamp(Cursor + delta, 0, Matches.Count - 1);
+
+        return null;
     }
 }
