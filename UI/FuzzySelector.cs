@@ -12,7 +12,7 @@ namespace PSFuzzySelect.UI;
 public class FuzzySelector(string prompt, IEnumerable<(object obj, string display)> items) : IApplication
 {
     /// <summary>An instance of the Input component that manages the search query input</summary>
-    private Input _input = new(prompt, string.Empty);
+    private readonly Input _input = new(prompt, string.Empty);
 
     #region List State
 
