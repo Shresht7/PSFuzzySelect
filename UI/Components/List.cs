@@ -96,7 +96,9 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
         return key.Key switch
         {
             ConsoleKey.Enter => new Select(),
+            ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
+            ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(matches.Count - cursor - 1),
             ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
