@@ -25,13 +25,25 @@ public class Input(string prompt, string query) : IComponent
 
     public Message? HandleKey(ConsoleKeyInfo key)
     {
+        // Handle left and right navigation
+        if (key.Key == ConsoleKey.LeftArrow)
+        {
+            if (_cursor > 0) _cursor--; // Move cursor left by 1 character
+        }
+        else if (key.Key == ConsoleKey.RightArrow)
+        {
+            if (_cursor < Query.Length) _cursor++; // Move cursor right by 1 character
+        }
+
         // Handle character input for search query
-        if (!char.IsControl(key.KeyChar))
+        else if (!char.IsControl(key.KeyChar))
         {
             Query += key.KeyChar;
             _cursor++;  // Advance the cursor by 1 character
             return new QueryChange(Query);
         }
+
+        // Handle delete and backspace
         else if (key.Key == ConsoleKey.Backspace)
         {
             if (Query.Length == 0) return null; // Nothing to remove
