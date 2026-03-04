@@ -12,6 +12,9 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
 
     public int Cursor => cursor;
 
+    /// <summary>A scroll offset to determine which portion of the matches list is currently visible in the UI</summary>
+    private int _scrollOffset = 0;
+
     /// <summary>
     /// Updates the list of matches and ensures the cursor remains within valid bounds.
     /// </summary>
@@ -24,12 +27,19 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
 
     public void Render(ISurface surface)
     {
-        var visibleMatches = matches.Take(surface.Height).ToList(); // Use surface.Height to determine how many items to display
+        // Scroll the list if the cursor moves outside the visible area
+        if (cursor < _scrollOffset)
+            _scrollOffset = cursor;
+        else if (cursor >= _scrollOffset + surface.Height)
+            _scrollOffset = cursor - surface.Height + 1;
+
+        // Use surface.Height to determine how many items to display
+        var visibleMatches = matches.Skip(_scrollOffset).Take(surface.Height).ToList();
 
         for (var i = 0; i < visibleMatches.Count; i++)
         {
             var item = visibleMatches[i];
-            bool isSelected = i == cursor;
+            bool isSelected = i + _scrollOffset == cursor;
             var cursorIndicator = isSelected ? "> " : "  ";
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
