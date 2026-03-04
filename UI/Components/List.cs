@@ -28,6 +28,8 @@ public class List(List<MatchResult> matches, int cursor) : IComponent
 
     public void Render(ISurface surface)
     {
+        if (matches.Count == 0) return; // Don't render anything if there are no matches to display
+
         // Scroll the list if the cursor moves outside the visible area
         if (cursor < _scrollOffset)
             _scrollOffset = cursor;
