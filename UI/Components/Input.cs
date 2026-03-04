@@ -4,9 +4,20 @@ using PSFuzzySelect.UI.Components.Text;
 
 namespace PSFuzzySelect.UI.Components;
 
+/// <summary>
+/// A component that allows the user to input a query string, which is used to filter the list of items.
+/// </summary>
+/// <param name="prompt">The prompt text displayed before the user's query input</param>
+/// <param name="query">The initial query string</param>
 public class Input(string prompt, string query) : IComponent
 {
+    /// <summary>The prompt text displayed before the user's query input</summary>
     private string Prompt { get; } = prompt + ' ';
+
+    /// <summary>
+    /// The current query string entered by the user.
+    /// This is updated in response to user input and is used to filter the list of items.
+    /// </summary>
     public string Query { get; private set; } = query;
 
     /// <summary>The position of the cursor within the query</summary>
