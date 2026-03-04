@@ -10,7 +10,7 @@ public class Input(string prompt, string query) : IComponent
     public string Query { get; private set; } = query;
 
     /// <summary>The position of the cursor within the query</summary>
-    private int _cursor = 0;
+    private int _cursor = query.Length;
 
     public void Render(ISurface surface)
     {
