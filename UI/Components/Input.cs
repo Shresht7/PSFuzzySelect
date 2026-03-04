@@ -38,6 +38,12 @@ public class Input(string prompt, string query) : IComponent
                     ? Math.Min(Query.Length, FindNextWordBoundary())
                     : Math.Min(Query.Length, _cursor + 1);
                 break;
+            case ConsoleKey.Home:
+                _cursor = 0;
+                break;
+            case ConsoleKey.End:
+                _cursor = Query.Length;
+                break;
 
             // Deletion
             case ConsoleKey.Backspace:
