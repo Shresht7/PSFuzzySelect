@@ -25,18 +25,25 @@ public class Input(string prompt, string query) : IComponent
 
     public Message? HandleKey(ConsoleKeyInfo key)
     {
-        // Handle left and right navigation
-        if (key.Key == ConsoleKey.LeftArrow)
+        // Handle cursor navigation
+        _cursor = key.Key switch
         {
-            if (_cursor > 0) _cursor--; // Move cursor left by 1 character
-        }
-        else if (key.Key == ConsoleKey.RightArrow)
-        {
-            if (_cursor < Query.Length) _cursor++; // Move cursor right by 1 character
-        }
+            // Move cursor to the start of the previous word
+            ConsoleKey.LeftArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => FindLastWordBoundary() + 1,
+
+            // Move cursor left by 1 character
+            ConsoleKey.LeftArrow => Math.Max(0, _cursor - 1),
+
+            // Move cursor to the start of the next word
+            ConsoleKey.RightArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => FindNextWordBoundary(),
+
+            // Move cursor right by 1 character
+            ConsoleKey.RightArrow => Math.Min(Query.Length, _cursor + 1),
+            _ => _cursor
+        };
 
         // Handle character input for search query
-        else if (!char.IsControl(key.KeyChar))
+        if (!char.IsControl(key.KeyChar))
         {
             Query += key.KeyChar;
             _cursor++;  // Advance the cursor by 1 character
