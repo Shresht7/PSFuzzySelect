@@ -112,8 +112,8 @@ public class Input(string prompt, string query) : IComponent
     private int FindLastWordBoundary()
     {
         var target = _cursor - 1;
-        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Skip any whitespace immediately to the left of the cursor
-        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Skip the word itself
+        while (target >= 0 && !char.IsWhiteSpace(Query[target])) target--; // Move left until we find a whitespace character
+        while (target >= 0 && char.IsWhiteSpace(Query[target])) target--; // Continue moving left until we find a non-whitespace character (or reach the beginning of the string)
         return target;
     }
 
