@@ -6,10 +6,12 @@ using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class List(List<MatchResult> matches) : IComponent
+public class List(List<MatchResult> matches, Func<object, string> displaySelector) : IComponent
 {
     /// <summary>The current list of matches to show in the UI</summary>
     public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
+
+    private readonly Func<object, string> _displaySelector = displaySelector;
 
     /// <summary>
     /// The current index of the highlighted item in the list of matches.
@@ -50,49 +52,52 @@ public class List(List<MatchResult> matches) : IComponent
             bool isSelected = i + _scrollOffset == Cursor;
             var cursorIndicator = isSelected ? "> " : "  ";
 
+            // Fetch the display string for the item using the provided display selector function
+            var displayString = _displaySelector(item.Item);
+
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));
 
             new TextBlock()
                 .Add(new TextSpan(cursorIndicator, Style.Default.WithForeground(Color.Cyan)))
-                .AddRange(GetHighlightedSpans(item, isSelected))
+                .AddRange(GetHighlightedSpans(displayString, item.Positions, isSelected))
                 .Add(new TextSpan($" (Score: {item.Score})", Style.Default.Dim()))
                 .Overflow(TextOverflow.Ellipsis)
                 .Render(lineSurface);
         }
     }
 
-    private static IEnumerable<TextSpan> GetHighlightedSpans(MatchResult item, bool isSelected)
+    private static IEnumerable<TextSpan> GetHighlightedSpans(string displayString, int[] positions, bool isSelected)
     {
         var baseStyle = isSelected ? Style.Default.Inverse() : Style.Default;
         var highlightStyle = baseStyle.WithForeground(Color.Yellow).Bold();
 
         // If there are no highlighted positions, return the entire string as a single span
-        if (item.Positions.Length == 0)
+        if (positions.Length == 0)
         {
-            yield return new TextSpan(item.DisplayString, baseStyle);
+            yield return new TextSpan(displayString, baseStyle);
             yield break;
         }
 
         // Otherwise, split the string into spans based on the highlighted positions
         int lastIdx = 0;    // Track the last index we processed in the string
-        foreach (var position in item.Positions)
+        foreach (var position in positions)
         {
             // Yield the non-highlighted part before the highlighted character
             if (position > lastIdx)
             {
-                yield return new TextSpan(item.DisplayString[lastIdx..position], baseStyle);
+                yield return new TextSpan(displayString[lastIdx..position], baseStyle);
             }
             // Yield the highlighted character
-            yield return new TextSpan(item.DisplayString[position].ToString(), highlightStyle);
+            yield return new TextSpan(displayString[position].ToString(), highlightStyle);
             // Update the last index
             lastIdx = position + 1;
         }
 
         // Yield any remaining non-highlighted part after the last highlighted character
-        if (lastIdx < item.DisplayString.Length)
+        if (lastIdx < displayString.Length)
         {
-            yield return new TextSpan(item.DisplayString[lastIdx..], baseStyle);
+            yield return new TextSpan(displayString[lastIdx..], baseStyle);
         }
     }
 
