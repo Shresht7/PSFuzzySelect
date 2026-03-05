@@ -136,6 +136,7 @@ public class List(
     {
         if (Cursor >= 0 && Cursor < Matches.Count)
         {
+            if (Cursor + 1 < Matches.Count) Cursor++; // Advance the cursor to the next item after selection, if possible
             return new Select(item);
         }
         return null;
