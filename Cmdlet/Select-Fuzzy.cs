@@ -17,6 +17,13 @@ public class SelectFuzzyCmdlet : PSCmdlet
     public PSObject? InputObject { get; set; }
 
     /// <summary>
+    /// Indicates whether multiple items can be selected in the fuzzy selector UI. If set to true, users can select multiple items; otherwise, only a single item can be selected.
+    /// This is implemented as a switch parameter, which means it can be used without an explicit value (e.g., -MultiSelect) to enable multi-selection mode.
+    /// </summary>
+    [Parameter]
+    public SwitchParameter MultiSelect { get; set; }
+
+    /// <summary>
     /// Properties to display and search on.
     /// If not specified, uses the object's default display properties or ToString() representation.
     /// </summary>
@@ -52,12 +59,12 @@ public class SelectFuzzyCmdlet : PSCmdlet
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(Prompt, _inputObjects, Property);
+        var selected = FuzzySelector.Show(Prompt, _inputObjects, Property, MultiSelect.IsPresent);
 
-        // Write the selected object to the pipeline if a selection was made
+        // Write the selected object (or array of objects) to the pipeline if a selection was made
         if (selected != null)
         {
-            WriteObject(selected);
+            WriteObject(selected, enumerateCollection: true);
         }
     }
 }
