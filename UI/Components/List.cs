@@ -105,7 +105,9 @@ public class List(List<MatchResult> matches, Func<object, string> displaySelecto
     {
         return key.Key switch
         {
-            ConsoleKey.Enter => new Select(),
+            ConsoleKey.Enter => new Confirm(),
+            ConsoleKey.Tab => new Select(Matches[Cursor].Item),
+            ConsoleKey.Spacebar => new Select(Matches[Cursor].Item),
             ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
             ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
