@@ -9,6 +9,8 @@ namespace PSFuzzySelect.Cmdlet;
 public class SelectFuzzyCmdlet : PSCmdlet
 {
 
+    #region Parameters
+
     /// <summary>
     /// The input object(s) to be processed by the cmdlet.
     /// This parameter accepts input from the pipeline, allowing users to pipe objects directly into the cmdlet for fuzzy selection.
@@ -37,8 +39,16 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public string Prompt { get; set; } = "Search:";
 
+    #endregion Parameters
+
+    #region Fields
+
     /// <summary>A list to hold all input objects received from the pipeline</summary>
     private readonly List<PSObject> _inputObjects = new();
+
+    #endregion Fields
+
+    #region Process
 
     /// <summary>
     /// Processes each record received from the pipeline.
@@ -52,6 +62,10 @@ public class SelectFuzzyCmdlet : PSCmdlet
             _inputObjects.Add(InputObject);
         }
     }
+
+    #endregion Process
+
+    #region End
 
     /// <summary>
     /// Called once after all input has been processed.
@@ -67,4 +81,6 @@ public class SelectFuzzyCmdlet : PSCmdlet
             WriteObject(selected, enumerateCollection: true);
         }
     }
+
+    #endregion End
 }
