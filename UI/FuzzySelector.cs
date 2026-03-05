@@ -1,5 +1,7 @@
+using System.Management.Automation;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
+using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
 
@@ -9,12 +11,13 @@ namespace PSFuzzySelect.UI;
 /// <remarks>Initializes a new instance of the FuzzySelector class</remarks>
 /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
-public class FuzzySelector(string prompt, IEnumerable<(object obj, string display)> items) : IApplication
+/// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
+public class FuzzySelector : IApplication
 {
     #region Input State
 
     /// <summary>An instance of the Input component that manages the search query input</summary>
-    private readonly Input _input = new(prompt, string.Empty);
+    private readonly Input _input;
 
     #endregion Input State
 
@@ -23,16 +26,43 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
     private readonly List _list = new([]);
 
-    /// <summary>
-    /// The collection of items to be displayed and matched in the fuzzy selector.
-    /// Each item is represented as a tuple containing the original object and its corresponding display string.
-    /// </summary>
-    private readonly IEnumerable<(object obj, string display)> _items = items;
+    #endregion List State
+
+    #region Matcher
+
+    /// <summary>The collection of items to be displayed and matched in the fuzzy selector</summary>
+    private readonly IEnumerable<object> _items;
+
+    private readonly ObjectDisplayAdapter _displayAdapter;
+    private readonly Dictionary<object, string> _displayCache = new();
 
     /// <summary>The fuzzy matcher used to match items against the search query</summary>
     private readonly FuzzyMatcher _matcher = new();
 
-    #endregion List State
+    /// <summary>
+    /// Gets the display string for the specified item, using the display adapter if available.
+    /// <param name="item">The item for which to get the display string.</param>
+    /// </summary>
+    /// <returns>The display string for the item.</returns>
+    private string GetDisplayString(object item)
+    {
+        // Check if the display string for this item is already cached to avoid redundant computations
+        if (_displayCache.TryGetValue(item, out var display)) return display;
+
+        // Generate the display string using the adapter. If the item is a PSObject,
+        // use the adapter to get the display string; otherwise, fall back to ToString()
+        display = item is PSObject psObj
+            ? _displayAdapter.GetDisplayString(psObj)
+            : item?.ToString() ?? string.Empty;
+
+        if (item != null)
+        {
+            _displayCache[item] = display;  // Cache the display string for future use
+        }
+        return display;
+    }
+
+    #endregion Matcher
 
     #region Result
 
@@ -49,6 +79,18 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
 
     #endregion Result
 
+    #region Constructor
+
+    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null)
+    {
+        _input = new(prompt, string.Empty);
+        _items = items;
+        _displayAdapter = new(properties);
+        _matcher = new();
+    }
+
+    #endregion Constructor
+
     #region Show
 
     /// <summary>
@@ -57,7 +99,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<(object obj, string display)> items)
+    public static object? Show(string prompt, IEnumerable<object> items)
     {
         var selector = new FuzzySelector(prompt, items);
         var engine = new Engine(selector);
@@ -162,7 +204,7 @@ public class FuzzySelector(string prompt, IEnumerable<(object obj, string displa
     /// </summary>
     private void RefreshList()
     {
-        var currentMatches = _matcher.Match(_items, _input.Query);
+        var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
         _selectedIndex = -1;
     }
