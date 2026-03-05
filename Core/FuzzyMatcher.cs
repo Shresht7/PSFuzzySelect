@@ -44,20 +44,22 @@ public class FuzzyMatcher
     /// </summary>
     /// <param name="items">The collection of items to match against. Each item can be of any type, such as a string or PSObject.</param>
     /// <param name="query">The search query string that the user is trying to match.</param>
+    /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public List<MatchResult> Match(IEnumerable<(object item, string display)> items, string query)
+    public List<MatchResult> Match(IEnumerable<object> items, string query, Func<object, string> displaySelector)
     {
         // No query provided, return all items with a default score of 0
         if (string.IsNullOrWhiteSpace(query))
         {
-            return items.Select(x => new MatchResult(x.item, x.display, 0, [])).ToList();
+            return items.Select(item => new MatchResult(item, displaySelector(item), 0, Array.Empty<int>())).ToList();
         }
 
         var results = new List<MatchResult>();
         var queryLower = query.ToLowerInvariant();
 
-        foreach (var (item, display) in items)
+        foreach (var item in items)
         {
+            var display = displaySelector(item);
             var matchInfo = TryMatch(display, queryLower);
             if (matchInfo.HasValue)
             {
