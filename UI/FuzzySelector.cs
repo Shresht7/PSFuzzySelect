@@ -176,7 +176,17 @@ public class FuzzySelector : IApplication
     public Message? HandleKey(ConsoleKeyInfo key)
     {
         // Handle Quit
-        if (key.Key == ConsoleKey.Escape) return new Quit();
+        if (key.Key == ConsoleKey.Escape)
+        {
+            _selectedItems.Clear(); // Clear any active selections due to cancellation
+            return new Quit();
+        }
+
+        // Handle Confirmation
+        if (key.Key == ConsoleKey.Enter)
+        {
+            return new Confirm();
+        }
 
         // Handle list navigation and selection keys
         var listMessage = _list.HandleKey(key);

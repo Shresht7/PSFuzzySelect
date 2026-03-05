@@ -126,7 +126,6 @@ public class List(
     {
         return key.Key switch
         {
-            ConsoleKey.Enter => new Confirm(),
             ConsoleKey.Tab => SelectItem(Matches[Cursor].Item),
             ConsoleKey.Spacebar => SelectItem(Matches[Cursor].Item),
             ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
