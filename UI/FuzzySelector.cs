@@ -124,8 +124,7 @@ public class FuzzySelector : IApplication
             case Confirm:
                 return ConfirmSelection();
             case Select msg:
-                SelectItem(msg.Item);
-                break;
+                return SelectItem(msg.Item);
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
