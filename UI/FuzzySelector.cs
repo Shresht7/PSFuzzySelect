@@ -14,20 +14,6 @@ namespace PSFuzzySelect.UI;
 /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
 public class FuzzySelector : IApplication
 {
-    #region Input State
-
-    /// <summary>An instance of the Input component that manages the search query input</summary>
-    private readonly Input _input;
-
-    #endregion Input State
-
-    #region List State
-
-    /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
-    private readonly List _list;
-
-    #endregion List State
-
     #region Matcher
 
     /// <summary>The collection of items to be displayed and matched in the fuzzy selector</summary>
@@ -79,13 +65,22 @@ public class FuzzySelector : IApplication
 
     #endregion Result
 
+    #region Components
+
+    /// <summary>An instance of the Input component that manages the search query input</summary>
+    private readonly Input _input;
+
+    /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
+    private readonly List _list;
+
+    #endregion Components
+
     #region Constructor
 
     public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null)
     {
         _items = items;
         _displayAdapter = new(properties);
-        _matcher = new();
 
         _input = new(prompt, string.Empty);
         _list = new([], GetDisplayString);
