@@ -4,6 +4,9 @@ using PSFuzzySelect.UI;
 
 namespace PSFuzzySelect.Cmdlet;
 
+/// <summary>
+/// A PowerShell cmdlet that provides a fuzzy selection interface for selecting items from a list of input objects.
+/// </summary>
 [Cmdlet(VerbsCommon.Select, "Fuzzy")]
 [OutputType(typeof(PSObject))]
 public class SelectFuzzyCmdlet : PSCmdlet
@@ -19,22 +22,22 @@ public class SelectFuzzyCmdlet : PSCmdlet
     public PSObject? InputObject { get; set; }
 
     /// <summary>
-    /// Indicates whether multiple items can be selected in the fuzzy selector UI. If set to true, users can select multiple items; otherwise, only a single item can be selected.
-    /// This is implemented as a switch parameter, which means it can be used without an explicit value (e.g., -MultiSelect) to enable multi-selection mode.
+    /// Indicates whether multiple items can be selected in the fuzzy selector.
+    /// If set to <see langword="true"/>, users can select multiple items; otherwise, only a single item can be selected.
     /// </summary>
     [Parameter]
     public SwitchParameter MultiSelect { get; set; }
 
     /// <summary>
     /// Properties to display and search on.
-    /// If not specified, uses the object's default display properties or ToString() representation.
+    /// If not specified, uses the object's default display properties or `ToString()` representation.
     /// </summary>
     [Parameter(Position = 0)]
     [ValidateNotNullOrEmpty]
     public string[]? Property { get; set; }
 
     /// <summary>
-    /// The prompt message to display in the fuzzy selector UI.
+    /// The prompt message to display in the fuzzy selector user-interface.
     /// </summary>
     [Parameter]
     public string Prompt { get; set; } = "Search:";
@@ -44,7 +47,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     #region Fields
 
     /// <summary>A list to hold all input objects received from the pipeline</summary>
-    private readonly List<PSObject> _inputObjects = new();
+    private readonly List<PSObject> _inputObjects = [];
 
     #endregion Fields
 
@@ -67,9 +70,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
     #region End
 
-    /// <summary>
-    /// Called once after all input has been processed.
-    /// </summary>
+    /// <summary>Called once after all input has been processed</summary>
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
