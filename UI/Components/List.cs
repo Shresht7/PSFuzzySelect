@@ -6,12 +6,20 @@ using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI.Components;
 
-public class List(List<MatchResult> matches, Func<object, string> displaySelector) : IComponent
+public class List(
+    List<MatchResult> matches,
+    bool isMultiSelect,
+    Func<object, string> displaySelector,
+    Func<object, bool> isSelected
+) : IComponent
 {
     /// <summary>The current list of matches to show in the UI</summary>
     public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
 
+    private readonly bool _isMultiSelect = isMultiSelect;
+
     private readonly Func<object, string> _displaySelector = displaySelector;
+    private readonly Func<object, bool> _isSelected = isSelected;
 
     /// <summary>
     /// The current index of the highlighted item in the list of matches.
@@ -46,11 +54,23 @@ public class List(List<MatchResult> matches, Func<object, string> displaySelecto
         // Use surface.Height to determine how many items to display
         var visibleMatches = Matches.Skip(_scrollOffset).Take(surface.Height).ToList();
 
+        // Render loop update
         for (var i = 0; i < visibleMatches.Count; i++)
         {
             var item = visibleMatches[i];
-            bool isSelected = i + _scrollOffset == Cursor;
-            var cursorIndicator = isSelected ? "> " : "  ";
+            bool isCurrent = i + _scrollOffset == Cursor;
+            bool isChecked = _isSelected(item.Item);
+
+            var cursorIndicator = isCurrent ? "❯ " : "  ";
+            var cursorStyle = isCurrent ? Style.Default.WithForeground(Color.BrightCyan).Bold() : Style.Default;
+
+            var selectionIndicator = string.Empty;
+            var selectionStyle = Style.Default.WithForeground(Color.Cyan);
+            if (_isMultiSelect)
+            {
+                selectionIndicator = isChecked ? "[◈] " : "[ ] ";
+                selectionStyle = isChecked ? selectionStyle.Bold() : selectionStyle.Dim();
+            }
 
             // Fetch the display string for the item using the provided display selector function
             var displayString = _displaySelector(item.Item);
@@ -59,17 +79,18 @@ public class List(List<MatchResult> matches, Func<object, string> displaySelecto
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));
 
             new TextBlock()
-                .Add(new TextSpan(cursorIndicator, Style.Default.WithForeground(Color.Cyan)))
-                .AddRange(GetHighlightedSpans(displayString, item.Positions, isSelected))
-                .Add(new TextSpan($" (Score: {item.Score})", Style.Default.Dim()))
+                .Add(new TextSpan(cursorIndicator, cursorStyle))
+                .Add(new TextSpan(selectionIndicator, selectionStyle))
+                .AddRange(GetHighlightedSpans(displayString, item.Positions, isCurrent, isChecked))
                 .Overflow(TextOverflow.Ellipsis)
                 .Render(lineSurface);
         }
     }
 
-    private static IEnumerable<TextSpan> GetHighlightedSpans(string displayString, int[] positions, bool isSelected)
+    private static IEnumerable<TextSpan> GetHighlightedSpans(string displayString, int[] positions, bool isCurrent, bool isSelected = false)
     {
-        var baseStyle = isSelected ? Style.Default.Inverse() : Style.Default;
+        var baseStyle = isCurrent ? Style.Default.Inverse() : Style.Default.WithForeground(Color.BrightBlack);
+        if (isSelected) baseStyle = baseStyle.WithForeground(Color.BrightWhite).Bold();
         var highlightStyle = baseStyle.WithForeground(Color.Yellow).Bold();
 
         // If there are no highlighted positions, return the entire string as a single span
@@ -105,13 +126,30 @@ public class List(List<MatchResult> matches, Func<object, string> displaySelecto
     {
         return key.Key switch
         {
-            ConsoleKey.Enter => new Select(),
+            ConsoleKey.Tab => SelectItem(Matches[Cursor].Item),
+            ConsoleKey.Spacebar => SelectItem(Matches[Cursor].Item),
             ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
             ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
             ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
+    }
+
+    /// <summary>
+    /// Creates a message to select the currently highlighted item in the list of matches.
+    /// This is triggered when the user presses the Tab or Spacebar key, indicating they want to select the current item.
+    /// </summary>
+    /// <param name="item">The item to be selected</param>
+    /// <returns>A message indicating the selection of the item, or null if the selection is invalid</returns>
+    private Select? SelectItem(object item)
+    {
+        if (Cursor >= 0 && Cursor < Matches.Count)
+        {
+            if (Cursor + 1 < Matches.Count) Cursor++; // Advance the cursor to the next item after selection, if possible
+            return new Select(item);
+        }
+        return null;
     }
 
     /// <summary>

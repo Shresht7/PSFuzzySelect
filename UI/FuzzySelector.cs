@@ -52,16 +52,11 @@ public class FuzzySelector : IApplication
 
     #region Result
 
-    /// <summary>
-    /// A selected index to keep track of the item
-    /// that the user has selected (e.g., by pressing Enter)
-    /// </summary>
-    private int _selectedIndex = -1;
+    private readonly bool _multiSelect = false;
 
-    /// <summary>Gets the currently selected item, or null if no selection has been made.</summary>
-    public object? SelectedValue => _selectedIndex >= 0 && _selectedIndex < _list.Matches.Count
-        ? _list.Matches[_selectedIndex].Item
-        : null;
+    private readonly HashSet<object> _selectedItems = new();
+
+    public object? SelectedValue => _multiSelect ? _selectedItems.ToArray() : _selectedItems.FirstOrDefault();
 
     #endregion Result
 
@@ -77,13 +72,14 @@ public class FuzzySelector : IApplication
 
     #region Constructor
 
-    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null)
+    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
     {
         _items = items;
         _displayAdapter = new(properties);
+        _multiSelect = multiSelect;
 
         _input = new(prompt, string.Empty);
-        _list = new([], GetDisplayString);
+        _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
     }
 
     #endregion Constructor
@@ -96,10 +92,11 @@ public class FuzzySelector : IApplication
     /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
     /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
+    /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null)
+    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
     {
-        var selector = new FuzzySelector(prompt, items, properties);
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
@@ -124,9 +121,10 @@ public class FuzzySelector : IApplication
     {
         switch (message)
         {
-            case Select:
-                SelectItem(_list.Cursor);
-                return new Quit(); // Exit after selection. At least until we setup multi-select
+            case Confirm:
+                return ConfirmSelection();
+            case Select msg:
+                return SelectItem(msg.Item);
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
@@ -178,7 +176,17 @@ public class FuzzySelector : IApplication
     public Message? HandleKey(ConsoleKeyInfo key)
     {
         // Handle Quit
-        if (key.Key == ConsoleKey.Escape) return new Quit();
+        if (key.Key == ConsoleKey.Escape)
+        {
+            _selectedItems.Clear(); // Clear any active selections due to cancellation
+            return new Quit();
+        }
+
+        // Handle Confirmation
+        if (key.Key == ConsoleKey.Enter)
+        {
+            return new Confirm();
+        }
 
         // Handle list navigation and selection keys
         var listMessage = _list.HandleKey(key);
@@ -204,7 +212,6 @@ public class FuzzySelector : IApplication
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
-        _selectedIndex = -1;
     }
 
     /// <summary>
@@ -220,13 +227,30 @@ public class FuzzySelector : IApplication
     /// <summary>
     /// Selects the currently highlighted item in the list of matches based on the cursor position and updates the selected index accordingly.
     /// </summary>
-    /// <param name="index">The index of the item to select.</param>
-    private void SelectItem(int index)
+    private Message? SelectItem(object item)
     {
-        if (index >= 0 && index < _list.Matches.Count)
+        if (_multiSelect)
         {
-            _selectedIndex = index;
+            if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection if already selected
         }
+        else
+        {
+            // Single-select mode: immediately confirm the selection
+            _selectedItems.Clear();
+            _selectedItems.Add(item);
+            return new Confirm();
+        }
+        return null;
+    }
+
+    private Message? ConfirmSelection()
+    {
+        // If nothing is selected via Tab, we take the one under the cursor
+        if (_selectedItems.Count == 0 && _list.Cursor >= 0 && _list.Cursor < _list.Matches.Count)
+        {
+            _selectedItems.Add(_list.Matches[_list.Cursor].Item);
+        }
+        return new Quit();
     }
 
     #endregion Actions

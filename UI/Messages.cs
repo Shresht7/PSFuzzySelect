@@ -22,7 +22,13 @@ record class QueryChange(string Query) : Message;
 /// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
-record class Select : Message;
+/// <param name="Item">The item that the user has selected</param>
+record class Select(object Item) : Message;
+
+/// <summary>
+/// Message indicating that the user has confirmed their selection, which can be used to trigger any final actions or exit the fuzzy selector
+/// </summary>
+record class Confirm : Message;
 
 /// <summary>
 /// Message indicating that the console window has been resized, containing the new width and height of the console
