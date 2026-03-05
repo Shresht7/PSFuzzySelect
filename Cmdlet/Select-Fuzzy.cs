@@ -42,6 +42,12 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public string Prompt { get; set; } = "Search:";
 
+    /// <summary>
+    /// Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.
+    /// </summary>
+    [Parameter]
+    public bool Preview { get; set; } = false;
+
     #endregion Parameters
 
     #region Fields
@@ -74,7 +80,13 @@ public class SelectFuzzyCmdlet : PSCmdlet
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(Prompt, _inputObjects, Property, MultiSelect.IsPresent);
+        var selected = FuzzySelector.Show(
+            Prompt,
+            _inputObjects,
+            Property,
+            MultiSelect.IsPresent,
+            Preview
+        );
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made
         if (selected != null)

@@ -70,13 +70,27 @@ public class FuzzySelector : IApplication
 
     #endregion Components
 
+    #region Preview
+
+    /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
+    private bool _showPreview = false;
+
+    #endregion Preview
+
     #region Constructor
 
-    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
+    public FuzzySelector(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false
+    )
     {
         _items = items;
         _displayAdapter = new(properties);
         _multiSelect = multiSelect;
+        _showPreview = showPreview;
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -93,10 +107,18 @@ public class FuzzySelector : IApplication
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
     /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
     /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
+    /// <param name="showPreview">Indicates whether to show a preview of the selected item(s).</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
+    public static object? Show(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false
+    )
     {
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect);
+        // Initialize the fuzzy selector application with the provided parameters
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
@@ -105,6 +127,7 @@ public class FuzzySelector : IApplication
         // Run the main loop of the fuzzy selector
         engine.Run();
 
+        // Return the selected value after the user has made a selection
         return selector.SelectedValue;
     }
 
