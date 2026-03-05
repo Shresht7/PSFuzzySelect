@@ -1,7 +1,6 @@
 ﻿using System.Management.Automation;
 
 using PSFuzzySelect.UI;
-using PSFuzzySelect.UI.Helpers;
 
 namespace PSFuzzySelect.Cmdlet;
 
@@ -52,12 +51,8 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void EndProcessing()
     {
-        // Generate display strings for each input object based on the specified properties or default display logic
-        var displayAdapter = new ObjectDisplayAdapter(Property);
-        var items = _inputObjects.Select(obj => ((object)obj, displayAdapter.GetDisplayString(obj)));
-
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(Prompt, items);
+        var selected = FuzzySelector.Show(Prompt, _inputObjects);
 
         // Write the selected object to the pipeline if a selection was made
         if (selected != null)
