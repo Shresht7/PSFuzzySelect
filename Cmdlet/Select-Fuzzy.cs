@@ -52,7 +52,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(Prompt, _inputObjects);
+        var selected = FuzzySelector.Show(Prompt, _inputObjects, Property);
 
         // Write the selected object to the pipeline if a selection was made
         if (selected != null)

@@ -98,10 +98,11 @@ public class FuzzySelector : IApplication
     /// </summary>
     /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
+    /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<object> items)
+    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null)
     {
-        var selector = new FuzzySelector(prompt, items);
+        var selector = new FuzzySelector(prompt, items, properties);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
