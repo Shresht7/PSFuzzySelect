@@ -24,7 +24,7 @@ public class FuzzySelector : IApplication
     #region List State
 
     /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
-    private readonly List _list = new([]);
+    private readonly List _list;
 
     #endregion List State
 
@@ -83,10 +83,12 @@ public class FuzzySelector : IApplication
 
     public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null)
     {
-        _input = new(prompt, string.Empty);
         _items = items;
         _displayAdapter = new(properties);
         _matcher = new();
+
+        _input = new(prompt, string.Empty);
+        _list = new([], GetDisplayString);
     }
 
     #endregion Constructor

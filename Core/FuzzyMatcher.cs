@@ -51,7 +51,7 @@ public class FuzzyMatcher
         // No query provided, return all items with a default score of 0
         if (string.IsNullOrWhiteSpace(query))
         {
-            return items.Select(item => new MatchResult(item, displaySelector(item), 0, Array.Empty<int>())).ToList();
+            return items.Select(item => new MatchResult(item, string.Empty, 0, Array.Empty<int>())).ToList();
         }
 
         var results = new List<MatchResult>();
