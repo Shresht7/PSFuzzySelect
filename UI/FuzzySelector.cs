@@ -79,7 +79,7 @@ public class FuzzySelector : IApplication
         _multiSelect = multiSelect;
 
         _input = new(prompt, string.Empty);
-        _list = new([], GetDisplayString, item => _selectedItems.Contains(item));
+        _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
     }
 
     #endregion Constructor

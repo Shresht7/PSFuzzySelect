@@ -37,6 +37,7 @@ public class Engine(IApplication App)
     /// </summary>
     private static void Setup()
     {
+        Console.OutputEncoding = System.Text.Encoding.UTF8; // Ensure the console can render UTF-8 characters
         string ansi = string.Concat([
             Ansi.AltBufferEnter,      // Switch to the alternate screen buffer
             Ansi.CursorHide,          // Hide the cursor for a cleaner UI experience
