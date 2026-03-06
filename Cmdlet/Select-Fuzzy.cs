@@ -60,6 +60,9 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public PreviewPosition PreviewPosition { get; set; } = PreviewPosition.Right;
 
+    [Parameter]
+    public ScriptBlock? PreviewScript { get; set; }
+
     #endregion Parameters
 
     #region Fields
@@ -99,7 +102,8 @@ public class SelectFuzzyCmdlet : PSCmdlet
             MultiSelect.IsPresent,
             Preview.IsPresent,
             PreviewSize,
-            PreviewPosition
+            PreviewPosition,
+            PreviewScript
         );
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made
