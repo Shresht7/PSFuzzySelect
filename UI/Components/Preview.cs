@@ -20,6 +20,17 @@ public class Preview : IComponent
         }
     }
 
+    public void Clear()
+    {
+        _content = string.Empty;
+        _paragraph.Clear();
+    }
+
+    public void AddLine(TextBlock text)
+    {
+        _paragraph.AddLine(text);
+    }
+
     public void Render(ISurface surface)
     {
         new Box.Box(_paragraph).Border(BorderStyle.Single).Padding(1).Render(surface);

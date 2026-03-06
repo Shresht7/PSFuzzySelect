@@ -1,8 +1,10 @@
 using System.Management.Automation;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
+using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
+using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI;
@@ -74,6 +76,37 @@ public class FuzzySelector : IApplication
 
     /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
     private bool _showPreview = false;
+
+    private Preview _preview = new();
+
+    private void UpdatePreview(int index)
+    {
+        if (index < 0 || index >= _list.Matches.Count) return; // Invalid index, do nothing
+
+        var selectedItem = _list.Matches[index].Item;
+        _preview.Clear();
+
+        if (selectedItem is PSObject psObj)
+        {
+            foreach (var prop in psObj.Properties)
+            {
+                string valString;
+                try
+                {
+                    // Need to do this because some properties throw when accessed.
+                    valString = prop.Value?.ToString() ?? "null";
+                }
+                catch
+                {
+                    valString = "Error retrieving value";
+                }
+                _preview.AddLine(new TextBlock()
+                    .Add(new TextSpan($"{prop.Name}: ", Style.Default.WithForeground(Color.Yellow)))
+                    .Add(new TextSpan(valString, Style.Default.WithForeground(Color.White)))
+                );
+            }
+        }
+    }
 
     #endregion Preview
 
@@ -186,7 +219,7 @@ public class FuzzySelector : IApplication
             new StatusBar(_list.Matches.Count, _list.Cursor)
         );
 
-        var rightPane = new Preview();
+        var rightPane = _preview;
 
         // If preview is enabled, render the left and right panes side by side; otherwise, render only the left pane
         if (_showPreview)
@@ -252,6 +285,7 @@ public class FuzzySelector : IApplication
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
+        UpdatePreview(0);
     }
 
     /// <summary>
@@ -269,6 +303,7 @@ public class FuzzySelector : IApplication
     /// </summary>
     private Message? SelectItem(object item)
     {
+        UpdatePreview(_list.Cursor); // Update the preview to show details of the currently selected item
         if (_multiSelect)
         {
             if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection if already selected
