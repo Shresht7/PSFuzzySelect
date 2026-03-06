@@ -1,4 +1,5 @@
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
 using System.Text;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
@@ -15,7 +16,7 @@ namespace PSFuzzySelect.UI;
 /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
 /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
-public class FuzzySelector : IApplication
+public class FuzzySelector : IApplication, IDisposable
 {
     #region Matcher
 
@@ -84,6 +85,12 @@ public class FuzzySelector : IApplication
 
     private ScriptBlock? _previewScript;
 
+    private Runspace? _previewRunspace;
+
+    private PowerShell? _currentPreviewPs;
+
+    private readonly object _previewLock = new();
+
     private CancellationTokenSource? _previewCts;
 
     private void UpdatePreviewAsync(int index)
@@ -95,6 +102,14 @@ public class FuzzySelector : IApplication
         _previewCts?.Dispose();
         _previewCts = new CancellationTokenSource();
         var ct = _previewCts.Token;
+
+        // Stop any in-flight preview script execution
+        lock (_previewLock)
+        {
+            _currentPreviewPs?.Stop();
+            _currentPreviewPs?.Dispose();
+            _currentPreviewPs = null;
+        }
 
         var selectedItem = _list.Matches[index].Item;
 
@@ -127,15 +142,32 @@ public class FuzzySelector : IApplication
 
     private string GeneratePreviewContent(object item)
     {
-        if (_previewScript != null)
+        if (_previewScript != null && _previewRunspace != null)
         {
             try
             {
-                var results = _previewScript.InvokeWithContext(
-                    functionsToDefine: null,
-                    variablesToDefine: new List<PSVariable> { new PSVariable("_", item) }
-                );
+                var ps = PowerShell.Create();
+                ps.Runspace = _previewRunspace;
+
+                // Store reference so it can be stopped from another thread
+                lock (_previewLock) { _currentPreviewPs = ps; }
+
+                // Set $_ and $PSItem variables in the runspace
+                _previewRunspace.SessionStateProxy.SetVariable("_", item);
+                _previewRunspace.SessionStateProxy.SetVariable("PSItem", item);
+
+                // Re-parse the script text to unbind it from the caller's runspace
+                ps.AddScript(_previewScript.ToString());
+
+                var results = ps.Invoke();
+
+                lock (_previewLock) { _currentPreviewPs = null; }
+
                 return string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
+            }
+            catch (PipelineStoppedException)
+            {
+                return string.Empty; // Script was cancelled
             }
             catch (Exception ex)
             {
@@ -197,6 +229,13 @@ public class FuzzySelector : IApplication
         _previewPosition = previewPosition;
         _previewScript = previewScript;
 
+        // Create a dedicated runspace for preview script execution
+        if (_previewScript != null)
+        {
+            _previewRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault());
+            _previewRunspace.Open();
+        }
+
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
     }
@@ -230,16 +269,23 @@ public class FuzzySelector : IApplication
     {
         // Initialize the fuzzy selector application with the provided parameters
         var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
-        var engine = new Engine(selector);
+        try
+        {
+            var engine = new Engine(selector);
 
-        // Initial refresh to populate matches before the first render
-        selector.RefreshList();
+            // Initial refresh to populate matches before the first render
+            selector.RefreshList();
 
-        // Run the main loop of the fuzzy selector
-        engine.Run();
+            // Run the main loop of the fuzzy selector
+            engine.Run();
 
-        // Return the selected value after the user has made a selection
-        return selector.SelectedValue;
+            // Return the selected value after the user has made a selection
+            return selector.SelectedValue;
+        }
+        finally
+        {
+            selector.Dispose();
+        }
     }
 
     #endregion Show
@@ -411,6 +457,30 @@ public class FuzzySelector : IApplication
     }
 
     #endregion Actions
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+
+        lock (_previewLock)
+        {
+            _currentPreviewPs?.Stop();
+            _currentPreviewPs?.Dispose();
+            _currentPreviewPs = null;
+        }
+
+        if (_previewRunspace != null)
+        {
+            _previewRunspace.Close();
+            _previewRunspace.Dispose();
+            _previewRunspace = null;
+        }
+    }
+
+    #endregion IDisposable
 }
 
 /// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
