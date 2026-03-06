@@ -114,7 +114,14 @@ public class FuzzySelector : IApplication
                     _preview.SetContent(content);
                 }
             }
-            catch (OperationCanceledException) { /* Task was cancelled! Do absolutely nothing. */ }
+            catch (OperationCanceledException)
+            {
+                // Task was cancelled; ignore.
+            }
+            catch (Exception)
+            {
+                // Swallow or handle/log unexpected exceptions here to avoid unobserved task exceptions.
+            }
         });
     }
 
