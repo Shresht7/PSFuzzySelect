@@ -351,7 +351,14 @@ public class FuzzySelector : IApplication, IDisposable
                 UpdatePreviewAsync(msg.Index);
                 break;
             case Select msg:
-                return SelectItem(msg.Item);
+                var result = SelectItem(msg.Item);
+                // If the selection didn't result in an exit (e.g. multi-select),
+                // update the preview because the cursor might have advanced.
+                if (result == null)
+                {
+                    UpdatePreviewAsync(_list.Cursor);
+                }
+                return result;
             case QueryChange msg:
                 UpdateQuery(msg.Query);
                 break;
