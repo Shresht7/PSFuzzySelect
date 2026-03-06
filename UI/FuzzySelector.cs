@@ -104,12 +104,6 @@ public class FuzzySelector : IApplication, IDisposable
         if (!_showPreview) return;
         if (index < 0 || index >= _list.Matches.Count) return;
 
-        // Grab reference under the lock, then stop outside to avoid deadlock
-        // (Stop() can block until the BeginInvoke callback completes, which also needs the lock)
-        PowerShell? psToStop;
-        lock (_previewLock) { psToStop = _currentPreviewPs; }
-        psToStop?.Stop();
-
         // Stash the item for the debounce callback
         _pendingPreviewItem = _list.Matches[index].Item;
 
@@ -150,15 +144,36 @@ public class FuzzySelector : IApplication, IDisposable
             var ps = PowerShell.Create();
             ps.Runspace = _previewRunspace;
 
-            // Swap in the new instance under the lock, then stop the old one outside
+            // Swap in the new instance under the lock
             PowerShell? psToStop;
             lock (_previewLock)
             {
                 psToStop = _currentPreviewPs;
                 _currentPreviewPs = ps;
             }
-            psToStop?.Stop();
-            psToStop?.Dispose();
+
+            // Stop the previous instance if it's still running.
+            // This is done outside the lock to avoid blocking other operations,
+            // but effectively serializes runspace access since Stop() blocks until the pipeline terminates.
+            // We do NOT Dispose here; the callback of the stopped instance will handle disposal.
+            try
+            {
+                psToStop?.Stop();
+            }
+            catch (Exception)
+            {
+                // Ignore errors during stop (e.g. if already disposed or stopped)
+            }
+
+            // Check if this instance has been superseded while we were stopping the old one
+            lock (_previewLock)
+            {
+                if (_currentPreviewPs != ps)
+                {
+                    ps.Dispose();
+                    return;
+                }
+            }
 
             // Set $_ and $PSItem variables in the runspace
             _previewRunspace!.SessionStateProxy.SetVariable("_", item);
@@ -515,3 +530,4 @@ public class FuzzySelector : IApplication, IDisposable
 
 /// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
 public enum PreviewPosition { Right, Left, Top, Bottom }
+
