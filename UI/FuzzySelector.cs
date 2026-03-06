@@ -179,12 +179,29 @@ public class FuzzySelector : IApplication
             Size.Fixed(1)           // Status bar at the bottom
         ).Gap(1);                       // Add a gap between sections
 
-        // Compose the UI components according to the blueprint and render them to the buffer
-        blueprint.Compose(
+        // Compose the UI components according to the blueprint
+        var leftPane = blueprint.Compose(
             _input,
             _list,
             new StatusBar(_list.Matches.Count, _list.Cursor)
-        ).Render(surface);
+        );
+
+        var rightPane = new Preview();
+
+        // If preview is enabled, render the left and right panes side by side; otherwise, render only the left pane
+        if (_showPreview)
+        {
+            var mainLayout = Layout.Horizontal(
+                Size.Flexible(1),   // Left pane takes up available space
+                Size.Fixed(30)     // Right pane has a fixed width for preview
+            ).Gap(2);              // Add a gap between panes
+
+            mainLayout.Compose(leftPane, rightPane).Render(surface);
+        }
+        else
+        {
+            leftPane.Render(surface);
+        }
     }
 
     #endregion Render
