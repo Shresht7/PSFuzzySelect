@@ -104,11 +104,11 @@ public class FuzzySelector : IApplication, IDisposable
         if (!_showPreview) return;
         if (index < 0 || index >= _list.Matches.Count) return;
 
-        // Stop any in-flight preview script execution
-        lock (_previewLock)
-        {
-            _currentPreviewPs?.Stop();
-        }
+        // Grab reference under the lock, then stop outside to avoid deadlock
+        // (Stop() can block until the BeginInvoke callback completes, which also needs the lock)
+        PowerShell? psToStop;
+        lock (_previewLock) { psToStop = _currentPreviewPs; }
+        psToStop?.Stop();
 
         // Stash the item for the debounce callback
         _pendingPreviewItem = _list.Matches[index].Item;
@@ -150,13 +150,15 @@ public class FuzzySelector : IApplication, IDisposable
             var ps = PowerShell.Create();
             ps.Runspace = _previewRunspace;
 
-            // Store reference so it can be stopped from UpdatePreviewAsync
+            // Swap in the new instance under the lock, then stop the old one outside
+            PowerShell? psToStop;
             lock (_previewLock)
             {
-                _currentPreviewPs?.Stop();
-                _currentPreviewPs?.Dispose();
+                psToStop = _currentPreviewPs;
                 _currentPreviewPs = ps;
             }
+            psToStop?.Stop();
+            psToStop?.Dispose();
 
             // Set $_ and $PSItem variables in the runspace
             _previewRunspace!.SessionStateProxy.SetVariable("_", item);
@@ -491,12 +493,14 @@ public class FuzzySelector : IApplication, IDisposable
     {
         _debounceTimer?.Dispose();
 
+        PowerShell? psToStop;
         lock (_previewLock)
         {
-            _currentPreviewPs?.Stop();
-            _currentPreviewPs?.Dispose();
+            psToStop = _currentPreviewPs;
             _currentPreviewPs = null;
         }
+        psToStop?.Stop();
+        psToStop?.Dispose();
 
         if (_previewRunspace != null)
         {
