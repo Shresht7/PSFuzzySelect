@@ -46,7 +46,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.
     /// </summary>
     [Parameter]
-    public bool Preview { get; set; } = false;
+    public SwitchParameter Preview { get; set; }
 
     /// <summary>
     /// The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").
@@ -97,7 +97,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
             _inputObjects,
             Property,
             MultiSelect.IsPresent,
-            Preview,
+            Preview.IsPresent,
             PreviewSize,
             PreviewPosition
         );
