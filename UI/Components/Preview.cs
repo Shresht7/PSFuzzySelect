@@ -7,23 +7,11 @@ namespace PSFuzzySelect.UI.Components;
 public class Preview : IComponent
 {
     private Paragraph _paragraph = new();
-    private string _content = string.Empty;
 
-    public string Content
+    public void SetContent(string content)
     {
-        get => _content;
-        set
-        {
-            _content = value;
-            _paragraph.Clear();
-            _paragraph = new Paragraph(value);
-        }
-    }
-
-    public void Clear()
-    {
-        _content = string.Empty;
-        _paragraph.Clear();
+        var nextParagraph = new Paragraph(content);
+        _paragraph = nextParagraph;
     }
 
     public void AddLine(TextBlock text)

@@ -1,4 +1,5 @@
 using System.Management.Automation;
+using System.Text;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Components.Text;
@@ -81,33 +82,50 @@ public class FuzzySelector : IApplication
 
     private PreviewPosition _previewPosition = PreviewPosition.Right;
 
-    private void UpdatePreview(int index)
+    private CancellationTokenSource? _previewCts;
+
+    private void UpdatePreviewAsync(int index)
     {
         if (index < 0 || index >= _list.Matches.Count) return; // Invalid index, do nothing
 
-        var selectedItem = _list.Matches[index].Item;
-        _preview.Clear();
+        // Cancel the previous pending preview update
+        _previewCts?.Cancel();
+        _previewCts = new CancellationTokenSource();
+        var ct = _previewCts.Token;
 
-        if (selectedItem is PSObject psObj)
+        var selectedItem = _list.Matches[index].Item;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                // Debounce! If the user moves again within a short frame of time, this task gets cancelled right here
+                await Task.Delay(150, ct);
+
+                // Generate the preview contents
+                string content = GeneratePreviewContent(selectedItem);
+
+                // Update the component atomically
+                if (!ct.IsCancellationRequested)
+                {
+                    _preview.SetContent(content);
+                }
+            }
+            catch (OperationCanceledException) { /* Task was cancelled! Do absolutely nothing. */ }
+        });
+    }
+
+    private string GeneratePreviewContent(object item)
+    {
+        var sb = new StringBuilder();
+        if (item is PSObject psObj)
         {
             foreach (var prop in psObj.Properties)
             {
-                string valString;
-                try
-                {
-                    // Need to do this because some properties throw when accessed.
-                    valString = prop.Value?.ToString() ?? "null";
-                }
-                catch
-                {
-                    valString = "Error retrieving value";
-                }
-                _preview.AddLine(new TextBlock()
-                    .Add(new TextSpan($"{prop.Name}: ", Style.Default.WithForeground(Color.Yellow)))
-                    .Add(new TextSpan(valString, Style.Default.WithForeground(Color.White)))
-                );
+                try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
             }
         }
+        return sb.ToString();
     }
 
     private Size _previewSize = Size.Fractional(0.5f);
@@ -207,7 +225,7 @@ public class FuzzySelector : IApplication
             case Confirm:
                 return ConfirmSelection();
             case HighlightChange msg:
-                UpdatePreview(msg.Index);
+                UpdatePreviewAsync(msg.Index);
                 break;
             case Select msg:
                 return SelectItem(msg.Item);
@@ -317,7 +335,7 @@ public class FuzzySelector : IApplication
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
-        UpdatePreview(0);
+        UpdatePreviewAsync(0);
     }
 
     /// <summary>
