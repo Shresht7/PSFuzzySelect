@@ -42,6 +42,32 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public string Prompt { get; set; } = "Search:";
 
+    /// <summary>
+    /// Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.
+    /// </summary>
+    [Parameter]
+    public SwitchParameter Preview { get; set; }
+
+    /// <summary>
+    /// The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").
+    /// </summary>
+    [Parameter]
+    public string PreviewSize { get; set; } = "50%";
+
+    /// <summary>
+    /// The position of the preview pane in the fuzzy selector interface (e.g., left, right, top, bottom).
+    /// </summary>
+    [Parameter]
+    public PreviewPosition PreviewPosition { get; set; } = PreviewPosition.Right;
+
+
+    /// <summary>
+    /// A script block used to generate the preview content for each item in the fuzzy selector interface.
+    /// The current item is provided as <c>$PSItem</c> / <c>$_</c>, and the script output is displayed in the preview pane.
+    /// </summary>
+    [Parameter]
+    public ScriptBlock? PreviewScript { get; set; }
+
     #endregion Parameters
 
     #region Fields
@@ -74,7 +100,16 @@ public class SelectFuzzyCmdlet : PSCmdlet
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(Prompt, _inputObjects, Property, MultiSelect.IsPresent);
+        var selected = FuzzySelector.Show(
+            Prompt,
+            _inputObjects,
+            Property,
+            MultiSelect.IsPresent,
+            Preview.IsPresent,
+            PreviewSize,
+            PreviewPosition,
+            PreviewScript
+        );
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made
         if (selected != null)

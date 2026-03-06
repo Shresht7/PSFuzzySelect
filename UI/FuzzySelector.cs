@@ -1,8 +1,12 @@
 using System.Management.Automation;
+using System.Management.Automation.Runspaces;
+using System.Text;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
+using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
+using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI;
@@ -12,7 +16,7 @@ namespace PSFuzzySelect.UI;
 /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
 /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
-public class FuzzySelector : IApplication
+public class FuzzySelector : IApplication, IDisposable
 {
     #region Matcher
 
@@ -70,13 +74,167 @@ public class FuzzySelector : IApplication
 
     #endregion Components
 
+    #region Preview
+
+    /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
+    private bool _showPreview = false;
+
+    private Preview _preview = new();
+
+    private PreviewPosition _previewPosition = PreviewPosition.Right;
+
+    private ScriptBlock? _previewScript;
+
+    private Runspace? _previewRunspace;
+
+    private PowerShell? _currentPreviewPs;
+
+    private readonly object _previewLock = new();
+
+    private CancellationTokenSource? _previewCts;
+
+    private void UpdatePreviewAsync(int index)
+    {
+        if (index < 0 || index >= _list.Matches.Count) return; // Invalid index, do nothing
+
+        // Cancel the previous pending preview update
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+        _previewCts = new CancellationTokenSource();
+        var ct = _previewCts.Token;
+
+        // Stop any in-flight preview script execution
+        lock (_previewLock)
+        {
+            _currentPreviewPs?.Stop();
+            _currentPreviewPs?.Dispose();
+            _currentPreviewPs = null;
+        }
+
+        var selectedItem = _list.Matches[index].Item;
+
+        Task.Run(async () =>
+        {
+            try
+            {
+                // Debounce! If the user moves again within a short frame of time, this task gets cancelled right here
+                await Task.Delay(150, ct);
+
+                // Generate the preview contents
+                string content = GeneratePreviewContent(selectedItem);
+
+                // Update the component atomically
+                if (!ct.IsCancellationRequested)
+                {
+                    _preview.SetContent(content);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Task was cancelled; ignore.
+            }
+            catch (Exception)
+            {
+                // Swallow or handle/log unexpected exceptions here to avoid unobserved task exceptions.
+            }
+        });
+    }
+
+    private string GeneratePreviewContent(object item)
+    {
+        if (_previewScript != null && _previewRunspace != null)
+        {
+            try
+            {
+                var ps = PowerShell.Create();
+                ps.Runspace = _previewRunspace;
+
+                // Store reference so it can be stopped from another thread
+                lock (_previewLock) { _currentPreviewPs = ps; }
+
+                // Set $_ and $PSItem variables in the runspace
+                _previewRunspace.SessionStateProxy.SetVariable("_", item);
+                _previewRunspace.SessionStateProxy.SetVariable("PSItem", item);
+
+                // Re-parse the script text to unbind it from the caller's runspace
+                ps.AddScript(_previewScript.ToString());
+
+                var results = ps.Invoke();
+
+                lock (_previewLock) { _currentPreviewPs = null; }
+
+                return string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
+            }
+            catch (PipelineStoppedException)
+            {
+                return string.Empty; // Script was cancelled
+            }
+            catch (Exception ex)
+            {
+                return $"Error generating preview: {ex.Message}";
+            }
+        }
+        else
+        {
+            var sb = new StringBuilder();
+            if (item is PSObject psObj)
+            {
+                foreach (var prop in psObj.Properties)
+                {
+                    try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
+                }
+            }
+            return sb.ToString();
+        }
+    }
+
+    private Size _previewSize = Size.Fractional(0.5f);
+
+    private Size GetPreviewSize(string previewSize)
+    {
+        if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
+        {
+            return Size.Fractional(percentage / 100.0f);
+        }
+        else if (int.TryParse(previewSize, out var fixedWidth))
+        {
+            return Size.Fixed(fixedWidth);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid preview size format. Use a percentage (e.g., '50%') or a fixed width (e.g., '30').");
+        }
+    }
+
+    #endregion Preview
+
     #region Constructor
 
-    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
+    public FuzzySelector(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false,
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
+    )
     {
         _items = items;
         _displayAdapter = new(properties);
         _multiSelect = multiSelect;
+        _showPreview = showPreview;
+        _previewSize = GetPreviewSize(previewSize);
+        _previewPosition = previewPosition;
+        _previewScript = previewScript;
+
+        // Create a dedicated runspace for preview script execution
+        if (_previewScript != null)
+        {
+            _previewRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault());
+            _previewRunspace.Open();
+        }
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -93,19 +251,41 @@ public class FuzzySelector : IApplication
     /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
     /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
     /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
+    /// <param name="showPreview">Indicates whether to show a preview of the selected item(s).</param>
+    /// <param name="previewSize">The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").</param>
+    /// <param name="previewPosition">The position of the preview pane in the fuzzy selector interface (e.g., left, right, top, bottom).</param>
+    /// <param name="previewScript">An optional script block to generate custom preview content based on the selected item.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
+    public static object? Show(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false,
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
+    )
     {
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect);
-        var engine = new Engine(selector);
+        // Initialize the fuzzy selector application with the provided parameters
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
+        try
+        {
+            var engine = new Engine(selector);
 
-        // Initial refresh to populate matches before the first render
-        selector.RefreshList();
+            // Initial refresh to populate matches before the first render
+            selector.RefreshList();
 
-        // Run the main loop of the fuzzy selector
-        engine.Run();
+            // Run the main loop of the fuzzy selector
+            engine.Run();
 
-        return selector.SelectedValue;
+            // Return the selected value after the user has made a selection
+            return selector.SelectedValue;
+        }
+        finally
+        {
+            selector.Dispose();
+        }
     }
 
     #endregion Show
@@ -123,6 +303,9 @@ public class FuzzySelector : IApplication
         {
             case Confirm:
                 return ConfirmSelection();
+            case HighlightChange msg:
+                UpdatePreviewAsync(msg.Index);
+                break;
             case Select msg:
                 return SelectItem(msg.Item);
             case QueryChange msg:
@@ -156,12 +339,31 @@ public class FuzzySelector : IApplication
             Size.Fixed(1)           // Status bar at the bottom
         ).Gap(1);                       // Add a gap between sections
 
-        // Compose the UI components according to the blueprint and render them to the buffer
-        blueprint.Compose(
+        // Compose the UI components according to the blueprint
+        var leftPane = blueprint.Compose(
             _input,
             _list,
             new StatusBar(_list.Matches.Count, _list.Cursor)
-        ).Render(surface);
+        );
+        var rightPane = _preview;
+
+        // If preview is enabled, render the left and right panes side by side; otherwise, render only the left pane
+        if (_showPreview)
+        {
+            var mainLayout = _previewPosition switch
+            {
+                PreviewPosition.Right => Layout.Horizontal(Size.Flexible(1), _previewSize).Gap(2).Compose(leftPane, rightPane),
+                PreviewPosition.Left => Layout.Horizontal(_previewSize, Size.Flexible(1)).Gap(2).Compose(rightPane, leftPane),
+                PreviewPosition.Top => Layout.Vertical(_previewSize, Size.Flexible(1)).Gap(1).Compose(rightPane, leftPane),
+                PreviewPosition.Bottom => Layout.Vertical(Size.Flexible(1), _previewSize).Gap(1).Compose(leftPane, rightPane),
+                _ => throw new NotImplementedException("Unsupported preview position"),
+            };
+            mainLayout.Render(surface);
+        }
+        else
+        {
+            leftPane.Render(surface);
+        }
     }
 
     #endregion Render
@@ -212,6 +414,7 @@ public class FuzzySelector : IApplication
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
+        UpdatePreviewAsync(0);
     }
 
     /// <summary>
@@ -254,4 +457,31 @@ public class FuzzySelector : IApplication
     }
 
     #endregion Actions
+
+    #region IDisposable
+
+    public void Dispose()
+    {
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+
+        lock (_previewLock)
+        {
+            _currentPreviewPs?.Stop();
+            _currentPreviewPs?.Dispose();
+            _currentPreviewPs = null;
+        }
+
+        if (_previewRunspace != null)
+        {
+            _previewRunspace.Close();
+            _previewRunspace.Dispose();
+            _previewRunspace = null;
+        }
+    }
+
+    #endregion IDisposable
 }
+
+/// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
+public enum PreviewPosition { Right, Left, Top, Bottom }

@@ -20,6 +20,12 @@ record class KeyEvent(ConsoleKeyInfo Key) : Message;
 record class QueryChange(string Query) : Message;
 
 /// <summary>
+/// Message indicating that the highlighted item in the list of matches has changed, containing the index of the newly highlighted item
+/// </summary>
+/// <param name="Index">The index of the newly highlighted item</param>
+record class HighlightChange(int Index) : Message;
+
+/// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
 /// <param name="Item">The item that the user has selected</param>
