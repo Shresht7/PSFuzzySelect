@@ -79,6 +79,8 @@ public class FuzzySelector : IApplication
 
     private Preview _preview = new();
 
+    private PreviewPosition _previewPosition = PreviewPosition.Right;
+
     private void UpdatePreview(int index)
     {
         if (index < 0 || index >= _list.Matches.Count) return; // Invalid index, do nothing
@@ -136,7 +138,8 @@ public class FuzzySelector : IApplication
         string[]? properties = null,
         bool multiSelect = false,
         bool showPreview = false,
-        string previewSize = "50%"
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
         _items = items;
@@ -144,6 +147,7 @@ public class FuzzySelector : IApplication
         _multiSelect = multiSelect;
         _showPreview = showPreview;
         _previewSize = GetPreviewSize(previewSize);
+        _previewPosition = previewPosition;
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -169,11 +173,12 @@ public class FuzzySelector : IApplication
         string[]? properties = null,
         bool multiSelect = false,
         bool showPreview = false,
-        string previewSize = "50%"
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
         // Initialize the fuzzy selector application with the provided parameters
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize);
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
@@ -243,18 +248,20 @@ public class FuzzySelector : IApplication
             _list,
             new StatusBar(_list.Matches.Count, _list.Cursor)
         );
-
         var rightPane = _preview;
 
         // If preview is enabled, render the left and right panes side by side; otherwise, render only the left pane
         if (_showPreview)
         {
-            var mainLayout = Layout.Horizontal(
-                Size.Flexible(1),   // Left pane takes up available space
-                _previewSize        // Right pane (preview) takes up specified size
-            ).Gap(2);              // Add a gap between panes
-
-            mainLayout.Compose(leftPane, rightPane).Render(surface);
+            var mainLayout = _previewPosition switch
+            {
+                PreviewPosition.Right => Layout.Horizontal(Size.Flexible(1), _previewSize).Gap(2).Compose(leftPane, rightPane),
+                PreviewPosition.Left => Layout.Horizontal(_previewSize, Size.Flexible(1)).Gap(2).Compose(rightPane, leftPane),
+                PreviewPosition.Top => Layout.Vertical(_previewSize, Size.Flexible(1)).Gap(1).Compose(rightPane, leftPane),
+                PreviewPosition.Bottom => Layout.Vertical(Size.Flexible(1), _previewSize).Gap(1).Compose(leftPane, rightPane),
+                _ => throw new NotImplementedException("Unsupported preview position"),
+            };
+            mainLayout.Render(surface);
         }
         else
         {
@@ -354,3 +361,6 @@ public class FuzzySelector : IApplication
 
     #endregion Actions
 }
+
+/// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
+public enum PreviewPosition { Right, Left, Top, Bottom }
