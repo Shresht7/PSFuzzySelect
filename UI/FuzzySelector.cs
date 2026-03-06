@@ -82,6 +82,8 @@ public class FuzzySelector : IApplication
 
     private PreviewPosition _previewPosition = PreviewPosition.Right;
 
+    private ScriptBlock? _previewScript;
+
     private CancellationTokenSource? _previewCts;
 
     private void UpdatePreviewAsync(int index)
@@ -117,15 +119,33 @@ public class FuzzySelector : IApplication
 
     private string GeneratePreviewContent(object item)
     {
-        var sb = new StringBuilder();
-        if (item is PSObject psObj)
+        if (_previewScript != null)
         {
-            foreach (var prop in psObj.Properties)
+            try
             {
-                try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
+                var results = _previewScript.InvokeWithContext(
+                    functionsToDefine: null,
+                    variablesToDefine: new List<PSVariable> { new PSVariable("_", item) }
+                );
+                return string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
+            }
+            catch (Exception ex)
+            {
+                return $"Error generating preview: {ex.Message}";
             }
         }
-        return sb.ToString();
+        else
+        {
+            var sb = new StringBuilder();
+            if (item is PSObject psObj)
+            {
+                foreach (var prop in psObj.Properties)
+                {
+                    try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
+                }
+            }
+            return sb.ToString();
+        }
     }
 
     private Size _previewSize = Size.Fractional(0.5f);
@@ -157,7 +177,8 @@ public class FuzzySelector : IApplication
         bool multiSelect = false,
         bool showPreview = false,
         string previewSize = "50%",
-        PreviewPosition previewPosition = PreviewPosition.Right
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
     )
     {
         _items = items;
@@ -166,6 +187,7 @@ public class FuzzySelector : IApplication
         _showPreview = showPreview;
         _previewSize = GetPreviewSize(previewSize);
         _previewPosition = previewPosition;
+        _previewScript = previewScript;
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -184,6 +206,8 @@ public class FuzzySelector : IApplication
     /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
     /// <param name="showPreview">Indicates whether to show a preview of the selected item(s).</param>
     /// <param name="previewSize">The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").</param>
+    /// <param name="previewPosition">The position of the preview pane in the fuzzy selector interface (e.g., left, right, top, bottom).</param>
+    /// <param name="previewScript">An optional script block to generate custom preview content based on the selected item.</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
     public static object? Show(
         string prompt,
@@ -192,11 +216,12 @@ public class FuzzySelector : IApplication
         bool multiSelect = false,
         bool showPreview = false,
         string previewSize = "50%",
-        PreviewPosition previewPosition = PreviewPosition.Right
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
     )
     {
         // Initialize the fuzzy selector application with the provided parameters
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition);
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
