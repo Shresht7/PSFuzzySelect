@@ -91,101 +91,128 @@ public class FuzzySelector : IApplication, IDisposable
 
     private readonly object _previewLock = new();
 
-    private CancellationTokenSource? _previewCts;
+    private Timer? _debounceTimer;
 
+    private object? _pendingPreviewItem;
+
+    /// <summary>
+    /// Schedules an asynchronous preview update for the item at the given index.
+    /// Debounces rapid cursor movements using a timer and cancels any in-flight preview script.
+    /// </summary>
     private void UpdatePreviewAsync(int index)
     {
-        if (index < 0 || index >= _list.Matches.Count) return; // Invalid index, do nothing
-
-        // Cancel the previous pending preview update
-        _previewCts?.Cancel();
-        _previewCts?.Dispose();
-        _previewCts = new CancellationTokenSource();
-        var ct = _previewCts.Token;
+        if (!_showPreview) return;
+        if (index < 0 || index >= _list.Matches.Count) return;
 
         // Stop any in-flight preview script execution
         lock (_previewLock)
         {
             _currentPreviewPs?.Stop();
-            _currentPreviewPs?.Dispose();
-            _currentPreviewPs = null;
         }
 
-        var selectedItem = _list.Matches[index].Item;
+        // Stash the item for the debounce callback
+        _pendingPreviewItem = _list.Matches[index].Item;
 
-        Task.Run(async () =>
-        {
-            try
-            {
-                // Debounce! If the user moves again within a short frame of time, this task gets cancelled right here
-                await Task.Delay(150, ct);
-
-                // Generate the preview contents
-                string content = GeneratePreviewContent(selectedItem);
-
-                // Update the component atomically
-                if (!ct.IsCancellationRequested)
-                {
-                    _preview.SetContent(content);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Task was cancelled; ignore.
-            }
-            catch (Exception)
-            {
-                // Swallow or handle/log unexpected exceptions here to avoid unobserved task exceptions.
-            }
-        });
+        // Reset or create the debounce timer (fires once after 150ms of inactivity)
+        if (_debounceTimer == null)
+            _debounceTimer = new Timer(OnDebounceElapsed, null, 150, Timeout.Infinite);
+        else
+            _debounceTimer.Change(150, Timeout.Infinite);
     }
 
-    private string GeneratePreviewContent(object item)
+    /// <summary>
+    /// Timer callback that fires after the debounce period elapses.
+    /// Generates and displays the preview content for the pending item.
+    /// </summary>
+    private void OnDebounceElapsed(object? state)
     {
+        var item = _pendingPreviewItem;
+        if (item == null) return;
+
         if (_previewScript != null && _previewRunspace != null)
         {
-            try
-            {
-                var ps = PowerShell.Create();
-                ps.Runspace = _previewRunspace;
-
-                // Store reference so it can be stopped from another thread
-                lock (_previewLock) { _currentPreviewPs = ps; }
-
-                // Set $_ and $PSItem variables in the runspace
-                _previewRunspace.SessionStateProxy.SetVariable("_", item);
-                _previewRunspace.SessionStateProxy.SetVariable("PSItem", item);
-
-                // Re-parse the script text to unbind it from the caller's runspace
-                ps.AddScript(_previewScript.ToString());
-
-                var results = ps.Invoke();
-
-                lock (_previewLock) { _currentPreviewPs = null; }
-
-                return string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
-            }
-            catch (PipelineStoppedException)
-            {
-                return string.Empty; // Script was cancelled
-            }
-            catch (Exception ex)
-            {
-                return $"Error generating preview: {ex.Message}";
-            }
+            InvokePreviewScriptAsync(item);
         }
         else
         {
-            var sb = new StringBuilder();
-            if (item is PSObject psObj)
-            {
-                foreach (var prop in psObj.Properties)
-                {
-                    try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
-                }
-            }
-            return sb.ToString();
+            _preview.SetContent(GenerateDefaultPreview(item));
         }
+    }
+
+    /// <summary>
+    /// Invokes the preview script asynchronously using BeginInvoke on the dedicated preview runspace.
+    /// The script receives the item as $_ and $PSItem.
+    /// </summary>
+    private void InvokePreviewScriptAsync(object item)
+    {
+        try
+        {
+            var ps = PowerShell.Create();
+            ps.Runspace = _previewRunspace;
+
+            // Store reference so it can be stopped from UpdatePreviewAsync
+            lock (_previewLock)
+            {
+                _currentPreviewPs?.Stop();
+                _currentPreviewPs?.Dispose();
+                _currentPreviewPs = ps;
+            }
+
+            // Set $_ and $PSItem variables in the runspace
+            _previewRunspace!.SessionStateProxy.SetVariable("_", item);
+            _previewRunspace.SessionStateProxy.SetVariable("PSItem", item);
+
+            // Re-parse the script text to unbind it from the caller's runspace
+            ps.AddScript(_previewScript!.ToString());
+
+            // Fire-and-forget async invocation; callback updates the preview component
+            ps.BeginInvoke<PSObject>(null, null, ar =>
+            {
+                try
+                {
+                    var results = ps.EndInvoke(ar);
+                    var content = string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
+                    _preview.SetContent(content);
+                }
+                catch (PipelineStoppedException)
+                {
+                    // Script was cancelled; ignore.
+                }
+                catch (Exception ex)
+                {
+                    _preview.SetContent($"Error generating preview: {ex.Message}");
+                }
+                finally
+                {
+                    ps.Dispose();
+                    lock (_previewLock)
+                    {
+                        if (_currentPreviewPs == ps)
+                            _currentPreviewPs = null;
+                    }
+                }
+            }, null);
+        }
+        catch (Exception ex)
+        {
+            _preview.SetContent($"Error generating preview: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Generates default preview content by enumerating the properties of a PSObject.
+    /// </summary>
+    private static string GenerateDefaultPreview(object item)
+    {
+        var sb = new StringBuilder();
+        if (item is PSObject psObj)
+        {
+            foreach (var prop in psObj.Properties)
+            {
+                try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
+            }
+        }
+        return sb.ToString();
     }
 
     private Size _previewSize = Size.Fractional(0.5f);
@@ -462,8 +489,7 @@ public class FuzzySelector : IApplication, IDisposable
 
     public void Dispose()
     {
-        _previewCts?.Cancel();
-        _previewCts?.Dispose();
+        _debounceTimer?.Dispose();
 
         lock (_previewLock)
         {
