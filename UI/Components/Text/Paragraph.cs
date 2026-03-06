@@ -7,7 +7,7 @@ public class Paragraph : IComponent
 {
 
     private readonly List<TextBlock> _lines = [];
-    private int ScrollOffset { get; set; } = 0;
+    public int ScrollOffset { get; set; } = 0;
 
     public Paragraph(string content)
     {
