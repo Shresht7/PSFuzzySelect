@@ -92,6 +92,7 @@ public class FuzzySelector : IApplication
 
         // Cancel the previous pending preview update
         _previewCts?.Cancel();
+        _previewCts?.Dispose();
         _previewCts = new CancellationTokenSource();
         var ct = _previewCts.Token;
 
