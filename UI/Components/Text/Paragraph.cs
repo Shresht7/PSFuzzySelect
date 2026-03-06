@@ -11,7 +11,10 @@ public class Paragraph : IComponent
 
     public Paragraph(string content)
     {
-        _lines = content.Split(['\r', '\n']).Select(line => new TextBlock(line)).ToList();
+        _lines = content
+            .Split(["\r\n", "\n", "\r"], System.StringSplitOptions.None)
+            .Select(line => new TextBlock(line))
+            .ToList();
     }
 
     public Paragraph(params TextBlock[] lines)

@@ -24,8 +24,8 @@ public class Preview : IComponent
         new Box.Box(_paragraph).Border(BorderStyle.Single).Padding(1).Render(surface);
     }
 
-    public void Scroll(int Delta)
+    public void Scroll(int delta)
     {
-        _paragraph.ScrollOffset = Math.Max(0, _paragraph.ScrollOffset + Delta);
+        _paragraph.ScrollOffset = Math.Max(0, _paragraph.ScrollOffset + delta);
     }
 }
