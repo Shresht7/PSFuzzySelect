@@ -60,6 +60,11 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public PreviewPosition PreviewPosition { get; set; } = PreviewPosition.Right;
 
+
+    /// <summary>
+    /// A script block used to generate the preview content for each item in the fuzzy selector interface.
+    /// The current item is provided as <c>$PSItem</c> / <c>$_</c>, and the script output is displayed in the preview pane.
+    /// </summary>
     [Parameter]
     public ScriptBlock? PreviewScript { get; set; }
 
