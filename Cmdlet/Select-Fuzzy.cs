@@ -48,6 +48,12 @@ public class SelectFuzzyCmdlet : PSCmdlet
     [Parameter]
     public bool Preview { get; set; } = false;
 
+    /// <summary>
+    /// The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").
+    /// </summary>
+    [Parameter]
+    public string PreviewSize { get; set; } = "50%";
+
     #endregion Parameters
 
     #region Fields
@@ -85,7 +91,8 @@ public class SelectFuzzyCmdlet : PSCmdlet
             _inputObjects,
             Property,
             MultiSelect.IsPresent,
-            Preview
+            Preview,
+            PreviewSize
         );
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made

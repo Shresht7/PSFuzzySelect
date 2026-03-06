@@ -108,6 +108,24 @@ public class FuzzySelector : IApplication
         }
     }
 
+    private Size _previewSize = Size.Fractional(0.5f);
+
+    private Size GetPreviewSize(string previewSize)
+    {
+        if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
+        {
+            return Size.Fractional(percentage / 100.0f);
+        }
+        else if (int.TryParse(previewSize, out var fixedWidth))
+        {
+            return Size.Fixed(fixedWidth);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid preview size format. Use a percentage (e.g., '50%') or a fixed width (e.g., '30').");
+        }
+    }
+
     #endregion Preview
 
     #region Constructor
@@ -117,13 +135,15 @@ public class FuzzySelector : IApplication
         IEnumerable<object> items,
         string[]? properties = null,
         bool multiSelect = false,
-        bool showPreview = false
+        bool showPreview = false,
+        string previewSize = "50%"
     )
     {
         _items = items;
         _displayAdapter = new(properties);
         _multiSelect = multiSelect;
         _showPreview = showPreview;
+        _previewSize = GetPreviewSize(previewSize);
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -141,17 +161,19 @@ public class FuzzySelector : IApplication
     /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
     /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
     /// <param name="showPreview">Indicates whether to show a preview of the selected item(s).</param>
+    /// <param name="previewSize">The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").</param>
     /// <returns>The selected item, or null if no selection was made.</returns>
     public static object? Show(
         string prompt,
         IEnumerable<object> items,
         string[]? properties = null,
         bool multiSelect = false,
-        bool showPreview = false
+        bool showPreview = false,
+        string previewSize = "50%"
     )
     {
         // Initialize the fuzzy selector application with the provided parameters
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview);
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize);
         var engine = new Engine(selector);
 
         // Initial refresh to populate matches before the first render
@@ -226,7 +248,7 @@ public class FuzzySelector : IApplication
         {
             var mainLayout = Layout.Horizontal(
                 Size.Flexible(1),   // Left pane takes up available space
-                Size.Fixed(30)     // Right pane has a fixed width for preview
+                _previewSize        // Right pane (preview) takes up specified size
             ).Gap(2);              // Add a gap between panes
 
             mainLayout.Compose(leftPane, rightPane).Render(surface);
