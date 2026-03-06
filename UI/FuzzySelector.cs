@@ -201,6 +201,9 @@ public class FuzzySelector : IApplication
         {
             case Confirm:
                 return ConfirmSelection();
+            case HighlightChange msg:
+                UpdatePreview(msg.Index);
+                break;
             case Select msg:
                 return SelectItem(msg.Item);
             case QueryChange msg:
@@ -325,7 +328,6 @@ public class FuzzySelector : IApplication
     /// </summary>
     private Message? SelectItem(object item)
     {
-        UpdatePreview(_list.Cursor); // Update the preview to show details of the currently selected item
         if (_multiSelect)
         {
             if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection if already selected

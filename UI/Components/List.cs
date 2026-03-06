@@ -157,7 +157,7 @@ public class List(
     /// ensuring that the cursor stays within the bounds of the current matches.
     /// </summary>
     /// <param name="delta">The number of positions to move the cursor. Positive values move the cursor down, negative values move it up.</param>
-    private Message? CursorMove(int delta)
+    private HighlightChange? CursorMove(int delta)
     {
         // If there are no matches, reset the cursor to an invalid position
         if (Matches.Count == 0)
@@ -165,9 +165,10 @@ public class List(
             Cursor = -1;
             return null;
         }
+
         // Move the cursor by the specified delta, ensuring it stays within the bounds of the matches list
         Cursor = Math.Clamp(Cursor + delta, 0, Matches.Count - 1);
 
-        return null;
+        return new HighlightChange(Cursor);
     }
 }
