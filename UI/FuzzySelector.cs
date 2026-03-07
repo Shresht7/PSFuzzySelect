@@ -465,16 +465,17 @@ public class FuzzySelector : IApplication, IDisposable
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
-        UpdatePreviewAsync(0);
     }
 
     /// <summary>
     /// Updates the search query with the new value entered by the user and refreshes the list of matches accordingly.
     /// </summary>
     /// <param name="newQuery">The updated search query</param>
-    private void UpdateQuery(string newQuery)
+    private HighlightChange? UpdateQuery(string newQuery)
     {
         RefreshList();
+        return new HighlightChange(0); // Reset highlight to the top of the list after refreshing matches
+
     }
 
 
