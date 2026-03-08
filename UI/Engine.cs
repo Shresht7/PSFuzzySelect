@@ -104,9 +104,6 @@ public class Engine(IApplication App)
                 engine._getMatchItem = selector.GetMatchItem;
             }
 
-            // Initial refresh to populate matches before the first render
-            selector.RefreshList();
-
             // Run the main loop of the fuzzy selector
             engine.Run();
 

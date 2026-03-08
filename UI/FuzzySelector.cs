@@ -8,10 +8,6 @@ using PSFuzzySelect.UI.Surface;
 namespace PSFuzzySelect.UI;
 
 /// <summary>The main fuzzy selector application component. It manages the application state and user interactions.</summary>
-/// <remarks>Initializes a new instance of the FuzzySelector class</remarks>
-/// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
-/// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
-/// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
 public class FuzzySelector : IApplication
 {
     #region Matcher
@@ -129,6 +125,9 @@ public class FuzzySelector : IApplication
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
+
+        // Initial refresh to populate matches before the first render
+        RefreshList();
     }
 
     #endregion Constructor
@@ -253,7 +252,7 @@ public class FuzzySelector : IApplication
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    internal void RefreshList()
+    private void RefreshList()
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);
