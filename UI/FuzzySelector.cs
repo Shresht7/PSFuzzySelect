@@ -135,39 +135,18 @@ public class FuzzySelector : IApplication
     #region Update
 
     /// <summary>
-    /// Updates the state of the fuzzy selector based on the received message, which can represent various user actions
-    /// such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
+    /// Updates the state of the fuzzy selector based on the received message.
+    /// Each case dispatches to a handler that performs the state change and returns an optional follow-up message.
     /// </summary>
-    /// <param name="message">The message representing a user action.</param>
-    public Message? Update(Message? message)
+    public Message? Update(Message? message) => message switch
     {
-        switch (message)
-        {
-            case Confirm:
-                return ConfirmSelection();
-            case Select msg:
-                var selectResult = SelectItem(msg.Item);
-                if (selectResult != null) return selectResult; // Confirm in single-select mode
-                return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
-            case QueryChange:
-                RefreshList();
-                return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
-            case UpdatePreview msg:
-                _preview.SetContent(msg.Content);
-                break;
-            case KeyEvent keyEvent:
-                var keyResult = HandleKey(keyEvent.Key);
-                // Translate HighlightChange into a RequestPreview when preview is active
-                if (keyResult is HighlightChange hc && _showPreview)
-                    return new RequestPreview(GetMatchItem(hc.Index));
-                return keyResult;
-            case null:
-            default:
-                // No message to process, do nothing
-                break;
-        }
-        return null;
-    }
+        KeyEvent e => HandleKey(e.Key),
+        QueryChange => HandleQueryChange(),
+        Select e => HandleSelect(e.Item),
+        Confirm => HandleConfirm(),
+        UpdatePreview e => HandleUpdatePreview(e.Content),
+        _ => null,
+    };
 
     #endregion Update
 
@@ -223,7 +202,7 @@ public class FuzzySelector : IApplication
     /// backspace for editing, and special keys for selection and exit.
     /// </summary>
     /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
-    public Message? HandleKey(ConsoleKeyInfo key)
+    private Message? HandleKey(ConsoleKeyInfo key)
     {
         // Handle Quit
         if (key.Key == ConsoleKey.Escape)
@@ -240,8 +219,13 @@ public class FuzzySelector : IApplication
 
         // Handle list navigation and selection keys
         var listMessage = _list.HandleKey(key);
-        if (listMessage != null) return listMessage;
-
+        if (listMessage != null)
+        {
+            // Translate HighlightChange into a RequestPreview when preview is active
+            if (listMessage is HighlightChange hc && _showPreview)
+                return new RequestPreview(GetMatchItem(hc.Index));
+            return listMessage;
+        }
 
         // Handle character input for search query
         var inputMessage = _input.HandleKey(key);
@@ -264,36 +248,52 @@ public class FuzzySelector : IApplication
         _list.SetMatches(currentMatches);
     }
 
-
-
+    /// <summary>
+    /// Handles a query change by refreshing the match list and optionally requesting a preview for the new top item.
+    /// </summary>
+    private Message? HandleQueryChange()
+    {
+        RefreshList();
+        return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
+    }
 
     /// <summary>
-    /// Selects the currently highlighted item in the list of matches based on the cursor position and updates the selected index accordingly.
+    /// Handles item selection. In single-select mode, immediately confirms.
+    /// In multi-select mode, toggles the item and optionally requests a preview update.
     /// </summary>
-    private Message? SelectItem(object item)
+    private Message? HandleSelect(object item)
     {
         if (_multiSelect)
         {
-            if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection if already selected
+            if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection
+            return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
         }
-        else
-        {
-            // Single-select mode: immediately confirm the selection
-            _selectedItems.Clear();
-            _selectedItems.Add(item);
-            return new Confirm();
-        }
-        return null;
+
+        // Single-select mode: immediately confirm the selection
+        _selectedItems.Clear();
+        _selectedItems.Add(item);
+        return new Confirm();
     }
 
-    private Message? ConfirmSelection()
+    /// <summary>
+    /// Handles confirmation. If nothing was explicitly selected, takes the item under the cursor.
+    /// </summary>
+    private Message? HandleConfirm()
     {
-        // If nothing is selected via Tab, we take the one under the cursor
         if (_selectedItems.Count == 0 && _list.Cursor >= 0 && _list.Cursor < _list.Matches.Count)
         {
             _selectedItems.Add(_list.Matches[_list.Cursor].Item);
         }
         return new Quit();
+    }
+
+    /// <summary>
+    /// Handles an incoming preview content update from the PreviewWorker.
+    /// </summary>
+    private Message? HandleUpdatePreview(string content)
+    {
+        _preview.SetContent(content);
+        return null;
     }
 
     #endregion Actions
