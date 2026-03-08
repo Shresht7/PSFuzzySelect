@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace PSFuzzySelect.UI.Styles;
 
 /// <summary>
@@ -182,4 +184,17 @@ public static class Ansi
     /// <summary>ANSI escape code to switch back to the main buffer</summary>
     /// <returns>`\x1b[?1049l`</returns>
     public static string AltBufferExit => $"{Esc}?1049l";
+
+    /// <summary>
+    /// Removes ANSI CSI escape sequences from text.
+    /// This is a stopgap sanitizer for untrusted preview content.
+    /// </summary>
+    /// <param name="text">Input text that may contain ANSI CSI escapes.</param>
+    /// <returns>Sanitized text without CSI escape sequences.</returns>
+    public static string Strip(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+
+        return Regex.Replace(text, @"\x1B\[[0-?]*[ -/]*[@-~]", string.Empty);
+    }
 }

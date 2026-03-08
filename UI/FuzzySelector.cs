@@ -4,6 +4,7 @@ using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
+using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI;
 
@@ -301,7 +302,7 @@ public class FuzzySelector : IApplication
     /// </summary>
     private Message? HandleUpdatePreview(string content)
     {
-        _preview.SetContent(content);
+        _preview.SetContent(Ansi.Strip(content));
         return null;
     }
 
