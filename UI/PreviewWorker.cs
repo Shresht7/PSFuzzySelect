@@ -24,6 +24,8 @@ sealed class PreviewWorker : IDisposable
 
     private bool disposedValue;
 
+    private volatile bool _isDisposing;
+
     public PreviewWorker(ScriptBlock scriptBlock, Action<Message> messageQueueCallback)
     {
         _scriptBlock = scriptBlock;
@@ -38,9 +40,26 @@ sealed class PreviewWorker : IDisposable
 
     public void Enqueue(object item)
     {
-        if (!_requests.IsAddingCompleted && !_cts.Token.IsCancellationRequested)
+        if (disposedValue || _isDisposing || _cts.IsCancellationRequested)
         {
-            _requests.Add(item);
+            return;
+        }
+
+        try
+        {
+            _requests.Add(item, _cts.Token);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Worker resources are already torn down.
+        }
+        catch (InvalidOperationException)
+        {
+            // Queue was completed while enqueueing.
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation started while enqueueing.
         }
     }
 
@@ -119,6 +138,7 @@ sealed class PreviewWorker : IDisposable
         {
             if (disposing)
             {
+                _isDisposing = true;
                 _cts.Cancel(); // Signal the worker thread to stop processing new requests and exit
                 _requests.CompleteAdding(); // Indicate that no more requests will be added to the queue
 
@@ -136,7 +156,7 @@ sealed class PreviewWorker : IDisposable
 
                 // Wait for the worker thread to finish processing any remaining requests and exit gracefully,
                 // with a timeout to prevent hanging indefinitely
-                _workerThread.Join(500);
+                _workerThread.Join(5000);
 
                 // Dispose and clean up resources used by the worker
                 _requests.Dispose();
