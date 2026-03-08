@@ -103,9 +103,10 @@ public class Engine(IApplication App)
         var engine = new Engine(selector);
         try
         {
-            if (showPreview && previewScript != null)
+            if (showPreview)
             {
-                engine._previewWorker = new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg));
+                var effectivePreviewScript = previewScript ?? ScriptBlock.Create("$PSItem | Format-List | Out-String");
+                engine._previewWorker = new PreviewWorker(effectivePreviewScript, msg => engine.EnqueueMessage(msg));
 
                 // Prime preview generation so it updates even before the first key press.
                 var initialPreview = selector.CreateInitialPreviewRequest();
