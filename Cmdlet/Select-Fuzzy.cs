@@ -64,6 +64,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>
     /// A script block used to generate the preview content for each item in the fuzzy selector interface.
     /// The current item is provided as <c>$PSItem</c> / <c>$_</c>, and the script output is displayed in the preview pane.
+    /// If omitted while <see cref="Preview"/> is enabled, a default formatter is used.
     /// </summary>
     [Parameter]
     public ScriptBlock? PreviewScript { get; set; }

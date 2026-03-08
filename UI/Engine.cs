@@ -87,7 +87,17 @@ public class Engine(IApplication App)
 
     /// <summary>
     /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
+    /// When preview is enabled and no preview script is supplied, a default formatting script is used.
     /// </summary>
+    /// <param name="prompt">Prompt label displayed above the input.</param>
+    /// <param name="items">Items available for fuzzy matching and selection.</param>
+    /// <param name="properties">Optional property names used to build display text for each item.</param>
+    /// <param name="multiSelect">Whether multiple items can be selected.</param>
+    /// <param name="showPreview">Whether to display the preview pane.</param>
+    /// <param name="previewSize">Preview pane size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
+    /// <param name="previewPosition">Preview pane placement relative to the main list.</param>
+    /// <param name="previewScript">Optional script that generates preview text for the highlighted item.</param>
+    /// <returns>The selected object, an array of selected objects in multi-select mode, or null when cancelled.</returns>
     public static object? Show(
         string prompt,
         IEnumerable<object> items,

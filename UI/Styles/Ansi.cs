@@ -187,7 +187,7 @@ public static class Ansi
 
     /// <summary>
     /// Removes ANSI CSI escape sequences from text.
-    /// This is a stopgap sanitizer for untrusted preview content.
+    /// This is a stopgap sanitizer for preview content and does not cover all ANSI variants.
     /// </summary>
     /// <param name="text">Input text that may contain ANSI CSI escapes.</param>
     /// <returns>Sanitized text without CSI escape sequences.</returns>

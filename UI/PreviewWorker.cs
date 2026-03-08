@@ -4,6 +4,9 @@ using System.Management.Automation.Runspaces;
 
 namespace PSFuzzySelect.UI;
 
+/// <summary>
+/// Generates preview text on a background thread by invoking a PowerShell script per highlighted item.
+/// </summary>
 sealed class PreviewWorker : IDisposable
 {
     private Runspace _runspace;
@@ -26,6 +29,11 @@ sealed class PreviewWorker : IDisposable
 
     private volatile bool _isDisposing;
 
+    /// <summary>
+    /// Initializes a new preview worker and starts its background loop.
+    /// </summary>
+    /// <param name="scriptBlock">Script used to produce preview text for each item.</param>
+    /// <param name="messageQueueCallback">Callback used to send UI update messages back to the engine.</param>
     public PreviewWorker(ScriptBlock scriptBlock, Action<Message> messageQueueCallback)
     {
         _scriptBlock = scriptBlock;
@@ -38,6 +46,11 @@ sealed class PreviewWorker : IDisposable
         _workerThread.Start();
     }
 
+    /// <summary>
+    /// Queues an item for preview generation.
+    /// Calls made during teardown are safely ignored.
+    /// </summary>
+    /// <param name="item">The item to preview.</param>
     public void Enqueue(object item)
     {
         if (disposedValue || _isDisposing || _cts.IsCancellationRequested)
@@ -63,6 +76,9 @@ sealed class PreviewWorker : IDisposable
         }
     }
 
+    /// <summary>
+    /// Continuously processes queued preview requests until cancellation.
+    /// </summary>
     private void WorkerLoop()
     {
         try
@@ -132,6 +148,10 @@ sealed class PreviewWorker : IDisposable
         catch (OperationCanceledException) { }
     }
 
+    /// <summary>
+    /// Releases managed resources and stops the background worker.
+    /// </summary>
+    /// <param name="disposing">True when called from <see cref="Dispose()"/>.</param>
     private void Dispose(bool disposing)
     {
         if (!disposedValue)

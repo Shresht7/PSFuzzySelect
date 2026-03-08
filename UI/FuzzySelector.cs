@@ -96,6 +96,12 @@ public class FuzzySelector : IApplication
 
     private Size _previewSize = Size.Fractional(0.5f);
 
+    /// <summary>
+    /// Parses the preview size string into a layout size.
+    /// </summary>
+    /// <param name="previewSize">Size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
+    /// <returns>A <see cref="Size"/> value used by layout composition.</returns>
+    /// <exception cref="ArgumentException">Thrown when the input format is invalid.</exception>
     private Size GetPreviewSize(string previewSize)
     {
         if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
@@ -299,6 +305,7 @@ public class FuzzySelector : IApplication
 
     /// <summary>
     /// Handles an incoming preview content update from the PreviewWorker.
+    /// ANSI CSI sequences are stripped as a stopgap before rendering.
     /// </summary>
     private Message? HandleUpdatePreview(string content)
     {
