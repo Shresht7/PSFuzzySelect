@@ -37,9 +37,6 @@ public class Engine(IApplication App)
     /// <summary>The background worker responsible for generating preview content asynchronously</summary>
     private PreviewWorker? _previewWorker;
 
-    /// <summary>A delegate to resolve a match index to the corresponding item object</summary>
-    private Func<int, object?>? _getMatchItem;
-
     /// <summary>
     /// Performs initial setup for the console, such as hiding the cursor and entering the alternate screen buffer
     /// to prepare for rendering the UI components of the fuzzy selector application.
@@ -101,7 +98,6 @@ public class Engine(IApplication App)
             if (showPreview && previewScript != null)
             {
                 engine._previewWorker = new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg));
-                engine._getMatchItem = selector.GetMatchItem;
             }
 
             // Run the main loop of the fuzzy selector
@@ -196,13 +192,12 @@ public class Engine(IApplication App)
             // Let the application process the message and return any follow-up message to be processed in the same frame
             message = App.Update(message);
 
-            // Engine-level side effect: dispatch preview requests when the highlight changes
-            if (message is HighlightChange hc && _previewWorker != null)
+            // Engine-level side effect: dispatch preview generation to the background worker
+            if (message is RequestPreview rp)
             {
-                var item = _getMatchItem?.Invoke(hc.Index);
-                if (item != null)
+                if (rp.Item != null)
                 {
-                    _previewWorker.Enqueue(item);
+                    _previewWorker?.Enqueue(rp.Item);
                 }
                 else
                 {

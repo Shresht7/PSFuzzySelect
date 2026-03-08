@@ -32,6 +32,13 @@ record class HighlightChange(int Index) : Message;
 record class UpdatePreview(string Content) : Message;
 
 /// <summary>
+/// Message requesting that the Engine dispatch a preview generation for the specified item.
+/// Emitted by the application when the highlighted item changes; intercepted by the Engine to dispatch to the PreviewWorker.
+/// </summary>
+/// <param name="Item">The item to generate a preview for, or null to clear the preview</param>
+record class RequestPreview(object? Item) : Message;
+
+/// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
 /// <param name="Item">The item that the user has selected</param>

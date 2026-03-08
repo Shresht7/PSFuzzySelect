@@ -78,7 +78,7 @@ public class FuzzySelector : IApplication
     /// <summary>
     /// Gets the item at the specified match index, or null if the index is out of bounds.
     /// </summary>
-    public object? GetMatchItem(int index)
+    private object? GetMatchItem(int index)
     {
         if (index < 0 || index >= _list.Matches.Count) return null;
         return _list.Matches[index].Item;
@@ -146,15 +146,21 @@ public class FuzzySelector : IApplication
             case Confirm:
                 return ConfirmSelection();
             case Select msg:
-                // In multi-select mode, signal a highlight change so the preview can update
-                return SelectItem(msg.Item) ?? new HighlightChange(_list.Cursor);
-            case QueryChange msg:
-                return UpdateQuery(msg.Query);
+                var selectResult = SelectItem(msg.Item);
+                if (selectResult != null) return selectResult; // Confirm in single-select mode
+                return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
+            case QueryChange:
+                RefreshList();
+                return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
             case UpdatePreview msg:
                 _preview.SetContent(msg.Content);
                 break;
             case KeyEvent keyEvent:
-                return HandleKey(keyEvent.Key);
+                var keyResult = HandleKey(keyEvent.Key);
+                // Translate HighlightChange into a RequestPreview when preview is active
+                if (keyResult is HighlightChange hc && _showPreview)
+                    return new RequestPreview(GetMatchItem(hc.Index));
+                return keyResult;
             case null:
             default:
                 // No message to process, do nothing
@@ -258,16 +264,7 @@ public class FuzzySelector : IApplication
         _list.SetMatches(currentMatches);
     }
 
-    /// <summary>
-    /// Updates the search query with the new value entered by the user and refreshes the list of matches accordingly.
-    /// </summary>
-    /// <param name="newQuery">The updated search query</param>
-    private HighlightChange? UpdateQuery(string newQuery)
-    {
-        RefreshList();
-        return new HighlightChange(0); // Reset highlight to the top of the list after refreshing matches
 
-    }
 
 
     /// <summary>
