@@ -4,14 +4,11 @@ using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
+using PSFuzzySelect.UI.Styles;
 
 namespace PSFuzzySelect.UI;
 
 /// <summary>The main fuzzy selector application component. It manages the application state and user interactions.</summary>
-/// <remarks>Initializes a new instance of the FuzzySelector class</remarks>
-/// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
-/// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
-/// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
 public class FuzzySelector : IApplication
 {
     #region Matcher
@@ -70,73 +67,102 @@ public class FuzzySelector : IApplication
 
     #endregion Components
 
+    #region Preview
+
+    /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
+    private bool _showPreview = false;
+
+    private Preview _preview = new();
+
+    private PreviewPosition _previewPosition = PreviewPosition.Right;
+
+    /// <summary>
+    /// Gets the item at the specified match index, or null if the index is out of bounds.
+    /// </summary>
+    private object? GetMatchItem(int index)
+    {
+        if (index < 0 || index >= _list.Matches.Count) return null;
+        return _list.Matches[index].Item;
+    }
+
+    /// <summary>
+    /// Creates the initial preview request for the currently highlighted item.
+    /// Returns null when preview is disabled.
+    /// </summary>
+    internal Message? CreateInitialPreviewRequest()
+    {
+        return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
+    }
+
+    private Size _previewSize = Size.Fractional(0.5f);
+
+    /// <summary>
+    /// Parses the preview size string into a layout size.
+    /// </summary>
+    /// <param name="previewSize">Size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
+    /// <returns>A <see cref="Size"/> value used by layout composition.</returns>
+    /// <exception cref="ArgumentException">Thrown when the input format is invalid.</exception>
+    private Size GetPreviewSize(string previewSize)
+    {
+        if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
+        {
+            return Size.Fractional(percentage / 100.0f);
+        }
+        else if (int.TryParse(previewSize, out var fixedWidth))
+        {
+            return Size.Fixed(fixedWidth);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid preview size format. Use a percentage (e.g., '50%') or a fixed width (e.g., '30').");
+        }
+    }
+
+    #endregion Preview
+
     #region Constructor
 
-    public FuzzySelector(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
+    public FuzzySelector(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false,
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right
+    )
     {
         _items = items;
         _displayAdapter = new(properties);
         _multiSelect = multiSelect;
+        _showPreview = showPreview;
+        _previewSize = GetPreviewSize(previewSize);
+        _previewPosition = previewPosition;
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
+
+        // Initial refresh to populate matches before the first render
+        RefreshList();
     }
 
     #endregion Constructor
 
-    #region Show
-
-    /// <summary>
-    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
-    /// </summary>
-    /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
-    /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
-    /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
-    /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
-    /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(string prompt, IEnumerable<object> items, string[]? properties = null, bool multiSelect = false)
-    {
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect);
-        var engine = new Engine(selector);
-
-        // Initial refresh to populate matches before the first render
-        selector.RefreshList();
-
-        // Run the main loop of the fuzzy selector
-        engine.Run();
-
-        return selector.SelectedValue;
-    }
-
-    #endregion Show
-
     #region Update
 
     /// <summary>
-    /// Updates the state of the fuzzy selector based on the received message, which can represent various user actions
-    /// such as changing the search query, moving the cursor, selecting an item, or quitting the selector.
+    /// Updates the state of the fuzzy selector based on the received message.
+    /// Each case dispatches to a handler that performs the state change and returns an optional follow-up message.
     /// </summary>
-    /// <param name="message">The message representing a user action.</param>
-    public Message? Update(Message? message)
+    public Message? Update(Message? message) => message switch
     {
-        switch (message)
-        {
-            case Confirm:
-                return ConfirmSelection();
-            case Select msg:
-                return SelectItem(msg.Item);
-            case QueryChange msg:
-                UpdateQuery(msg.Query);
-                break;
-            case KeyEvent keyEvent:
-                return HandleKey(keyEvent.Key);
-            case null:
-            default:
-                // No message to process, do nothing
-                break;
-        }
-        return null;
-    }
+        KeyEvent e => HandleKey(e.Key),
+        QueryChange => HandleQueryChange(),
+        Select e => HandleSelect(e.Item),
+        Confirm => HandleConfirm(),
+        UpdatePreview e => HandleUpdatePreview(e.Content),
+        _ => null,
+    };
 
     #endregion Update
 
@@ -156,12 +182,31 @@ public class FuzzySelector : IApplication
             Size.Fixed(1)           // Status bar at the bottom
         ).Gap(1);                       // Add a gap between sections
 
-        // Compose the UI components according to the blueprint and render them to the buffer
-        blueprint.Compose(
+        // Compose the UI components according to the blueprint
+        var leftPane = blueprint.Compose(
             _input,
             _list,
             new StatusBar(_list.Matches.Count, _list.Cursor)
-        ).Render(surface);
+        );
+        var rightPane = _preview;
+
+        // If preview is enabled, render the left and right panes side by side; otherwise, render only the left pane
+        if (_showPreview)
+        {
+            var mainLayout = _previewPosition switch
+            {
+                PreviewPosition.Right => Layout.Horizontal(Size.Flexible(1), _previewSize).Gap(2).Compose(leftPane, rightPane),
+                PreviewPosition.Left => Layout.Horizontal(_previewSize, Size.Flexible(1)).Gap(2).Compose(rightPane, leftPane),
+                PreviewPosition.Top => Layout.Vertical(_previewSize, Size.Flexible(1)).Gap(1).Compose(rightPane, leftPane),
+                PreviewPosition.Bottom => Layout.Vertical(Size.Flexible(1), _previewSize).Gap(1).Compose(leftPane, rightPane),
+                _ => throw new NotImplementedException("Unsupported preview position"),
+            };
+            mainLayout.Render(surface);
+        }
+        else
+        {
+            leftPane.Render(surface);
+        }
     }
 
     #endregion Render
@@ -173,7 +218,7 @@ public class FuzzySelector : IApplication
     /// backspace for editing, and special keys for selection and exit.
     /// </summary>
     /// <returns>A Message object representing the user action, which will be processed by the main loop to update the state of the fuzzy selector</returns>
-    public Message? HandleKey(ConsoleKeyInfo key)
+    private Message? HandleKey(ConsoleKeyInfo key)
     {
         // Handle Quit
         if (key.Key == ConsoleKey.Escape)
@@ -190,8 +235,13 @@ public class FuzzySelector : IApplication
 
         // Handle list navigation and selection keys
         var listMessage = _list.HandleKey(key);
-        if (listMessage != null) return listMessage;
-
+        if (listMessage != null)
+        {
+            // Translate HighlightChange into a RequestPreview when preview is active
+            if (listMessage is HighlightChange hc && _showPreview)
+                return new RequestPreview(GetMatchItem(hc.Index));
+            return listMessage;
+        }
 
         // Handle character input for search query
         var inputMessage = _input.HandleKey(key);
@@ -215,37 +265,37 @@ public class FuzzySelector : IApplication
     }
 
     /// <summary>
-    /// Updates the search query with the new value entered by the user and refreshes the list of matches accordingly.
+    /// Handles a query change by refreshing the match list and optionally requesting a preview for the new top item.
     /// </summary>
-    /// <param name="newQuery">The updated search query</param>
-    private void UpdateQuery(string newQuery)
+    private Message? HandleQueryChange()
     {
         RefreshList();
+        return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
     }
 
-
     /// <summary>
-    /// Selects the currently highlighted item in the list of matches based on the cursor position and updates the selected index accordingly.
+    /// Handles item selection. In single-select mode, immediately confirms.
+    /// In multi-select mode, toggles the item and optionally requests a preview update.
     /// </summary>
-    private Message? SelectItem(object item)
+    private Message? HandleSelect(object item)
     {
         if (_multiSelect)
         {
-            if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection if already selected
+            if (!_selectedItems.Add(item)) _selectedItems.Remove(item); // Toggle selection
+            return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
         }
-        else
-        {
-            // Single-select mode: immediately confirm the selection
-            _selectedItems.Clear();
-            _selectedItems.Add(item);
-            return new Confirm();
-        }
-        return null;
+
+        // Single-select mode: immediately confirm the selection
+        _selectedItems.Clear();
+        _selectedItems.Add(item);
+        return new Confirm();
     }
 
-    private Message? ConfirmSelection()
+    /// <summary>
+    /// Handles confirmation. If nothing was explicitly selected, takes the item under the cursor.
+    /// </summary>
+    private Message? HandleConfirm()
     {
-        // If nothing is selected via Tab, we take the one under the cursor
         if (_selectedItems.Count == 0 && _list.Cursor >= 0 && _list.Cursor < _list.Matches.Count)
         {
             _selectedItems.Add(_list.Matches[_list.Cursor].Item);
@@ -253,5 +303,20 @@ public class FuzzySelector : IApplication
         return new Quit();
     }
 
+    /// <summary>
+    /// Handles an incoming preview content update from the PreviewWorker.
+    /// ANSI CSI sequences are stripped as a stopgap before rendering.
+    /// </summary>
+    private Message? HandleUpdatePreview(string content)
+    {
+        _preview.SetContent(Ansi.Strip(content));
+        return null;
+    }
+
     #endregion Actions
+
 }
+
+/// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
+public enum PreviewPosition { Right, Left, Top, Bottom }
+

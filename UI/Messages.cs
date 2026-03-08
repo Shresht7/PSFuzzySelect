@@ -20,6 +20,25 @@ record class KeyEvent(ConsoleKeyInfo Key) : Message;
 record class QueryChange(string Query) : Message;
 
 /// <summary>
+/// Message indicating that the highlighted item in the list of matches has changed, containing the index of the newly highlighted item
+/// </summary>
+/// <param name="Index">The index of the newly highlighted item</param>
+record class HighlightChange(int Index) : Message;
+
+/// <summary>
+/// Message indicating that the preview content should be updated, containing the new content to display
+/// </summary>
+/// <param name="Content">The new preview content to display</param>
+record class UpdatePreview(string Content) : Message;
+
+/// <summary>
+/// Message requesting that the Engine dispatch a preview generation for the specified item.
+/// Emitted by the application when the highlighted item changes; intercepted by the Engine to dispatch to the PreviewWorker.
+/// </summary>
+/// <param name="Item">The item to generate a preview for, or null to clear the preview</param>
+record class RequestPreview(object? Item) : Message;
+
+/// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
 /// <param name="Item">The item that the user has selected</param>

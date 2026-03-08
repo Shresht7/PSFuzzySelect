@@ -1,3 +1,7 @@
+using System.Collections.Concurrent;
+using System.Management.Automation;
+using System.Threading;
+
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Styles;
@@ -31,6 +35,12 @@ public class Engine(IApplication App)
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool _shouldQuit = false;
 
+    /// <summary>The background worker responsible for generating preview content asynchronously</summary>
+    private PreviewWorker? _previewWorker;
+
+    /// <summary>Event used to wake the main loop when messages arrive from other threads</summary>
+    private readonly AutoResetEvent _messageEvent = new(false);
+
     /// <summary>
     /// Performs initial setup for the console, such as hiding the cursor and entering the alternate screen buffer
     /// to prepare for rendering the UI components of the fuzzy selector application.
@@ -47,90 +57,219 @@ public class Engine(IApplication App)
         Console.Write(ansi);          // Write the ANSI escape codes to the console to apply the setup
     }
 
+
     /// <summary>
-    /// Runs the main loop of the fuzzy selector application, which includes rendering the UI components, capturing user input,
-    /// and updating the state of the application based on the captured input until the user decides to quit the application.
+    /// Runs the main loop of the fuzzy selector application: render, collect events, process messages.
     /// </summary>
     public void Run()
     {
-        Setup(); // Perform initial setup for the console
+        Setup();
 
         try
         {
-            // The Main Loop of the Application
             while (!_shouldQuit)
             {
-                Render();                           // Render the current state of the UI components to the console
-                var message = CaptureEvents();      // Handle user input and get the resulting message representing the user action
-                Update(message);                    // Update the state of the fuzzy selector based on the message
+                Render();
+
+                // Collect all pending events, then process them before the next render
+                foreach (var message in CollectEvents())
+                {
+                    if (_shouldQuit) break;
+                    ProcessMessage(message);
+                }
             }
         }
         finally
         {
-            Cleanup();  // Clean up the console UI when exiting
+            Cleanup();
         }
     }
 
     /// <summary>
-    /// Captures user input from the console and translates it into a Message that can be processed
-    /// by the main loop to update the state of the fuzzy selector.
-    /// This method is called on each iteration of the main loop after rendering to handle user interactions.
+    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
+    /// When preview is enabled and no preview script is supplied, a default formatting script is used.
     /// </summary>
-    private Message? CaptureEvents()
+    /// <param name="prompt">Prompt label displayed above the input.</param>
+    /// <param name="items">Items available for fuzzy matching and selection.</param>
+    /// <param name="properties">Optional property names used to build display text for each item.</param>
+    /// <param name="multiSelect">Whether multiple items can be selected.</param>
+    /// <param name="showPreview">Whether to display the preview pane.</param>
+    /// <param name="previewSize">Preview pane size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
+    /// <param name="previewPosition">Preview pane placement relative to the main list.</param>
+    /// <param name="previewScript">Optional script that generates preview text for the highlighted item.</param>
+    /// <returns>The selected object, an array of selected objects in multi-select mode, or null when cancelled.</returns>
+    public static object? Show(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false,
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
+    )
     {
-        // Initialize a variable to hold the captured message, which will be set when a user input is detected
-        Message? message = null;
-
-        // Event Loop: Continuously check for user input until a message is captured.
-        while (message == null)
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition);
+        var engine = new Engine(selector);
+        try
         {
-            // Check for a resize event by comparing the current console dimensions with the renderer's dimensions
+            if (showPreview)
+            {
+                var effectivePreviewScript = previewScript ?? ScriptBlock.Create("$PSItem | Format-List | Out-String");
+                engine._previewWorker = new PreviewWorker(effectivePreviewScript, msg => engine.EnqueueMessage(msg));
+
+                // Prime preview generation so it updates even before the first key press.
+                var initialPreview = selector.CreateInitialPreviewRequest();
+                if (initialPreview != null)
+                {
+                    engine.ProcessMessage(initialPreview);
+                }
+            }
+
+            // Run the main loop of the fuzzy selector
+            engine.Run();
+
+            // Return the selected value after the user has made a selection
+            return selector.SelectedValue;
+        }
+        finally
+        {
+            engine._previewWorker?.Dispose();
+            engine._messageEvent.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// A thread-safe queue to hold messages generated by user input or internal events that need to be processed by the main loop.
+    /// </summary>
+    private readonly ConcurrentQueue<Message> _messageQueue = new();
+
+    /// <summary>
+    /// Enqueues a message to be processed by the main loop. This method can be called from any thread to safely add messages to the queue,
+    /// which will then be processed in the next iteration of the main loop after rendering.
+    /// </summary>
+    /// <param name="message">The message to enqueue</param>
+    public void EnqueueMessage(Message message)
+    {
+        _messageQueue.Enqueue(message);
+        _messageEvent.Set();
+    }
+
+    #region Event Collection
+
+    /// <summary>
+    /// Collects all pending events: blocks until at least one event is available,
+    /// then drains any additional queued messages and buffered keystrokes.
+    /// </summary>
+    private List<Message> CollectEvents()
+    {
+        var events = new List<Message>();
+
+        // Block until at least one event is available
+        events.Add(WaitForEvent());
+
+        // Drain any queued messages (e.g. from PreviewWorker)
+        while (_messageQueue.TryDequeue(out var queued))
+            events.Add(queued);
+
+        // Drain any buffered keystrokes
+        while (Console.KeyAvailable)
+            events.Add(new KeyEvent(Console.ReadKey(intercept: true)));
+
+        return events;
+    }
+
+    /// <summary>
+    /// Blocks until a single event is available from the message queue, a console resize, or a keystroke.
+    /// </summary>
+    private Message WaitForEvent()
+    {
+        while (true)
+        {
+            if (_messageQueue.TryDequeue(out var queued))
+                return queued;
+
             if (Console.WindowWidth != _renderer.Width || Console.WindowHeight != _renderer.Height)
-            {
                 return new Resize(Console.WindowWidth, Console.WindowHeight);
-            }
 
-            // Check if a key is available in the input buffer. If so, read it and create a KeyEvent message.
             if (Console.KeyAvailable)
-            {
-                var key = Console.ReadKey(intercept: true);
-                message = new KeyEvent(key);
-            }
+                return new KeyEvent(Console.ReadKey(intercept: true));
 
-            // If no key is available, we can briefly sleep to avoid busy-waiting and reduce CPU usage while waiting for input
-            if (message == null) Thread.Sleep(16);
+            _messageEvent.WaitOne(16); // Wake when signaled or timeout to poll
         }
+    }
 
-        return message; // Return the captured message, or null if no input was captured
+    #endregion Event Collection
+
+    #region Message Processing
+
+    /// <summary>
+    /// Processes a single message and its follow-up chain. Each message passes through
+    /// three stages: engine pre-processing, app dispatch, and engine side-effects.
+    /// </summary>
+    private void ProcessMessage(Message message)
+    {
+        Message? current = message;
+        while (current != null && !_shouldQuit)
+        {
+            // 1. Engine pre-processing: handle messages the engine owns (Resize, Quit)
+            current = HandleEngineMessage(current);
+            if (current == null) break;
+
+            // 2. App dispatch: let the application process the message and return a follow-up
+            current = App.Update(current);
+
+            // 3. Engine side-effects: intercept follow-up messages meant for the engine (RequestPreview)
+            current = HandleSideEffects(current);
+        }
     }
 
     /// <summary>
-    /// Updates the state of the application based on the received message.
-    /// It processes messages in a loop, feeding returned messages back into the application 
-    /// until no more messages are produced or a Quit command is received.
+    /// Handles messages that are engine-level concerns.
+    /// Returns null if the message was fully consumed, or the message itself to continue to the app.
     /// </summary>
-    /// <param name="message">The initial message representing a user action or event.</param>
-    private void Update(Message? message)
+    private Message? HandleEngineMessage(Message message)
     {
-        // Process messages until the application returns null or requests to quit
-        while (message != null)
+        switch (message)
         {
-            // Check for resize events and update the renderer's dimensions accordingly
-            if (message is Resize msg)
-            {
-                _renderer.Resize(msg.Width, msg.Height);
-            }
-            // Check if the message is a Quit command, and if so, set the quit flag and exit the loop
-            else if (message is Quit)
-            {
-                Quit();
-                break;
-            }
-
-            // Let the application process the message and return any follow-up message to be processed in the same frame
-            message = App.Update(message);
+            case RequestPreview { Item: not null } rp:
+                // Intercept explicit RequestPreview messages sent directly to the engine
+                _previewWorker?.Enqueue(rp.Item);
+                return null; // Consumed
+            case RequestPreview:
+                App.Update(new UpdatePreview(string.Empty));
+                return null; // Consumed
+            case Resize r:
+                _renderer.Resize(r.Width, r.Height);
+                return message; // Also pass to app so it can re-layout
+            case Quit:
+                _shouldQuit = true;
+                return null; // Consumed — stop the chain
+            default:
+                return message; // Pass through to app
         }
     }
+
+    /// <summary>
+    /// Intercepts follow-up messages returned by the app that represent engine-level side effects.
+    /// Returns null if consumed, or the message to continue the follow-up chain.
+    /// </summary>
+    private Message? HandleSideEffects(Message? message)
+    {
+        switch (message)
+        {
+            case RequestPreview { Item: not null } rp:
+                _previewWorker?.Enqueue(rp.Item);
+                return null; // Consumed — dispatched to worker
+            case RequestPreview: // Item is null — clear the preview
+                App.Update(new UpdatePreview(string.Empty));
+                return null; // Consumed
+            default:
+                return message; // Continue the follow-up chain
+        }
+    }
+
+    #endregion Message Processing
 
     /// <summary>
     /// Renders the entire UI by delegating to the root component, which will recursively render
@@ -157,11 +296,4 @@ public class Engine(IApplication App)
         Console.Write(ansi);      // Write the ANSI escape codes to the console to apply the cleanup
     }
 
-    /// <summary>
-    /// Sets the flag to quit the application, which will cause the main loop to exit and the <see cref="Run"/> method to return
-    /// </summary>
-    private void Quit()
-    {
-        _shouldQuit = true;
-    }
 }
