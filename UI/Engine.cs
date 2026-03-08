@@ -1,7 +1,9 @@
+using System.Collections.Concurrent;
+using System.Management.Automation;
+
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Styles;
-using System.Collections.Concurrent;
 
 namespace PSFuzzySelect.UI;
 
@@ -69,6 +71,44 @@ public class Engine(IApplication App)
         finally
         {
             Cleanup();  // Clean up the console UI when exiting
+        }
+    }
+
+    /// <summary>
+    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
+    /// </summary>
+    public static object? Show(
+        string prompt,
+        IEnumerable<object> items,
+        string[]? properties = null,
+        bool multiSelect = false,
+        bool showPreview = false,
+        string previewSize = "50%",
+        PreviewPosition previewPosition = PreviewPosition.Right,
+        ScriptBlock? previewScript = null
+    )
+    {
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
+        try
+        {
+            var engine = new Engine(selector);
+
+            selector._previewWorker = showPreview && previewScript != null
+                ? new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg))
+                : null;
+
+            // Initial refresh to populate matches before the first render
+            selector.RefreshList();
+
+            // Run the main loop of the fuzzy selector
+            engine.Run();
+
+            // Return the selected value after the user has made a selection
+            return selector.SelectedValue;
+        }
+        finally
+        {
+            selector.Dispose();
         }
     }
 

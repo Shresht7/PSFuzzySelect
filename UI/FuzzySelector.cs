@@ -81,7 +81,7 @@ public class FuzzySelector : IApplication, IDisposable
 
     private ScriptBlock? _previewScript;
 
-    private PreviewWorker? _previewWorker;
+    internal PreviewWorker? _previewWorker;
 
     private void UpdatePreviewAsync(int index)
     {
@@ -140,58 +140,6 @@ public class FuzzySelector : IApplication, IDisposable
     }
 
     #endregion Constructor
-
-    #region Show
-
-    /// <summary>
-    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
-    /// </summary>
-    /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
-    /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector.</param>
-    /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
-    /// <param name="multiSelect">Indicates whether multiple items can be selected.</param>
-    /// <param name="showPreview">Indicates whether to show a preview of the selected item(s).</param>
-    /// <param name="previewSize">The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").</param>
-    /// <param name="previewPosition">The position of the preview pane in the fuzzy selector interface (e.g., left, right, top, bottom).</param>
-    /// <param name="previewScript">An optional script block to generate custom preview content based on the selected item.</param>
-    /// <returns>The selected item, or null if no selection was made.</returns>
-    public static object? Show(
-        string prompt,
-        IEnumerable<object> items,
-        string[]? properties = null,
-        bool multiSelect = false,
-        bool showPreview = false,
-        string previewSize = "50%",
-        PreviewPosition previewPosition = PreviewPosition.Right,
-        ScriptBlock? previewScript = null
-    )
-    {
-        // Initialize the fuzzy selector application with the provided parameters
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
-        try
-        {
-            var engine = new Engine(selector);
-
-            selector._previewWorker = showPreview && previewScript != null
-                ? new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg))
-                : null;
-
-            // Initial refresh to populate matches before the first render
-            selector.RefreshList();
-
-            // Run the main loop of the fuzzy selector
-            engine.Run();
-
-            // Return the selected value after the user has made a selection
-            return selector.SelectedValue;
-        }
-        finally
-        {
-            selector.Dispose();
-        }
-    }
-
-    #endregion Show
 
     #region Update
 
@@ -323,7 +271,7 @@ public class FuzzySelector : IApplication, IDisposable
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshList()
+    internal void RefreshList()
     {
         var currentMatches = _matcher.Match(_items, _input.Query, GetDisplayString);
         _list.SetMatches(currentMatches);

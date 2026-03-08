@@ -100,7 +100,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     protected override void EndProcessing()
     {
         // Show the fuzzy selector UI and get the selected item
-        var selected = FuzzySelector.Show(
+        var selected = Engine.Show(
             Prompt,
             _inputObjects,
             Property,
