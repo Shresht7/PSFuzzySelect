@@ -84,6 +84,15 @@ public class FuzzySelector : IApplication
         return _list.Matches[index].Item;
     }
 
+    /// <summary>
+    /// Creates the initial preview request for the currently highlighted item.
+    /// Returns null when preview is disabled.
+    /// </summary>
+    internal Message? CreateInitialPreviewRequest()
+    {
+        return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
+    }
+
     private Size _previewSize = Size.Fractional(0.5f);
 
     private Size GetPreviewSize(string previewSize)

@@ -101,6 +101,13 @@ public class Engine(IApplication App)
             if (showPreview && previewScript != null)
             {
                 engine._previewWorker = new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg));
+
+                // Prime preview generation so it updates even before the first key press.
+                var initialPreview = selector.CreateInitialPreviewRequest();
+                if (initialPreview != null)
+                {
+                    engine.ProcessMessage(initialPreview);
+                }
             }
 
             // Run the main loop of the fuzzy selector
