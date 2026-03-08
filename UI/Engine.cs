@@ -34,6 +34,12 @@ public class Engine(IApplication App)
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool _shouldQuit = false;
 
+    /// <summary>The background worker responsible for generating preview content asynchronously</summary>
+    private PreviewWorker? _previewWorker;
+
+    /// <summary>A delegate to resolve a match index to the corresponding item object</summary>
+    private Func<int, object?>? _getMatchItem;
+
     /// <summary>
     /// Performs initial setup for the console, such as hiding the cursor and entering the alternate screen buffer
     /// to prepare for rendering the UI components of the fuzzy selector application.
@@ -88,14 +94,15 @@ public class Engine(IApplication App)
         ScriptBlock? previewScript = null
     )
     {
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition, previewScript);
+        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition);
+        var engine = new Engine(selector);
         try
         {
-            var engine = new Engine(selector);
-
-            selector._previewWorker = showPreview && previewScript != null
-                ? new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg))
-                : null;
+            if (showPreview && previewScript != null)
+            {
+                engine._previewWorker = new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg));
+                engine._getMatchItem = selector.GetMatchItem;
+            }
 
             // Initial refresh to populate matches before the first render
             selector.RefreshList();
@@ -108,7 +115,7 @@ public class Engine(IApplication App)
         }
         finally
         {
-            selector.Dispose();
+            engine._previewWorker?.Dispose();
         }
     }
 
@@ -191,6 +198,21 @@ public class Engine(IApplication App)
 
             // Let the application process the message and return any follow-up message to be processed in the same frame
             message = App.Update(message);
+
+            // Engine-level side effect: dispatch preview requests when the highlight changes
+            if (message is HighlightChange hc && _previewWorker != null)
+            {
+                var item = _getMatchItem?.Invoke(hc.Index);
+                if (item != null)
+                {
+                    _previewWorker.Enqueue(item);
+                }
+                else
+                {
+                    App.Update(new UpdatePreview(string.Empty));
+                }
+                message = null;
+            }
         }
     }
 

@@ -12,7 +12,7 @@ namespace PSFuzzySelect.UI;
 /// <param name="prompt">The prompt message to display in the fuzzy selector UI.</param>
 /// <param name="items">The collection of items to be displayed and matched in the fuzzy selector</param>
 /// <param name="properties">An optional array of property names to use for display. If null or empty, the selector will attempt to use the object's default display properties or ToString() method.</param>
-public class FuzzySelector : IApplication, IDisposable
+public class FuzzySelector : IApplication
 {
     #region Matcher
 
@@ -79,19 +79,13 @@ public class FuzzySelector : IApplication, IDisposable
 
     private PreviewPosition _previewPosition = PreviewPosition.Right;
 
-    private ScriptBlock? _previewScript;
-
-    internal PreviewWorker? _previewWorker;
-
-    private void UpdatePreviewAsync(int index)
+    /// <summary>
+    /// Gets the item at the specified match index, or null if the index is out of bounds.
+    /// </summary>
+    public object? GetMatchItem(int index)
     {
-        if (!_showPreview || _previewScript == null || index < 0 || index >= _list.Matches.Count)
-        {
-            _preview.SetContent(string.Empty);
-            return;
-        }
-        var item = _list.Matches[index].Item;
-        _previewWorker?.Enqueue(item);
+        if (index < 0 || index >= _list.Matches.Count) return null;
+        return _list.Matches[index].Item;
     }
 
     private Size _previewSize = Size.Fractional(0.5f);
@@ -123,8 +117,7 @@ public class FuzzySelector : IApplication, IDisposable
         bool multiSelect = false,
         bool showPreview = false,
         string previewSize = "50%",
-        PreviewPosition previewPosition = PreviewPosition.Right,
-        ScriptBlock? previewScript = null
+        PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
         _items = items;
@@ -133,7 +126,6 @@ public class FuzzySelector : IApplication, IDisposable
         _showPreview = showPreview;
         _previewSize = GetPreviewSize(previewSize);
         _previewPosition = previewPosition;
-        _previewScript = previewScript;
 
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
@@ -154,21 +146,11 @@ public class FuzzySelector : IApplication, IDisposable
         {
             case Confirm:
                 return ConfirmSelection();
-            case HighlightChange msg:
-                UpdatePreviewAsync(msg.Index);
-                break;
             case Select msg:
-                var result = SelectItem(msg.Item);
-                // If the selection didn't result in an exit (e.g. multi-select),
-                // update the preview because the cursor might have advanced.
-                if (result == null)
-                {
-                    UpdatePreviewAsync(_list.Cursor);
-                }
-                return result;
+                // In multi-select mode, signal a highlight change so the preview can update
+                return SelectItem(msg.Item) ?? new HighlightChange(_list.Cursor);
             case QueryChange msg:
-                UpdateQuery(msg.Query);
-                break;
+                return UpdateQuery(msg.Query);
             case UpdatePreview msg:
                 _preview.SetContent(msg.Content);
                 break;
@@ -320,14 +302,6 @@ public class FuzzySelector : IApplication, IDisposable
 
     #endregion Actions
 
-    #region IDisposable
-
-    public void Dispose()
-    {
-        _previewWorker?.Dispose();
-    }
-
-    #endregion IDisposable
 }
 
 /// <summary>An enumeration representing the possible positions for the preview pane in the fuzzy selector interface</summary>
