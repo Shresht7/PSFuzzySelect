@@ -26,6 +26,12 @@ record class QueryChange(string Query) : Message;
 record class HighlightChange(int Index) : Message;
 
 /// <summary>
+/// Message indicating that the preview content should be updated, containing the new content to display
+/// </summary>
+/// <param name="Content">The new preview content to display</param>
+record class UpdatePreview(string Content) : Message;
+
+/// <summary>
 /// Message indicating that the user has selected an item from the list of matches
 /// </summary>
 /// <param name="Item">The item that the user has selected</param>

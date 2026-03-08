@@ -1,12 +1,8 @@
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Text;
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Components;
-using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
-using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Surface;
 
 namespace PSFuzzySelect.UI;
@@ -85,151 +81,17 @@ public class FuzzySelector : IApplication, IDisposable
 
     private ScriptBlock? _previewScript;
 
-    private Runspace? _previewRunspace;
+    private PreviewWorker? _previewWorker;
 
-    private PowerShell? _currentPreviewPs;
-
-    private readonly object _previewLock = new();
-
-    private Timer? _debounceTimer;
-
-    private object? _pendingPreviewItem;
-
-    /// <summary>
-    /// Schedules an asynchronous preview update for the item at the given index.
-    /// Debounces rapid cursor movements using a timer and cancels any in-flight preview script.
-    /// </summary>
     private void UpdatePreviewAsync(int index)
     {
-        if (!_showPreview) return;
-        if (index < 0 || index >= _list.Matches.Count) return;
-
-        // Stash the item for the debounce callback
-        _pendingPreviewItem = _list.Matches[index].Item;
-
-        // Reset or create the debounce timer (fires once after 150ms of inactivity)
-        if (_debounceTimer == null)
-            _debounceTimer = new Timer(OnDebounceElapsed, null, 150, Timeout.Infinite);
-        else
-            _debounceTimer.Change(150, Timeout.Infinite);
-    }
-
-    /// <summary>
-    /// Timer callback that fires after the debounce period elapses.
-    /// Generates and displays the preview content for the pending item.
-    /// </summary>
-    private void OnDebounceElapsed(object? state)
-    {
-        var item = _pendingPreviewItem;
-        if (item == null) return;
-
-        if (_previewScript != null && _previewRunspace != null)
+        if (!_showPreview || _previewScript == null || index < 0 || index >= _list.Matches.Count)
         {
-            InvokePreviewScriptAsync(item);
+            _preview.SetContent(string.Empty);
+            return;
         }
-        else
-        {
-            _preview.SetContent(GenerateDefaultPreview(item));
-        }
-    }
-
-    /// <summary>
-    /// Invokes the preview script asynchronously using BeginInvoke on the dedicated preview runspace.
-    /// The script receives the item as $_ and $PSItem.
-    /// </summary>
-    private void InvokePreviewScriptAsync(object item)
-    {
-        try
-        {
-            var ps = PowerShell.Create();
-            ps.Runspace = _previewRunspace;
-
-            // Swap in the new instance under the lock
-            PowerShell? psToStop;
-            lock (_previewLock)
-            {
-                psToStop = _currentPreviewPs;
-                _currentPreviewPs = ps;
-            }
-
-            // Stop the previous instance if it's still running.
-            // This is done outside the lock to avoid blocking other operations,
-            // but effectively serializes runspace access since Stop() blocks until the pipeline terminates.
-            // We do NOT Dispose here; the callback of the stopped instance will handle disposal.
-            try
-            {
-                psToStop?.Stop();
-            }
-            catch (Exception)
-            {
-                // Ignore errors during stop (e.g. if already disposed or stopped)
-            }
-
-            // Check if this instance has been superseded while we were stopping the old one
-            lock (_previewLock)
-            {
-                if (_currentPreviewPs != ps)
-                {
-                    ps.Dispose();
-                    return;
-                }
-            }
-
-            // Set $_ and $PSItem variables in the runspace
-            _previewRunspace!.SessionStateProxy.SetVariable("_", item);
-            _previewRunspace.SessionStateProxy.SetVariable("PSItem", item);
-
-            // Re-parse the script text to unbind it from the caller's runspace
-            ps.AddScript(_previewScript!.ToString());
-
-            // Fire-and-forget async invocation; callback updates the preview component
-            ps.BeginInvoke<PSObject>(null, null, ar =>
-            {
-                try
-                {
-                    var results = ps.EndInvoke(ar);
-                    var content = string.Join(Environment.NewLine, results.Select(r => r?.ToString() ?? ""));
-                    _preview.SetContent(content);
-                }
-                catch (PipelineStoppedException)
-                {
-                    // Script was cancelled; ignore.
-                }
-                catch (Exception ex)
-                {
-                    _preview.SetContent($"Error generating preview: {ex.Message}");
-                }
-                finally
-                {
-                    ps.Dispose();
-                    lock (_previewLock)
-                    {
-                        if (_currentPreviewPs == ps)
-                            _currentPreviewPs = null;
-                    }
-                }
-            }, null);
-        }
-        catch (Exception ex)
-        {
-            _preview.SetContent($"Error generating preview: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Generates default preview content by enumerating the properties of a PSObject.
-    /// </summary>
-    private static string GenerateDefaultPreview(object item)
-    {
-        var sb = new StringBuilder();
-        if (item is PSObject psObj)
-        {
-            foreach (var prop in psObj.Properties)
-            {
-                try { sb.AppendLine($"{prop.Name}: {prop.Value}"); } catch { }
-            }
-        }
-        return sb.ToString();
+        var item = _list.Matches[index].Item;
+        _previewWorker?.Enqueue(item);
     }
 
     private Size _previewSize = Size.Fractional(0.5f);
@@ -273,13 +135,6 @@ public class FuzzySelector : IApplication, IDisposable
         _previewPosition = previewPosition;
         _previewScript = previewScript;
 
-        // Create a dedicated runspace for preview script execution
-        if (_previewScript != null)
-        {
-            _previewRunspace = RunspaceFactory.CreateRunspace(InitialSessionState.CreateDefault());
-            _previewRunspace.Open();
-        }
-
         _input = new(prompt, string.Empty);
         _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
     }
@@ -316,6 +171,10 @@ public class FuzzySelector : IApplication, IDisposable
         try
         {
             var engine = new Engine(selector);
+
+            selector._previewWorker = showPreview && previewScript != null
+                ? new PreviewWorker(previewScript, msg => engine.EnqueueMessage(msg))
+                : null;
 
             // Initial refresh to populate matches before the first render
             selector.RefreshList();
@@ -361,6 +220,9 @@ public class FuzzySelector : IApplication, IDisposable
                 return result;
             case QueryChange msg:
                 UpdateQuery(msg.Query);
+                break;
+            case UpdatePreview msg:
+                _preview.SetContent(msg.Content);
                 break;
             case KeyEvent keyEvent:
                 return HandleKey(keyEvent.Key);
@@ -514,23 +376,7 @@ public class FuzzySelector : IApplication, IDisposable
 
     public void Dispose()
     {
-        _debounceTimer?.Dispose();
-
-        PowerShell? psToStop;
-        lock (_previewLock)
-        {
-            psToStop = _currentPreviewPs;
-            _currentPreviewPs = null;
-        }
-        psToStop?.Stop();
-        psToStop?.Dispose();
-
-        if (_previewRunspace != null)
-        {
-            _previewRunspace.Close();
-            _previewRunspace.Dispose();
-            _previewRunspace = null;
-        }
+        _previewWorker?.Dispose();
     }
 
     #endregion IDisposable
