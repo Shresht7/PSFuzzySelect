@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Management.Automation;
+using System.Threading;
 
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;
@@ -37,6 +38,9 @@ public class Engine(IApplication App)
     /// <summary>The background worker responsible for generating preview content asynchronously</summary>
     private PreviewWorker? _previewWorker;
 
+    /// <summary>Event used to wake the main loop when messages arrive from other threads</summary>
+    private readonly AutoResetEvent _messageEvent = new(false);
+
     /// <summary>
     /// Performs initial setup for the console, such as hiding the cursor and entering the alternate screen buffer
     /// to prepare for rendering the UI components of the fuzzy selector application.
@@ -52,6 +56,7 @@ public class Engine(IApplication App)
         ]);
         Console.Write(ansi);          // Write the ANSI escape codes to the console to apply the setup
     }
+
 
     /// <summary>
     /// Runs the main loop of the fuzzy selector application: render, collect events, process messages.
@@ -119,6 +124,7 @@ public class Engine(IApplication App)
         finally
         {
             engine._previewWorker?.Dispose();
+            engine._messageEvent.Dispose();
         }
     }
 
@@ -135,6 +141,7 @@ public class Engine(IApplication App)
     public void EnqueueMessage(Message message)
     {
         _messageQueue.Enqueue(message);
+        _messageEvent.Set();
     }
 
     #region Event Collection
@@ -177,7 +184,7 @@ public class Engine(IApplication App)
             if (Console.KeyAvailable)
                 return new KeyEvent(Console.ReadKey(intercept: true));
 
-            Thread.Sleep(16); // Avoid busy-waiting
+            _messageEvent.WaitOne(16); // Wake when signaled or timeout to poll
         }
     }
 
@@ -214,6 +221,13 @@ public class Engine(IApplication App)
     {
         switch (message)
         {
+            case RequestPreview { Item: not null } rp:
+                // Intercept explicit RequestPreview messages sent directly to the engine
+                _previewWorker?.Enqueue(rp.Item);
+                return null; // Consumed
+            case RequestPreview:
+                App.Update(new UpdatePreview(string.Empty));
+                return null; // Consumed
             case Resize r:
                 _renderer.Resize(r.Width, r.Height);
                 return message; // Also pass to app so it can re-layout
