@@ -94,6 +94,23 @@ public class SelectFuzzyCmdlet : PSCmdlet
         catch (Exception ex) { _uiThreadException = ex; }
     }
 
+    /// <summary>A buffer for storing input objects before they are sent to the fuzzy selector user-interface</summary>
+    private readonly List<object> _inputBuffer = [];
+
+    /// <summary>The batch size for processing input objects. This determines how many items are buffered before being sent to the UI for display</summary>
+    private readonly int _batchSize = 64;
+
+    private void FlushInputBuffer()
+    {
+        if (_inputBuffer.Count == 0) return;
+
+        // Send the buffered items to the UI for display
+        _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer.ToArray()));
+
+        // Clear the buffer after flushing
+        _inputBuffer.Clear();
+    }
+
     #endregion Fields
 
     #region Begin
@@ -132,9 +149,10 @@ public class SelectFuzzyCmdlet : PSCmdlet
         if (InputObject == null) return;
         if (_engine == null) throw new InvalidOperationException("Engine not initialized!");
 
-        // If an input object is provided, enqueue it to be added to the fuzzy selector UI. The UI will update in real-time as items are added.
-        // !! FIXME: Pipe the PSObject straight through to the UI for now. Implement batch processing
-        _engine.EnqueueMessage(new ItemsAdded(new List<object> { InputObject }));
+        // Buffer incoming items until we reach the batch size...
+        _inputBuffer.Add(InputObject);
+        // ...then flush the buffer to the UI to update the displayed items
+        if (_inputBuffer.Count >= _batchSize) FlushInputBuffer();
     }
 
     #endregion Process
@@ -149,6 +167,8 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
         try
         {
+            // Flush any remaining items in the buffer
+            FlushInputBuffer();
 
             // Signal the UI that no more items will be added, allowing it to update its state accordingly
             _engine.EnqueueMessage(new ItemsFinished());
