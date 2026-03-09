@@ -13,8 +13,14 @@ public class FuzzySelector : IApplication
 {
     #region Matcher
 
-    /// <summary>The collection of items to be displayed and matched in the fuzzy selector</summary>
-    private readonly IEnumerable<object> _items;
+    /// <summary>
+    /// The complete list of items to be matched against the search query.
+    /// This list is populated from the input pipeline and can be updated dynamically as new items arrive.
+    /// </summary>
+    private readonly List<object> _items = [];
+
+    /// <summary>Indicates whether the fuzzy selector is done receiving items from the pipeline.</summary>
+    private bool _isStreamingFinished = false;
 
     private readonly ObjectDisplayAdapter _displayAdapter;
     private readonly Dictionary<object, string> _displayCache = new();
@@ -124,7 +130,7 @@ public class FuzzySelector : IApplication
 
     public FuzzySelector(
         string prompt,
-        IEnumerable<object> items,
+        IEnumerable<object>? initialItems = null,
         string[]? properties = null,
         bool multiSelect = false,
         bool showPreview = false,
@@ -132,7 +138,7 @@ public class FuzzySelector : IApplication
         PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
-        _items = items;
+        _items = initialItems?.ToList() ?? [];
         _displayAdapter = new(properties);
         _multiSelect = multiSelect;
         _showPreview = showPreview;
@@ -161,6 +167,8 @@ public class FuzzySelector : IApplication
         Select e => HandleSelect(e.Item),
         Confirm => HandleConfirm(),
         UpdatePreview e => HandleUpdatePreview(e.Content),
+        ItemsAdded e => HandleItemsAdded(e.Items),
+        ItemsFinished e => HandleItemsFinished(),
         _ => null,
     };
 
@@ -310,6 +318,20 @@ public class FuzzySelector : IApplication
     private Message? HandleUpdatePreview(string content)
     {
         _preview.SetContent(Ansi.Strip(content));
+        return null;
+    }
+
+    private Message? HandleItemsAdded(IReadOnlyList<object> newItems)
+    {
+        _items.AddRange(newItems);
+        // TODO: Instead of refreshing the entire list, we could optimize by only incrementally matching the new items and merging them into the existing matches.
+        RefreshList();
+        return null;
+    }
+
+    private Message? HandleItemsFinished()
+    {
+        _isStreamingFinished = true;
         return null;
     }
 
