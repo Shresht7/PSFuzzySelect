@@ -71,6 +71,24 @@ public class FuzzySelector : IApplication
     /// <summary>An instance of the List component that manages the display and navigation of the list of matches</summary>
     private readonly List _list;
 
+    private const int QueryDebounceMs = 30;
+    private bool _queryDirty = false;
+    private long _lastQueryChangeMs = 0;
+
+    private static long NowMs() => DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
+
+    private Message? FlushDebouncedQueryIfReady(bool force = false)
+    {
+        if (!_queryDirty) return null;
+
+        var elapsed = NowMs() - _lastQueryChangeMs;
+        if (!force && elapsed < QueryDebounceMs) return null;
+
+        _queryDirty = false;
+        RefreshList();
+        return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
+    }
+
     #endregion Components
 
     #region Preview
@@ -169,6 +187,7 @@ public class FuzzySelector : IApplication
         UpdatePreview e => HandleUpdatePreview(e.Content),
         ItemsAdded e => HandleItemsAdded(e.Items),
         ItemsFinished e => HandleItemsFinished(),
+        FrameTick => FlushDebouncedQueryIfReady(),
         _ => null,
     };
 
@@ -284,8 +303,9 @@ public class FuzzySelector : IApplication
     /// </summary>
     private Message? HandleQueryChange()
     {
-        RefreshList();
-        return _showPreview ? new RequestPreview(GetMatchItem(0)) : null;
+        _queryDirty = true;
+        _lastQueryChangeMs = NowMs();
+        return null; // The actual refresh will be triggered by a FrameTick message after the debounce delay
     }
 
     /// <summary>

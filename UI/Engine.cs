@@ -193,7 +193,12 @@ public class Engine(IApplication App) : IDisposable
             if (_messageQueue.TryDequeue(out var queued))
                 return queued;
 
-            _messageEvent.WaitOne(16); // Wake when signaled or timeout to poll
+            if (_messageEvent.WaitOne(16))
+            {
+                continue; // New message arrived, loop to check the queue and other events
+            }
+
+            return new FrameTick(); // No events, return a FrameTick for time-based updates (e.g. animations, debouncing)
         }
     }
 
