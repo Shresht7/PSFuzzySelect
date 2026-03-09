@@ -122,7 +122,19 @@ public class Engine(IApplication App) : IDisposable
 
     #region Event Collection
 
-    /// <summary>The maximum number of messages to process per frame to prevent the main loop from being overwhelmed by a flood of events.</summary>
+    /// <summary>
+    /// The maximum number of messages to dequeue and process from <see cref="_messageQueue"/> in a single frame.
+    /// </summary>
+    /// <remarks>
+    /// The value of 64 is a pragmatic balance between UI responsiveness and throughput: it allows the engine to
+    /// make progress on large bursts of background messages without spending so long in a single frame that
+    /// rendering and user input feel sluggish.
+    ///
+    /// When more than <see cref="MaxQueuedMessagesPerFrame"/> messages are queued, only the first 64 are processed
+    /// in the current frame; the remaining messages stay in the queue and are processed in subsequent frames.
+    /// This ensures that no messages are dropped while preventing the main loop from being overwhelmed by a
+    /// flood of events in a single iteration.
+    /// </remarks>
     private const int MaxQueuedMessagesPerFrame = 64;
 
     /// <summary>
