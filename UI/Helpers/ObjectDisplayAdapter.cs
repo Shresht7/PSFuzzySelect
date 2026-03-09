@@ -54,15 +54,15 @@ public class ObjectDisplayAdapter
         var sb = new StringBuilder();
         bool first = true;  // Check to avoid leading separator
 
-        foreach (var propName in properties)
+        foreach (var property in properties)
         {
             // Append a separator if this is not the first property
             if (!first) sb.Append(" | ");
             first = false;
 
             // Append the property value
-            var property = obj.Properties[propName];
-            sb.Append(property?.Value?.ToString() ?? string.Empty);
+            var value = ResolvePropertyValue(obj, property);
+            sb.Append(value?.ToString() ?? string.Empty);
         }
 
         return sb.ToString();
@@ -85,5 +85,37 @@ public class ObjectDisplayAdapter
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Resolves a nested property value from a PSObject based on a dot-separated property path (e.g., "Address.City")
+    /// using the PowerShell property system, which can handle complex objects and collections.
+    /// </summary>
+    /// <param name="obj">The PSObject to resolve the property value from</param>
+    /// <param name="path">The dot-separated property path</param>
+    /// <returns>The resolved property value, or null if not found</returns>
+    private object? ResolvePropertyValue(PSObject obj, string path)
+    {
+        if (string.IsNullOrEmpty(path)) return null; // If the path is empty, return null
+
+        // Split the property path into parts
+        var parts = path.Split('.');
+        object? current = obj;
+
+        // Traverse the property path, resolving each part using the PowerShell property system
+        foreach (var part in parts)
+        {
+            if (current == null) return null; // If at any point we encounter a null value, return null
+
+            // Wrap the current object in a PSObject if it is not already,
+            // so we can use the PowerShell property system to find the next part
+            var psCurrent = PSObject.AsPSObject(current);
+            var property = psCurrent.Properties[part];
+
+            if (property == null) return null; // Property not found
+            current = property.Value;
+        }
+
+        return current; // Return the final resolved value
     }
 }
