@@ -147,22 +147,30 @@ public class SelectFuzzyCmdlet : PSCmdlet
         if (_engine == null || _selector == null || _uiThread == null)
             throw new InvalidOperationException("Failed to initialize correctly!");
 
-        // Signal the UI that no more items will be added, allowing it to update its state accordingly
-        _engine.EnqueueMessage(new ItemsFinished());
-
-        // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
-        _uiThread.Join();
-
-        // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
-        if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
-
-        // Retrieve the selected item(s) from the engine after the UI has closed
-        var selected = _selector.SelectedValue;
-
-        // Write the selected object (or array of objects) to the pipeline if a selection was made
-        if (selected != null)
+        try
         {
-            WriteObject(selected, enumerateCollection: true);
+
+            // Signal the UI that no more items will be added, allowing it to update its state accordingly
+            _engine.EnqueueMessage(new ItemsFinished());
+
+            // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
+            _uiThread.Join();
+
+            // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
+            if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
+
+            // Retrieve the selected item(s) from the engine after the UI has closed
+            var selected = _selector.SelectedValue;
+
+            // Write the selected object (or array of objects) to the pipeline if a selection was made
+            if (selected != null)
+            {
+                WriteObject(selected, enumerateCollection: true);
+            }
+        }
+        finally
+        {
+            _engine.Dispose();
         }
     }
 
@@ -177,6 +185,9 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
         // Await the UI thread to finish to ensure a clean shutdown. (5 second timeout to prevent hanging indefinitely if the UI fails to close properly)
         if (_uiThread != null && _uiThread.IsAlive) _uiThread.Join(5000);
+
+        // Dispose off the engine if not done already
+        _engine?.Dispose();
     }
 
     #endregion Stop

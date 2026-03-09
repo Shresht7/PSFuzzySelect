@@ -27,7 +27,7 @@ public interface IApplication : IComponent
 /// including rendering the UI components, handling user input, and updating the state of the application based on user interactions.
 /// </summary>
 /// <param name="App">The root component of the application, which will be rendered and updated by the engine</param>
-public class Engine(IApplication App)
+public class Engine(IApplication App) : IDisposable
 {
     /// <summary>The renderer responsible for drawing the UI components of the fuzzy selector application on the console</summary>
     private readonly ConsoleRenderer _renderer = new(Console.WindowWidth, Console.WindowHeight);
@@ -260,5 +260,23 @@ public class Engine(IApplication App)
         ]);
         Console.Write(ansi);      // Write the ANSI escape codes to the console to apply the cleanup
     }
+
+    #region Dispose
+
+    /// <summary> Whether the engine has been disposed</summary>
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        _previewWorker?.Dispose();
+        _previewWorker = null;
+
+        _messageEvent.Dispose();
+    }
+
+    #endregion Dispose
 
 }
