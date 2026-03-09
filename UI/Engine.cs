@@ -27,7 +27,7 @@ public interface IApplication : IComponent
 /// including rendering the UI components, handling user input, and updating the state of the application based on user interactions.
 /// </summary>
 /// <param name="App">The root component of the application, which will be rendered and updated by the engine</param>
-public class Engine(IApplication App)
+public class Engine(IApplication App) : IDisposable
 {
     /// <summary>The renderer responsible for drawing the UI components of the fuzzy selector application on the console</summary>
     private readonly ConsoleRenderer _renderer = new(Console.WindowWidth, Console.WindowHeight);
@@ -85,57 +85,22 @@ public class Engine(IApplication App)
         }
     }
 
-    /// <summary>
-    /// Shows the fuzzy selector UI for the provided collection of items and returns the selected item based on user interaction.
-    /// When preview is enabled and no preview script is supplied, a default formatting script is used.
-    /// </summary>
-    /// <param name="prompt">Prompt label displayed above the input.</param>
-    /// <param name="items">Items available for fuzzy matching and selection.</param>
-    /// <param name="properties">Optional property names used to build display text for each item.</param>
-    /// <param name="multiSelect">Whether multiple items can be selected.</param>
-    /// <param name="showPreview">Whether to display the preview pane.</param>
-    /// <param name="previewSize">Preview pane size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
-    /// <param name="previewPosition">Preview pane placement relative to the main list.</param>
-    /// <param name="previewScript">Optional script that generates preview text for the highlighted item.</param>
-    /// <returns>The selected object, an array of selected objects in multi-select mode, or null when cancelled.</returns>
-    public static object? Show(
-        string prompt,
-        IEnumerable<object> items,
-        string[]? properties = null,
-        bool multiSelect = false,
-        bool showPreview = false,
-        string previewSize = "50%",
-        PreviewPosition previewPosition = PreviewPosition.Right,
-        ScriptBlock? previewScript = null
-    )
+    public void EnablePreview(ScriptBlock? previewScript)
     {
-        var selector = new FuzzySelector(prompt, items, properties, multiSelect, showPreview, previewSize, previewPosition);
-        var engine = new Engine(selector);
-        try
+        // Use the given script or fallback to a default script 
+        var effectivePreviewScript = previewScript ?? ScriptBlock.Create("$PSItem | Format-List | Out-String");
+
+        // Initialize the PreviewWorker thread
+        _previewWorker = new PreviewWorker(effectivePreviewScript, msg => EnqueueMessage(msg));
+
+        // Prime preview generation so it updates even before the first key press
+        if (App is FuzzySelector selector)
         {
-            if (showPreview)
+            var initialPreview = selector.CreateInitialPreviewRequest();
+            if (initialPreview != null)
             {
-                var effectivePreviewScript = previewScript ?? ScriptBlock.Create("$PSItem | Format-List | Out-String");
-                engine._previewWorker = new PreviewWorker(effectivePreviewScript, msg => engine.EnqueueMessage(msg));
-
-                // Prime preview generation so it updates even before the first key press.
-                var initialPreview = selector.CreateInitialPreviewRequest();
-                if (initialPreview != null)
-                {
-                    engine.ProcessMessage(initialPreview);
-                }
+                ProcessMessage(initialPreview);
             }
-
-            // Run the main loop of the fuzzy selector
-            engine.Run();
-
-            // Return the selected value after the user has made a selection
-            return selector.SelectedValue;
-        }
-        finally
-        {
-            engine._previewWorker?.Dispose();
-            engine._messageEvent.Dispose();
         }
     }
 
@@ -158,6 +123,21 @@ public class Engine(IApplication App)
     #region Event Collection
 
     /// <summary>
+    /// The maximum number of messages to dequeue and process from <see cref="_messageQueue"/> in a single frame.
+    /// </summary>
+    /// <remarks>
+    /// The value of 64 is a pragmatic balance between UI responsiveness and throughput: it allows the engine to
+    /// make progress on large bursts of background messages without spending so long in a single frame that
+    /// rendering and user input feel sluggish.
+    ///
+    /// When more than <see cref="MaxQueuedMessagesPerFrame"/> messages are queued, only the first 64 are processed
+    /// in the current frame; the remaining messages stay in the queue and are processed in subsequent frames.
+    /// This ensures that no messages are dropped while preventing the main loop from being overwhelmed by a
+    /// flood of events in a single iteration.
+    /// </remarks>
+    private const int MaxQueuedMessagesPerFrame = 64;
+
+    /// <summary>
     /// Collects all pending events: blocks until at least one event is available,
     /// then drains any additional queued messages and buffered keystrokes.
     /// </summary>
@@ -168,13 +148,43 @@ public class Engine(IApplication App)
         // Block until at least one event is available
         events.Add(WaitForEvent());
 
-        // Drain any queued messages (e.g. from PreviewWorker)
-        while (_messageQueue.TryDequeue(out var queued))
-            events.Add(queued);
-
         // Drain any buffered keystrokes
         while (Console.KeyAvailable)
             events.Add(new KeyEvent(Console.ReadKey(intercept: true)));
+
+        // Drain any queued messages (e.g. from PreviewWorker)
+        int drained = 0;
+        var coalescedItems = new List<object>();
+        while (drained < MaxQueuedMessagesPerFrame && _messageQueue.TryDequeue(out var queued))
+        {
+            drained++;
+
+            // Coalesce consecutive ItemsAdded messages into a single batch to prevent UI stalls
+            // when a large number of items are added in quick succession (e.g. initial load or large query result)
+            if (queued is ItemsAdded itemsAdded)
+            {
+                coalescedItems.AddRange(itemsAdded.Items);
+                continue;
+            }
+
+            // Flush coalesced items as a single batch message before processing the next non-items message to prevent UI stalls
+            if (coalescedItems.Count > 0)
+            {
+                events.Add(new ItemsAdded(coalescedItems.ToArray()));
+                coalescedItems.Clear();
+            }
+
+            // Enqueue the non-items message for processing
+            events.Add(queued);
+        }
+
+        // Flush any remaining coalesced items after processing the queued messages
+        if (coalescedItems.Count > 0)
+        {
+            events.Add(new ItemsAdded(coalescedItems.ToArray()));
+            coalescedItems.Clear();
+        }
+
 
         return events;
     }
@@ -186,16 +196,21 @@ public class Engine(IApplication App)
     {
         while (true)
         {
-            if (_messageQueue.TryDequeue(out var queued))
-                return queued;
+            if (Console.KeyAvailable)
+                return new KeyEvent(Console.ReadKey(intercept: true));
 
             if (Console.WindowWidth != _renderer.Width || Console.WindowHeight != _renderer.Height)
                 return new Resize(Console.WindowWidth, Console.WindowHeight);
 
-            if (Console.KeyAvailable)
-                return new KeyEvent(Console.ReadKey(intercept: true));
+            if (_messageQueue.TryDequeue(out var queued))
+                return queued;
 
-            _messageEvent.WaitOne(16); // Wake when signaled or timeout to poll
+            if (_messageEvent.WaitOne(16))
+            {
+                continue; // New message arrived, loop to check the queue and other events
+            }
+
+            return new FrameTick(); // No events, return a FrameTick for time-based updates (e.g. animations, debouncing)
         }
     }
 
@@ -295,5 +310,23 @@ public class Engine(IApplication App)
         ]);
         Console.Write(ansi);      // Write the ANSI escape codes to the console to apply the cleanup
     }
+
+    #region Dispose
+
+    /// <summary> Whether the engine has been disposed</summary>
+    private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        _previewWorker?.Dispose();
+        _previewWorker = null;
+
+        _messageEvent.Dispose();
+    }
+
+    #endregion Dispose
 
 }

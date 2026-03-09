@@ -46,7 +46,7 @@ public class FuzzyMatcher
     /// <param name="query">The search query string that the user is trying to match.</param>
     /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public List<MatchResult> Match(IEnumerable<object> items, string query, Func<object, string> displaySelector)
+    public IReadOnlyList<MatchResult> Match(IEnumerable<object> items, string query, Func<object, string> displaySelector)
     {
         // No query provided, return all items with a default score of 0
         if (string.IsNullOrWhiteSpace(query))
@@ -68,10 +68,72 @@ public class FuzzyMatcher
         }
 
         // Sort by score descending, then by display string for consistent ordering
-        return results
-            .OrderByDescending(r => r.Score)
-            .ThenBy(r => r.DisplayString)
-            .ToList();
+        results.Sort((a, b) =>
+        {
+            int cmp = b.Score.CompareTo(a.Score);
+            return cmp != 0 ? cmp : string.Compare(a.DisplayString, b.DisplayString, StringComparison.Ordinal);
+        });
+        return results;
+    }
+
+    public IReadOnlyList<MatchResult> MatchIncremental(IReadOnlyList<MatchResult> existingMatches, IReadOnlyList<object> newItems, string query, Func<object, string> displaySelector)
+    {
+        // Append new items with score 0 when the query is empty
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            var combined = new List<MatchResult>(existingMatches.Count + newItems.Count);
+            combined.AddRange(existingMatches);
+            foreach (var item in newItems) combined.Add(new MatchResult(item, string.Empty, 0, Array.Empty<int>()));
+            return combined;
+        }
+
+        // Perform matching only on the new items and merge with existing matches to maintain order and performance
+        var q = query.ToLowerInvariant();
+        var newMatches = new List<MatchResult>();
+        foreach (var item in newItems)
+        {
+            var display = displaySelector(item);
+            var matchInfo = TryMatch(display, q);
+            if (matchInfo.HasValue)
+            {
+                newMatches.Add(new MatchResult(item, display, matchInfo.Value.score, matchInfo.Value.positions));
+            }
+        }
+
+        if (newMatches.Count == 0) return existingMatches; // No new matches, return existing list as-is
+
+        // Sort new matches by score descending, then by display string for consistent ordering
+        newMatches.Sort((a, b) =>
+        {
+            int cmp = b.Score.CompareTo(a.Score);
+            return cmp != 0 ? cmp : string.Compare(a.DisplayString, b.DisplayString, StringComparison.Ordinal);
+        });
+
+        // Merge the two sorted lists
+        var merged = new List<MatchResult>(existingMatches.Count + newMatches.Count);
+        int existingIndex = 0, newIndex = 0;
+        while (existingIndex < existingMatches.Count && newIndex < newMatches.Count)
+        {
+            var existing = existingMatches[existingIndex];
+            var newMatch = newMatches[newIndex];
+
+            // Compare scores to determine order
+            int cmp = newMatch.Score.CompareTo(existing.Score);
+
+            // If scores are equal, use display string as tiebreaker to ensure consistent ordering
+            if (cmp == 0) cmp = string.Compare(existing.DisplayString, newMatch.DisplayString, StringComparison.Ordinal);
+            // Higher score should come first, so if cmp > 0, newMatch goes before existing
+            if (cmp > 0) { merged.Add(newMatch); newIndex++; }
+            // otherwise, existing goes first
+            else { merged.Add(existing); existingIndex++; }
+        }
+
+        // Add any remaining items from either list
+        while (existingIndex < existingMatches.Count) merged.Add(existingMatches[existingIndex++]);
+        while (newIndex < newMatches.Count) merged.Add(newMatches[newIndex++]);
+
+        // Return the final merged list
+        return merged;
     }
 
     /// <summary>
@@ -83,20 +145,22 @@ public class FuzzyMatcher
     private (int score, int[] positions)? TryMatch(string text, string query)
     {
         int score = 0, textIndex = 0, consecutiveMatches = 0;
-        var positions = new List<int>();
+        var positions = new int[query.Length];
 
         // Iterate through each character in the query and try to find it in the text in order
-        foreach (char queryChar in query)
+        for (int queryIndex = 0; queryIndex < query.Length; queryIndex++)
         {
+            char queryChar = query[queryIndex];
+
             // Find next occurrence of the query character in the text (case-insensitive)
-            int foundIndex = text.IndexOf(queryChar.ToString(), textIndex, StringComparison.OrdinalIgnoreCase);
+            int foundIndex = FindNextIgnoreCase(text, textIndex, queryChar);
             if (foundIndex == -1)
             {
                 return null; // Character not found, no match
             }
 
             // Character found, calculate score and store position
-            positions.Add(foundIndex);
+            positions[queryIndex] = foundIndex;
 
             // Bonus for matching at start of text
             if (foundIndex == 0)
@@ -127,7 +191,15 @@ public class FuzzyMatcher
             textIndex = foundIndex + 1;
         }
 
-        return (score, positions.ToArray());
+        return (score, positions);
+    }
+
+    private static int FindNextIgnoreCase(string text, int startIndex, char target)
+    {
+        for (int i = startIndex; i < text.Length; i++)
+            if (char.ToLowerInvariant(text[i]) == target)
+                return i;
+        return -1;
     }
 
     /// <summary>

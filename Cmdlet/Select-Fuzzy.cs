@@ -1,4 +1,5 @@
-﻿using System.Management.Automation;
+﻿using System.Diagnostics;
+using System.Management.Automation;
 
 using PSFuzzySelect.UI;
 
@@ -73,10 +74,90 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
     #region Fields
 
-    /// <summary>A list to hold all input objects received from the pipeline</summary>
-    private readonly List<PSObject> _inputObjects = [];
+    private FuzzySelector? _selector;
+
+    private Engine? _engine;
+
+    private Thread? _uiThread;
+
+    /// <summary>An exception that may occur on the UI thread. This is captured to allow for proper error handling and reporting back to the PowerShell pipeline.</summary>
+    private Exception? _uiThreadException;
+
+    /// <summary>
+    ///  Runs the fuzzy selector user-interface on a separate thread to avoid blocking the PowerShell pipeline.
+    /// </summary>
+    /// <remarks>
+    /// This method captures any exceptions that occur on the UI thread and stores them in the <see cref="_uiThreadException"/> field for later handling.
+    /// </remarks>
+    private void RunUIThread()
+    {
+        try { _engine!.Run(); }
+        catch (Exception ex) { _uiThreadException = ex; }
+    }
+
+    /// <summary>A buffer for storing input objects before they are sent to the fuzzy selector user-interface</summary>
+    private readonly List<object> _inputBuffer = [];
+
+    /// <summary>The batch size for processing input objects. This determines how many items are buffered before being sent to the UI for display</summary>
+    private readonly int _batchSize = 64;
+
+    /// <summary>
+    /// The interval in milliseconds for flushing the input buffer to the UI.
+    /// This is used to control how frequently the buffered items are dispatched if the batch size is not reached,
+    /// ensuring that the UI remains responsive even with a continuous stream of input objects.
+    /// </summary>
+    private readonly int _flushIntervalMs = 100;
+
+    /// <summary>
+    /// A stopwatch to track the time since the last flush of the input buffer.
+    /// This is used in conjunction with the <see cref="_flushIntervalMs"/> to determine
+    /// when to automatically flush the buffer to the fuzzy-selector user-interface,
+    /// ensuring that items are displayed in a timely manner even if the batch size is not reached.
+    /// </summary>
+    private readonly Stopwatch _streamStopwatch = Stopwatch.StartNew();
+
+    /// <summary>Flushes the input buffer to the fuzzy selector user-interface.</summary>
+    private void FlushInputBuffer()
+    {
+        // If there are no items in the buffer, there is nothing to flush
+        if (_inputBuffer.Count == 0) return;
+
+        // Send the buffered items to the UI for display
+        _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer.ToArray()));
+
+        // Clear the buffer after flushing
+        _inputBuffer.Clear();
+
+        // Restart the stopwatch to track the time until the next flush
+        _streamStopwatch.Restart();
+    }
 
     #endregion Fields
+
+    #region Begin
+
+    protected override void BeginProcessing()
+    {
+        _selector = new FuzzySelector(
+            Prompt,
+            null,
+            Property,
+            MultiSelect.IsPresent,
+            Preview.IsPresent,
+            PreviewSize,
+            PreviewPosition
+        );
+
+        _engine = new Engine(_selector);
+        if (Preview.IsPresent) _engine.EnablePreview(PreviewScript);
+
+        // Start the User-Interface on a separate thread so as not to block the PowerShell pipeline
+        // The PSObjects will be streamed into the UI by dispatching a ItemsAdded Message.
+        _uiThread = new Thread(RunUIThread) { IsBackground = false };
+        _uiThread.Start();
+    }
+
+    #endregion Begin
 
     #region Process
 
@@ -86,10 +167,16 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
-        // Collect input objects into a list for processing
-        if (InputObject != null)
+        if (InputObject == null) return;
+        if (_engine == null) throw new InvalidOperationException("Engine not initialized!");
+
+        // Buffer incoming items
+        _inputBuffer.Add(InputObject);
+
+        // Flush the buffer if we've reached the batch size or if the flush interval has elapsed to ensure timely updates to the UI
+        if (_inputBuffer.Count >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
         {
-            _inputObjects.Add(InputObject);
+            FlushInputBuffer();
         }
     }
 
@@ -100,24 +187,53 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>Called once after all input has been processed</summary>
     protected override void EndProcessing()
     {
-        // Show the fuzzy selector UI and get the selected item
-        var selected = Engine.Show(
-            Prompt,
-            _inputObjects,
-            Property,
-            MultiSelect.IsPresent,
-            Preview.IsPresent,
-            PreviewSize,
-            PreviewPosition,
-            PreviewScript
-        );
+        if (_engine == null || _selector == null || _uiThread == null)
+            throw new InvalidOperationException("Failed to initialize correctly!");
 
-        // Write the selected object (or array of objects) to the pipeline if a selection was made
-        if (selected != null)
+        try
         {
-            WriteObject(selected, enumerateCollection: true);
+            // Flush any remaining items in the buffer
+            FlushInputBuffer();
+
+            // Signal the UI that no more items will be added, allowing it to update its state accordingly
+            _engine.EnqueueMessage(new ItemsFinished());
+
+            // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
+            _uiThread.Join();
+
+            // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
+            if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
+
+            // Retrieve the selected item(s) from the engine after the UI has closed
+            var selected = _selector.SelectedValue;
+
+            // Write the selected object (or array of objects) to the pipeline if a selection was made
+            if (selected != null)
+            {
+                WriteObject(selected, enumerateCollection: true);
+            }
+        }
+        finally
+        {
+            _engine.Dispose();
         }
     }
 
     #endregion End
+
+    #region Stop
+
+    protected override void StopProcessing()
+    {
+        // If the cmdlet is stopped (e.g., by the user), signal the UI to quit immediately
+        _engine?.EnqueueMessage(new Quit());
+
+        // Await the UI thread to finish to ensure a clean shutdown. (5 second timeout to prevent hanging indefinitely if the UI fails to close properly)
+        if (_uiThread != null && _uiThread.IsAlive) _uiThread.Join(5000);
+
+        // Dispose off the engine if not done already
+        if (_uiThread == null || !_uiThread.IsAlive) _engine?.Dispose();
+    }
+
+    #endregion Stop
 }

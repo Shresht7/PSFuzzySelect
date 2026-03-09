@@ -60,3 +60,21 @@ record class Resize(int Width, int Height) : Message;
 /// Message indicating that the user has requested to quit the fuzzy selector without making a selection
 /// </summary>
 record class Quit : Message;
+
+/// <summary>
+/// Message carrying a batch of new items streamed from the pipeline.
+/// Dispatched by the cmdlet thread and processed by the FuzzySelector on the engine thread.
+/// </summary>
+/// <param name="Items">The batch of newly arrived items.</param>
+record class ItemsAdded(IReadOnlyList<object> Items) : Message;
+
+/// <summary>
+/// Message indicating that the pipeline has finished producing items.
+/// After this message, no more <see cref="ItemsAdded"/> messages will arrive.
+/// </summary>
+record class ItemsFinished : Message;
+
+/// <summary>
+/// Periodic engine tick used for time-based updates such as timers, debouncing, and animations.
+/// </summary>
+record class FrameTick : Message;

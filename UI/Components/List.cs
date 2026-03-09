@@ -34,11 +34,31 @@ public class List(
     /// Updates the list of matches and ensures the cursor remains within valid bounds.
     /// </summary>
     /// <param name="newMatches">The new list of match results to display.</param>
-    public void SetMatches(List<MatchResult> newMatches)
+    /// <param name="preserveCursor">Whether to attempt to preserve the current cursor position if possible, or reset to the top of the list.</param>
+    public void SetMatches(IReadOnlyList<MatchResult> newMatches, bool preserveCursor = false)
     {
-        Matches = newMatches;
-        Cursor = 0; // Reset cursor to the top of the list whenever matches are updated
-        _scrollOffset = 0; // Reset scroll offset to ensure the top of the list is visible
+        Matches = newMatches; // Update the matches list
+
+        if (!preserveCursor)
+        {
+            Cursor = 0; // Reset cursor to the top of the list whenever matches are updated
+            _scrollOffset = 0; // Reset scroll offset to ensure the top of the list is visible
+            return;
+        }
+
+        if (Matches.Count == 0)
+        {
+            Cursor = -1; // No matches, set cursor to an invalid position
+            _scrollOffset = 0; // Reset scroll offset
+            return;
+        }
+
+        // Ensure the cursor is within the bounds of the new matches list
+        Cursor = Math.Clamp(Cursor, 0, Matches.Count - 1);
+
+        // Keep the scroll offset valid
+        if (_scrollOffset > Cursor) _scrollOffset = Cursor;
+        if (_scrollOffset < 0) _scrollOffset = 0;
     }
 
     public void Render(ISurface surface)
