@@ -155,7 +155,11 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
     protected override void StopProcessing()
     {
+        // If the cmdlet is stopped (e.g., by the user), signal the UI to quit immediately
         _engine?.EnqueueMessage(new Quit());
+
+        // Await the UI thread to finish to ensure a clean shutdown. (5 second timeout to prevent hanging indefinitely if the UI fails to close properly)
+        if (_uiThread != null && _uiThread.IsAlive) _uiThread.Join(5000);
     }
 
     #endregion Stop
