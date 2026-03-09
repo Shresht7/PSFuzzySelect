@@ -147,7 +147,6 @@ public class List(
         return key.Key switch
         {
             ConsoleKey.Tab => SelectItem(Matches[Cursor].Item),
-            ConsoleKey.Spacebar => SelectItem(Matches[Cursor].Item),
             ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
             ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
