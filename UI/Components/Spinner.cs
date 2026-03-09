@@ -20,21 +20,23 @@ public class Spinner(bool active, string text, int frameInterval = 120) : ICompo
     public void Render(ISurface surface)
     {
         // The text to display next to the spinner
-        var spinner = new TextSpan(active ? _frames[0] : " ", _spinnerStyle);
-        var display = new TextBlock()
-            .Add(spinner).Add($" {text}")
-            .Align(TextAlignment.Right);
+        string spinnerFrame;
 
         // Calculate the current frame based on the elapsed time to create an animation effect when active
         if (active)
         {
             var ms = DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
             var idx = (int)(ms / _frameInterval % _frames.Length);
-            display = new TextBlock()
-                .Add(new TextSpan(_frames[idx], _spinnerStyle)).Add($" {text}")
-                .Align(TextAlignment.Right);
+            spinnerFrame = _frames[idx];
+        }
+        else
+        {
+            spinnerFrame = " ";
         }
 
+        var display = new TextBlock()
+            .Add(new TextSpan(spinnerFrame, _spinnerStyle)).Add($" {text}")
+            .Align(TextAlignment.Right);
         // Render the spinner
         display.Render(surface);
     }
