@@ -194,7 +194,7 @@ public class FuzzySelector : IApplication
         var leftPane = blueprint.Compose(
             _input,
             _list,
-            new StatusBar(_list.Matches.Count, _list.Cursor)
+            new StatusBar(_list.Matches.Count, _list.Cursor, !_isStreamingFinished)
         );
         var rightPane = _preview;
 
