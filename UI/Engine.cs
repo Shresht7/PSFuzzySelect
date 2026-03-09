@@ -136,6 +136,10 @@ public class Engine(IApplication App) : IDisposable
         // Block until at least one event is available
         events.Add(WaitForEvent());
 
+        // Drain any buffered keystrokes
+        while (Console.KeyAvailable)
+            events.Add(new KeyEvent(Console.ReadKey(intercept: true)));
+
         // Drain any queued messages (e.g. from PreviewWorker)
         int drained = 0;
         while (drained < MaxQueuedMessagesPerFrame && _messageQueue.TryDequeue(out var queued))
@@ -143,10 +147,6 @@ public class Engine(IApplication App) : IDisposable
             events.Add(queued);
             drained++;
         }
-
-        // Drain any buffered keystrokes
-        while (Console.KeyAvailable)
-            events.Add(new KeyEvent(Console.ReadKey(intercept: true)));
 
         return events;
     }
@@ -158,14 +158,14 @@ public class Engine(IApplication App) : IDisposable
     {
         while (true)
         {
-            if (_messageQueue.TryDequeue(out var queued))
-                return queued;
+            if (Console.KeyAvailable)
+                return new KeyEvent(Console.ReadKey(intercept: true));
 
             if (Console.WindowWidth != _renderer.Width || Console.WindowHeight != _renderer.Height)
                 return new Resize(Console.WindowWidth, Console.WindowHeight);
 
-            if (Console.KeyAvailable)
-                return new KeyEvent(Console.ReadKey(intercept: true));
+            if (_messageQueue.TryDequeue(out var queued))
+                return queued;
 
             _messageEvent.WaitOne(16); // Wake when signaled or timeout to poll
         }
