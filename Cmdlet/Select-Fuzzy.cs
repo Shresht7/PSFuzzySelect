@@ -82,6 +82,20 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
     private Thread? _uiThread;
 
+    /// <summary>An exception that may occur on the UI thread. This is captured to allow for proper error handling and reporting back to the PowerShell pipeline.</summary>
+    private Exception? _uiThreadException;
+
+    /// <summary>
+    ///  Runs the fuzzy selector user-interface on a separate thread to avoid blocking the PowerShell pipeline.
+    /// </summary>
+    /// <remarks>
+    /// This method captures any exceptions that occur on the UI thread and stores them in the <see cref="_uiThreadException"/> field for later handling.
+    /// </remarks>
+    private void RunUIThread()
+    {
+        try { _engine?.Run(); }
+        catch (Exception ex) { _uiThreadException = ex; }
+    }
 
     #endregion Fields
 
@@ -103,8 +117,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
         // Start the User-Interface on a separate thread so as not to block the PowerShell pipeline
         // The PSObjects will be streamed into the UI by dispatching a ItemsAdded Message.
-        _uiThread = new Thread(_engine.Run) { IsBackground = false }
-        ;
+        _uiThread = new Thread(RunUIThread) { IsBackground = false };
         _uiThread.Start();
     }
 
@@ -138,6 +151,9 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
         // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
         _uiThread!.Join();
+
+        // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
+        if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
 
         // Retrieve the selected item(s) from the engine after the UI has closed
         var selected = _selector?.SelectedValue;
