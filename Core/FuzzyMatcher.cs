@@ -145,20 +145,22 @@ public class FuzzyMatcher
     private (int score, int[] positions)? TryMatch(string text, string query)
     {
         int score = 0, textIndex = 0, consecutiveMatches = 0;
-        var positions = new List<int>();
+        var positions = new int[query.Length];
 
         // Iterate through each character in the query and try to find it in the text in order
-        foreach (char queryChar in query)
+        for (int queryIndex = 0; queryIndex < query.Length; queryIndex++)
         {
+            char queryChar = query[queryIndex];
+
             // Find next occurrence of the query character in the text (case-insensitive)
-            int foundIndex = text.IndexOf(queryChar.ToString(), textIndex, StringComparison.OrdinalIgnoreCase);
+            int foundIndex = FindNextIgnoreCase(text, textIndex, queryChar);
             if (foundIndex == -1)
             {
                 return null; // Character not found, no match
             }
 
             // Character found, calculate score and store position
-            positions.Add(foundIndex);
+            positions[queryIndex] = foundIndex;
 
             // Bonus for matching at start of text
             if (foundIndex == 0)
@@ -190,6 +192,14 @@ public class FuzzyMatcher
         }
 
         return (score, positions.ToArray());
+    }
+
+    private static int FindNextIgnoreCase(string text, int startIndex, char target)
+    {
+        for (int i = startIndex; i < text.Length; i++)
+            if (char.ToLowerInvariant(text[i]) == target)
+                return i;
+        return -1;
     }
 
     /// <summary>
