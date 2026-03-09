@@ -355,6 +355,10 @@ public class FuzzySelector : IApplication
     {
         _items.AddRange(newItems);
         RefreshList(newItems);
+
+        if (_showPreview && _list.Matches.Count > 0)
+            return new RequestPreview(GetMatchItem(_list.Cursor));
+
         return null;
     }
 
