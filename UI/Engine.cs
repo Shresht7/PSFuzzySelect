@@ -122,6 +122,9 @@ public class Engine(IApplication App) : IDisposable
 
     #region Event Collection
 
+    /// <summary>The maximum number of messages to process per frame to prevent the main loop from being overwhelmed by a flood of events.</summary>
+    private const int MaxQueuedMessagesPerFrame = 64;
+
     /// <summary>
     /// Collects all pending events: blocks until at least one event is available,
     /// then drains any additional queued messages and buffered keystrokes.
@@ -134,8 +137,12 @@ public class Engine(IApplication App) : IDisposable
         events.Add(WaitForEvent());
 
         // Drain any queued messages (e.g. from PreviewWorker)
-        while (_messageQueue.TryDequeue(out var queued))
+        int drained = 0;
+        while (drained < MaxQueuedMessagesPerFrame && _messageQueue.TryDequeue(out var queued))
+        {
             events.Add(queued);
+            drained++;
+        }
 
         // Drain any buffered keystrokes
         while (Console.KeyAvailable)
