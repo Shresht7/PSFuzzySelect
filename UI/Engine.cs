@@ -142,11 +142,37 @@ public class Engine(IApplication App) : IDisposable
 
         // Drain any queued messages (e.g. from PreviewWorker)
         int drained = 0;
+        var coalescedItems = new List<object>();
         while (drained < MaxQueuedMessagesPerFrame && _messageQueue.TryDequeue(out var queued))
         {
-            events.Add(queued);
             drained++;
+
+            // Coalesce consecutive ItemsAdded messages into a single batch to prevent UI stalls
+            // when a large number of items are added in quick succession (e.g. initial load or large query result)
+            if (queued is ItemsAdded itemsAdded)
+            {
+                coalescedItems.AddRange(itemsAdded.Items);
+                continue;
+            }
+
+            // Flush coalesced items as a single batch message before processing the next non-items message to prevent UI stalls
+            if (coalescedItems.Count > 0)
+            {
+                events.Add(new ItemsAdded(coalescedItems.ToArray()));
+                coalescedItems.Clear();
+            }
+
+            // Enqueue the non-items message for processing
+            events.Add(queued);
         }
+
+        // Flush any remaining coalesced items after processing the queued messages
+        if (coalescedItems.Count > 0)
+        {
+            events.Add(new ItemsAdded(coalescedItems.ToArray()));
+            coalescedItems.Clear();
+        }
+
 
         return events;
     }
