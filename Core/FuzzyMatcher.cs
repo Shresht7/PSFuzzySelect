@@ -68,10 +68,12 @@ public class FuzzyMatcher
         }
 
         // Sort by score descending, then by display string for consistent ordering
-        return results
-            .OrderByDescending(r => r.Score)
-            .ThenBy(r => r.DisplayString)
-            .ToList();
+        results.Sort((a, b) =>
+        {
+            int cmp = b.Score.CompareTo(a.Score);
+            return cmp != 0 ? cmp : string.Compare(a.DisplayString, b.DisplayString, StringComparison.Ordinal);
+        });
+        return results;
     }
 
     public IReadOnlyList<MatchResult> MatchIncremental(IReadOnlyList<MatchResult> existingMatches, IReadOnlyList<object> newItems, string query, Func<object, string> displaySelector)
