@@ -191,7 +191,7 @@ public class FuzzyMatcher
             textIndex = foundIndex + 1;
         }
 
-        return (score, positions.ToArray());
+        return (score, positions);
     }
 
     private static int FindNextIgnoreCase(string text, int startIndex, char target)
