@@ -268,9 +268,14 @@ public class FuzzySelector : IApplication
     /// </summary>
     private void RefreshList(IReadOnlyList<object>? newItems = null)
     {
+        // Determine the list of items that match the current query
         var currentMatches = newItems == null
-            ? _matcher.Match(_items, _input.Query, GetDisplayString)
-            : _matcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString);
+            ? _matcher.Match(_items, _input.Query, GetDisplayString) // if newItems is null, perform a full match against the entire list
+            : _matcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString); // otherwise, perform an incremental match on existing matches
+
+        if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
+
+        // Update the list component with the new matches, which will trigger a re-render of the match list in the user-interface
         _list.SetMatches(currentMatches);
     }
 

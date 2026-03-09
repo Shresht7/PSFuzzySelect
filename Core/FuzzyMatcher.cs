@@ -46,7 +46,7 @@ public class FuzzyMatcher
     /// <param name="query">The search query string that the user is trying to match.</param>
     /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public List<MatchResult> Match(IEnumerable<object> items, string query, Func<object, string> displaySelector)
+    public IReadOnlyList<MatchResult> Match(IEnumerable<object> items, string query, Func<object, string> displaySelector)
     {
         // No query provided, return all items with a default score of 0
         if (string.IsNullOrWhiteSpace(query))
@@ -74,7 +74,7 @@ public class FuzzyMatcher
             .ToList();
     }
 
-    public List<MatchResult> MatchIncremental(IReadOnlyList<MatchResult> existingMatches, IReadOnlyList<object> newItems, string query, Func<object, string> displaySelector)
+    public IReadOnlyList<MatchResult> MatchIncremental(IReadOnlyList<MatchResult> existingMatches, IReadOnlyList<object> newItems, string query, Func<object, string> displaySelector)
     {
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
@@ -98,7 +98,7 @@ public class FuzzyMatcher
             }
         }
 
-        if (newMatches.Count == 0) return existingMatches.ToList(); // No new matches, return existing list as-is
+        if (newMatches.Count == 0) return existingMatches; // No new matches, return existing list as-is
 
         // Sort new matches by score descending, then by display string for consistent ordering
         newMatches.Sort((a, b) =>

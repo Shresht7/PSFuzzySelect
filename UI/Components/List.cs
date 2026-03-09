@@ -34,7 +34,7 @@ public class List(
     /// Updates the list of matches and ensures the cursor remains within valid bounds.
     /// </summary>
     /// <param name="newMatches">The new list of match results to display.</param>
-    public void SetMatches(List<MatchResult> newMatches)
+    public void SetMatches(IReadOnlyList<MatchResult> newMatches)
     {
         Matches = newMatches;
         Cursor = 0; // Reset cursor to the top of the list whenever matches are updated
