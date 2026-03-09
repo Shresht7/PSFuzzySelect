@@ -109,8 +109,9 @@ public class SelectFuzzyCmdlet : PSCmdlet
             PreviewSize,
             PreviewPosition
         );
-        // TODO: We're missing the Preview Script block. Need to get rid of Engine.Show and adapt accordingly
+
         _engine = new Engine(_selector);
+        if (Preview.IsPresent) _engine.EnablePreview(PreviewScript);
 
         // Start the User-Interface on a separate thread so as not to block the PowerShell pipeline
         // The PSObjects will be streamed into the UI by dispatching a ItemsAdded Message.
