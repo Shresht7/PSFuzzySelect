@@ -232,7 +232,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
         if (_uiThread != null && _uiThread.IsAlive) _uiThread.Join(5000);
 
         // Dispose off the engine if not done already
-        _engine?.Dispose();
+        if (_uiThread == null || !_uiThread.IsAlive) _engine?.Dispose();
     }
 
     #endregion Stop
