@@ -90,7 +90,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </remarks>
     private void RunUIThread()
     {
-        try { _engine?.Run(); }
+        try { _engine!.Run(); }
         catch (Exception ex) { _uiThreadException = ex; }
     }
 
