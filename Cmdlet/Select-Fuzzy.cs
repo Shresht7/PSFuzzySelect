@@ -128,12 +128,12 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
+        if (InputObject == null) return;
+        if (_engine == null) throw new InvalidOperationException("Engine not initialized!");
+
         // If an input object is provided, enqueue it to be added to the fuzzy selector UI. The UI will update in real-time as items are added.
-        if (InputObject != null)
-        {
-            // !! FIXME: Pipe the PSObject straight through to the UI for now. Implement batch processing
-            _engine!.EnqueueMessage(new ItemsAdded(new List<object> { InputObject }));
-        }
+        // !! FIXME: Pipe the PSObject straight through to the UI for now. Implement batch processing
+        _engine.EnqueueMessage(new ItemsAdded(new List<object> { InputObject }));
     }
 
     #endregion Process
@@ -143,17 +143,20 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>Called once after all input has been processed</summary>
     protected override void EndProcessing()
     {
+        if (_engine == null || _selector == null || _uiThread == null)
+            throw new InvalidOperationException("Failed to initialize correctly!");
+
         // Signal the UI that no more items will be added, allowing it to update its state accordingly
-        _engine!.EnqueueMessage(new ItemsFinished());
+        _engine.EnqueueMessage(new ItemsFinished());
 
         // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
-        _uiThread!.Join();
+        _uiThread.Join();
 
         // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
         if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
 
         // Retrieve the selected item(s) from the engine after the UI has closed
-        var selected = _selector?.SelectedValue;
+        var selected = _selector.SelectedValue;
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made
         if (selected != null)
