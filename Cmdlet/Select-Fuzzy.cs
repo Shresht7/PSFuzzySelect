@@ -6,11 +6,38 @@ using PSFuzzySelect.UI;
 namespace PSFuzzySelect.Cmdlet;
 
 /// <summary>
-/// A PowerShell cmdlet that provides a fuzzy selection interface for selecting items from a list of input objects.
+/// <para type="synopsis">Provides an interactive fuzzy selection interface for PowerShell pipeline objects</para>
+/// <para type="description">
+/// `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-fitlering and selecting objects
+/// from the pipeline. Items appear in the user-interface as the upstream command produces them (streaming).
+/// The selected objects are written to the output pipeline after the user confirms.
+/// 
+/// Keybindings:
+///     Enter   Confirm Selection
+///     Esc     Cancel (Nothing written to the Output)
+///     ...
+/// </para>
 /// </summary>
+/// <example>
+///     <code>Get-ChildItem -File | Select-Fuzzy</code>
+///     <para>Interactively select a file</code>
+/// </example>
+/// <example>
+///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name</code>
+///     <para>Pick a file by name</code>
+/// </example>
+/// <example>
+///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect</code>
+///     <para>Select multiple files</para>
+/// </example>
+/// <example>
+///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect -Preview -PreviewScript { Get-Content $_.FullName }</code>
+///     <para>Select multiple files with live-content preview on the right</para>
+/// </example>
 [Cmdlet(VerbsCommon.Select, "Fuzzy")]
+[Alias("psfzf")]
 [OutputType(typeof(PSObject))]
-public class SelectFuzzyCmdlet : PSCmdlet
+public sealed class SelectFuzzyCmdlet : PSCmdlet
 {
 
     #region Parameters
