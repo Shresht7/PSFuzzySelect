@@ -73,9 +73,6 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
     #region Fields
 
-    /// <summary>A list to hold all input objects received from the pipeline</summary>
-    private readonly List<PSObject> _inputObjects = [];
-
     private FuzzySelector? _selector;
 
     private Engine? _engine;
@@ -131,7 +128,7 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
-        // Collect input objects into a list for processing
+        // If an input object is provided, enqueue it to be added to the fuzzy selector UI. The UI will update in real-time as items are added.
         if (InputObject != null)
         {
             // !! FIXME: Pipe the PSObject straight through to the UI for now. Implement batch processing
