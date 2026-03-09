@@ -276,7 +276,7 @@ public class FuzzySelector : IApplication
         if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
 
         // Update the list component with the new matches, which will trigger a re-render of the match list in the user-interface
-        _list.SetMatches(currentMatches);
+        _list.SetMatches(currentMatches, preserveCursor: newItems != null);
     }
 
     /// <summary>
