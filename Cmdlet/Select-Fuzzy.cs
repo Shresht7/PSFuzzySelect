@@ -76,7 +76,39 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>A list to hold all input objects received from the pipeline</summary>
     private readonly List<PSObject> _inputObjects = [];
 
+    private FuzzySelector? _selector;
+
+    private Engine? _engine;
+
+    private Thread? _uiThread;
+
+
     #endregion Fields
+
+    #region Begin
+
+    protected override void BeginProcessing()
+    {
+        _selector = new FuzzySelector(
+            Prompt,
+            null,
+            Property,
+            MultiSelect.IsPresent,
+            Preview.IsPresent,
+            PreviewSize,
+            PreviewPosition
+        );
+        // TODO: We're missing the Preview Script block. Need to get rid of Engine.Show and adapt accordingly
+        _engine = new Engine(_selector);
+
+        // Start the User-Interface on a separate thread so as not to block the PowerShell pipeline
+        // The PSObjects will be streamed into the UI by dispatching a ItemsAdded Message.
+        _uiThread = new Thread(_engine.Run) { IsBackground = false }
+        ;
+        _uiThread.Start();
+    }
+
+    #endregion Begin
 
     #region Process
 
@@ -89,7 +121,8 @@ public class SelectFuzzyCmdlet : PSCmdlet
         // Collect input objects into a list for processing
         if (InputObject != null)
         {
-            _inputObjects.Add(InputObject);
+            // !! FIXME: Pipe the PSObject straight through to the UI for now. Implement batch processing
+            _engine!.EnqueueMessage(new ItemsAdded(new List<object> { InputObject }));
         }
     }
 
@@ -100,17 +133,14 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>Called once after all input has been processed</summary>
     protected override void EndProcessing()
     {
-        // Show the fuzzy selector UI and get the selected item
-        var selected = Engine.Show(
-            Prompt,
-            _inputObjects,
-            Property,
-            MultiSelect.IsPresent,
-            Preview.IsPresent,
-            PreviewSize,
-            PreviewPosition,
-            PreviewScript
-        );
+        // Signal the UI that no more items will be added, allowing it to update its state accordingly
+        _engine!.EnqueueMessage(new ItemsFinished());
+
+        // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
+        _uiThread!.Join();
+
+        // Retrieve the selected item(s) from the engine after the UI has closed
+        var selected = _selector?.SelectedValue;
 
         // Write the selected object (or array of objects) to the pipeline if a selection was made
         if (selected != null)
@@ -120,4 +150,13 @@ public class SelectFuzzyCmdlet : PSCmdlet
     }
 
     #endregion End
+
+    #region Stop
+
+    protected override void StopProcessing()
+    {
+        _engine?.EnqueueMessage(new Quit());
+    }
+
+    #endregion Stop
 }
