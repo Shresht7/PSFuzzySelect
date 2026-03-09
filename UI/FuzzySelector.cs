@@ -331,6 +331,9 @@ public class FuzzySelector : IApplication
     /// </summary>
     private Message? HandleConfirm()
     {
+        // Ensure pending debounced query is applied before selection
+        FlushDebouncedQueryIfReady(force: true);
+
         if (_selectedItems.Count == 0 && _list.Cursor >= 0 && _list.Cursor < _list.Matches.Count)
         {
             _selectedItems.Add(_list.Matches[_list.Cursor].Item);
