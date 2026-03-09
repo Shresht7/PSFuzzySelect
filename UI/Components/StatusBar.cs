@@ -1,5 +1,6 @@
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Components.Text;
+using PSFuzzySelect.UI.Layouts;
 
 namespace PSFuzzySelect.UI.Components;
 
@@ -7,9 +8,7 @@ public class StatusBar(int matchCount, int cursor, bool isStreaming) : IComponen
 {
     public void Render(ISurface surface)
     {
-        new TextBlock($"{cursor + 1}/{matchCount}")
-            .Add(isStreaming ? " (Streaming...)" : string.Empty)
-            .Align(TextAlignment.Right)
+        new Spinner(isStreaming, $"{cursor + 1} / {matchCount}")
             .Render(surface);
     }
 }
