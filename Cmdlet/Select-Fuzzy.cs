@@ -1,4 +1,5 @@
-﻿using System.Management.Automation;
+﻿using System.Diagnostics;
+using System.Management.Automation;
 
 using PSFuzzySelect.UI;
 
@@ -100,8 +101,25 @@ public class SelectFuzzyCmdlet : PSCmdlet
     /// <summary>The batch size for processing input objects. This determines how many items are buffered before being sent to the UI for display</summary>
     private readonly int _batchSize = 64;
 
+    /// <summary>
+    /// The interval in milliseconds for flushing the input buffer to the UI.
+    /// This is used to control how frequently the buffered items are dispatched if the batch size is not reached,
+    /// ensuring that the UI remains responsive even with a continuous stream of input objects.
+    /// </summary>
+    private readonly int _flushIntervalMs = 100;
+
+    /// <summary>
+    /// A stopwatch to track the time since the last flush of the input buffer.
+    /// This is used in conjunction with the <see cref="_flushIntervalMs"/> to determine
+    /// when to automatically flush the buffer to the fuzzy-selector user-interface,
+    /// ensuring that items are displayed in a timely manner even if the batch size is not reached.
+    /// </summary>
+    private readonly Stopwatch _streamStopwatch = Stopwatch.StartNew();
+
+    /// <summary>Flushes the input buffer to the fuzzy selector user-interface.</summary>
     private void FlushInputBuffer()
     {
+        // If there are no items in the buffer, there is nothing to flush
         if (_inputBuffer.Count == 0) return;
 
         // Send the buffered items to the UI for display
@@ -109,6 +127,9 @@ public class SelectFuzzyCmdlet : PSCmdlet
 
         // Clear the buffer after flushing
         _inputBuffer.Clear();
+
+        // Restart the stopwatch to track the time until the next flush
+        _streamStopwatch.Restart();
     }
 
     #endregion Fields
@@ -149,10 +170,14 @@ public class SelectFuzzyCmdlet : PSCmdlet
         if (InputObject == null) return;
         if (_engine == null) throw new InvalidOperationException("Engine not initialized!");
 
-        // Buffer incoming items until we reach the batch size...
+        // Buffer incoming items
         _inputBuffer.Add(InputObject);
-        // ...then flush the buffer to the UI to update the displayed items
-        if (_inputBuffer.Count >= _batchSize) FlushInputBuffer();
+
+        // Flush the buffer if we've reached the batch size or if the flush interval has elapsed to ensure timely updates to the UI
+        if (_inputBuffer.Count >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
+        {
+            FlushInputBuffer();
+        }
     }
 
     #endregion Process
