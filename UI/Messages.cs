@@ -73,3 +73,8 @@ record class ItemsAdded(IReadOnlyList<object> Items) : Message;
 /// After this message, no more <see cref="ItemsAdded"/> messages will arrive.
 /// </summary>
 record class ItemsFinished : Message;
+
+/// <summary>
+/// Periodic engine tick used for time-based updates such as timers, debouncing, and animations.
+/// </summary>
+record class FrameTick : Message;
