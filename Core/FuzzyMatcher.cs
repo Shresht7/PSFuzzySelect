@@ -29,8 +29,9 @@ public class FuzzyMatcher
         var results = new List<MatchResult>();
         var queryLower = query.ToLowerInvariant();
 
-        foreach (var item in items)
+        for (int i = 0; i < items.Count; i++)
         {
+            object? item = items[i];
             var display = displaySelector(item);
             var matchInfo = TryMatch(display, queryLower);
             if (matchInfo.HasValue)
@@ -70,8 +71,9 @@ public class FuzzyMatcher
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
         var q = query.ToLowerInvariant();
         var newMatches = new List<MatchResult>();
-        foreach (var item in newItems)
+        for (int i = 0; i < newItems.Count; i++)
         {
+            object? item = newItems[i];
             var display = displaySelector(item);
             var matchInfo = TryMatch(display, q);
             if (matchInfo.HasValue)
