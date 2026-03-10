@@ -50,7 +50,7 @@ public class FuzzySelector : IApplication
 
     private static long NowMs() => DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
 
-    private Message? FlushDebouncedQueryIfReady(bool force = false)
+    private RequestPreview? FlushDebouncedQueryIfReady(bool force = false)
     {
         if (!_queryDirty) return null;
 
@@ -67,11 +67,11 @@ public class FuzzySelector : IApplication
     #region Preview
 
     /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
-    private bool _showPreview = false;
+    private readonly bool _showPreview = false;
 
-    private Preview _preview = new();
+    private readonly Preview _preview = new();
 
-    private PreviewPosition _previewPosition = PreviewPosition.Right;
+    private readonly PreviewPosition _previewPosition = PreviewPosition.Right;
 
     /// <summary>
     /// Gets the item at the specified match index, or null if the index is out of bounds.
@@ -91,7 +91,7 @@ public class FuzzySelector : IApplication
         return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
     }
 
-    private Size _previewSize = Size.Fractional(0.5f);
+    private readonly Size _previewSize = Size.Fractional(0.5f);
 
     /// <summary>
     /// Parses the preview size string into a layout size.
@@ -99,9 +99,9 @@ public class FuzzySelector : IApplication
     /// <param name="previewSize">Size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
     /// <returns>A <see cref="Size"/> value used by layout composition.</returns>
     /// <exception cref="ArgumentException">Thrown when the input format is invalid.</exception>
-    private Size GetPreviewSize(string previewSize)
+    private static Size GetPreviewSize(string previewSize)
     {
-        if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
+        if (previewSize.EndsWith('%') && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
         {
             return Size.Fractional(percentage / 100.0f);
         }
@@ -301,7 +301,7 @@ public class FuzzySelector : IApplication
     /// <summary>
     /// Handles confirmation. If nothing was explicitly selected, takes the item under the cursor.
     /// </summary>
-    private Message? HandleConfirm()
+    private Quit? HandleConfirm()
     {
         // Ensure pending debounced query is applied before selection
         FlushDebouncedQueryIfReady(force: true);
@@ -323,7 +323,7 @@ public class FuzzySelector : IApplication
         return null;
     }
 
-    private Message? HandleItemsAdded(MatchableItem[] newItems)
+    private RequestPreview? HandleItemsAdded(MatchableItem[] newItems)
     {
         _items.AddRange(newItems);
         RefreshList(newItems);
