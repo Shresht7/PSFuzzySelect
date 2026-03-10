@@ -1,28 +1,13 @@
 namespace PSFuzzySelect.Core;
 
-public readonly record struct MatchResult(object item, string displayString, int score, int[] positions)
-{
-    /// <summary>
-    /// The original item that was matched.
-    /// This can be any object that the fuzzy matcher is designed to work with,
-    /// such as a string, a PSObject, or a custom data structure.
-    /// </summary> 
-    public object Item { get; } = item;
-    /// <summary>
-    /// A string representation of the item that was used for display purposes.
-    /// This is the string that will be shown to the user in the fuzzy selection interface.
-    /// </summary>
-    public string DisplayString { get; } = displayString;
-    /// <summary>
-    /// The score of the match, typically a numerical value indicating how closely the item matches the search query
-    /// </summary>
-    public int Score { get; } = score;
-    /// <summary>
-    /// The positions of the characters in the DisplayString that contributed to the match.
-    /// This can be used for highlighting the matched characters in the UI.
-    /// </summary>
-    public int[] Positions { get; } = positions;
-}
+/// <summary>
+/// Represents the result of a fuzzy match, including the original item, its display string, the calculated score, and the positions of matched characters in the display string.
+/// </summary>
+/// <param name="Item">The original item that was matched</param>
+/// <param name="DisplayString">The string representation of the item used for matching</param>
+/// <param name="Score">The calculated score of the match</param>
+/// <param name="Positions">The positions of matched characters in the display string</param>
+public readonly record struct MatchResult(object Item, string DisplayString, int Score, int[] Positions);
 
 public class FuzzyMatcher
 {
