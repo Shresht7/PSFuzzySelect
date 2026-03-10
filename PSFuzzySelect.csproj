@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <AssemblyName>PSFuzzySelect</AssemblyName>
+        <RootNamespace>PSFuzzySelect</RootNamespace>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+
+        <!-- Don't copy PowerShell assemblies into the output directory; PowerShell will provide them at runtime -->
+        <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" PrivateAssets="All" />
+    </ItemGroup>
+
+    <Target Name="CopyModuleFiles" AfterTargets="Build">
+        <MakeDir Directories="$(ProjectDir)Module" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ProjectDir)Module" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="PSFuzzySelect.psd1" DestinationFolder="$(ProjectDir)Module" SkipUnchangedFiles="true" />
+    </Target>
+
+</Project>

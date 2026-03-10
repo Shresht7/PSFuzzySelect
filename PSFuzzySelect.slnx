@@ -1,6 +1,0 @@
-<Solution>
-  <Project Path="App/App.csproj" />
-  <Project Path="Cmdlet/Cmdlet.csproj" />
-  <Project Path="Core/Core.csproj" />
-  <Project Path="UI/UI.csproj" />
-</Solution>
