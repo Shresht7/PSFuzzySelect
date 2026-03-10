@@ -62,11 +62,19 @@ public record class Resize(int Width, int Height) : Message;
 public record class Quit : Message;
 
 /// <summary>
+/// Message representing an item that can be matched in the fuzzy selector,
+/// containing the original item and its display string used for matching and rendering in the UI
+/// </summary>
+/// <param name="Item">The original item</param>
+/// <param name="Display">The display string used for matching and rendering</param>
+public readonly record struct MatchableItem(object Item, string Display);
+
+/// <summary>
 /// Message carrying a batch of new items streamed from the pipeline.
 /// Dispatched by the cmdlet thread and processed by the FuzzySelector on the engine thread.
 /// </summary>
 /// <param name="Items">The batch of newly arrived items.</param>
-public record class ItemsAdded(List<object> Items) : Message;
+public record class ItemsAdded(IReadOnlyList<MatchableItem> Items) : Message;
 
 /// <summary>
 /// Message indicating that the pipeline has finished producing items.
