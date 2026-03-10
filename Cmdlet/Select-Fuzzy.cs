@@ -155,8 +155,12 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         // If there are no items in the buffer, there is nothing to flush
         if (_inputBufferIndex == 0) return;
 
+        // Create a copy of the filled portion of the buffer to send to the UI
+        var itemsToSend = new MatchableItem[_inputBufferIndex];
+        Array.Copy(_inputBuffer, itemsToSend, _inputBufferIndex);
+
         // Send the buffered items to the UI for display
-        _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer));
+        _engine!.EnqueueMessage(new ItemsAdded(itemsToSend));
 
         // Clear the buffer after flushing
         Array.Clear(_inputBuffer, 0, _inputBuffer.Length);
