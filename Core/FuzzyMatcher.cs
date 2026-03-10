@@ -23,12 +23,13 @@ public class FuzzyMatcher
     {
         var results = new List<MatchResult>(items.Count);
 
-        // No query provided, return all items with a default score of 0
+        // No query provided, return all items with their display strings and a default score of 0
         if (string.IsNullOrWhiteSpace(query))
         {
             for (int i = 0; i < items.Count; i++)
             {
-                results.Add(new MatchResult(items[i], string.Empty, 0, Array.Empty<int>()));
+                var item = items[i];
+                results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
             }
             return results;
         }
@@ -38,11 +39,11 @@ public class FuzzyMatcher
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
-            var display = item.Display ?? item.ToString() ?? string.Empty;
+            var display = item.Display;
             var matchInfo = TryMatch(display, queryLower);
             if (matchInfo.HasValue)
             {
-                results.Add(new MatchResult(item, display, matchInfo.Value.score, matchInfo.Value.positions));
+                results.Add(new MatchResult(item.Item, display, matchInfo.Value.score, matchInfo.Value.positions));
             }
         }
 
@@ -71,7 +72,8 @@ public class FuzzyMatcher
             combined.AddRange(existingMatches);
             for (int i = 0; i < newItems.Length; i++)
             {
-                combined.Add(new MatchResult(newItems[i], string.Empty, 0, Array.Empty<int>()));
+                var item = newItems[i];
+                combined.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
             }
             return combined;
         }
@@ -82,11 +84,11 @@ public class FuzzyMatcher
         for (int i = 0; i < newItems.Length; i++)
         {
             var item = newItems[i];
-            var display = item.Display ?? item.ToString() ?? string.Empty;
+            var display = item.Display;
             var matchInfo = TryMatch(display, q);
             if (matchInfo.HasValue)
             {
-                newMatches.Add(new MatchResult(item, display, matchInfo.Value.score, matchInfo.Value.positions));
+                newMatches.Add(new MatchResult(item.Item, display, matchInfo.Value.score, matchInfo.Value.positions));
             }
         }
 
