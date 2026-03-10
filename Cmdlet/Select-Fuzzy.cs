@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Management.Automation;
 
-using PSFuzzySelect.UI;
+using PSFuzzySelect.App;
 
 namespace PSFuzzySelect.Cmdlet;
 

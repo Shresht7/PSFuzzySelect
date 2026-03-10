@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" PrivateAssets="All" />
     <ProjectReference Include="..\Core\Core.csproj" />
     <ProjectReference Include="..\UI\UI.csproj" />
+    <ProjectReference Include="..\App\App.csproj" />
   </ItemGroup>
 
   <Target Name="CopyModuleFiles" AfterTargets="Build">

@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
-namespace PSFuzzySelect.UI;
+namespace PSFuzzySelect.App;
 
 /// <summary>
 /// Generates preview text on a background thread by invoking a PowerShell script per highlighted item.

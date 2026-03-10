@@ -5,7 +5,7 @@ using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI;
+namespace PSFuzzySelect.App;
 
 /// <summary>
 /// Defines the contract for an interactive application that can be rendered on the console and can update its state based on user interactions.

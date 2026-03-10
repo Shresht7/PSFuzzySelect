@@ -1,4 +1,4 @@
-namespace PSFuzzySelect.UI;
+namespace PSFuzzySelect.App;
 
 /// <summary>
 /// Defines the various messages that can be sent from the UI to the main loop of the fuzzy selector.
