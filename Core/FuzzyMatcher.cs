@@ -20,13 +20,18 @@ public class FuzzyMatcher
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
     public List<MatchResult> Match(List<object> items, string query, Func<object, string> displaySelector)
     {
+        var results = new List<MatchResult>(items.Count);
+
         // No query provided, return all items with a default score of 0
         if (string.IsNullOrWhiteSpace(query))
         {
-            return items.Select(item => new MatchResult(item, string.Empty, 0, Array.Empty<int>())).ToList();
+            for (int i = 0; i < items.Count; i++)
+            {
+                results.Add(new MatchResult(items[i], string.Empty, 0, Array.Empty<int>()));
+            }
+            return results;
         }
 
-        var results = new List<MatchResult>();
         var queryLower = query.ToLowerInvariant();
 
         for (int i = 0; i < items.Count; i++)
@@ -70,7 +75,7 @@ public class FuzzyMatcher
 
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
         var q = query.ToLowerInvariant();
-        var newMatches = new List<MatchResult>();
+        var newMatches = new List<MatchResult>(newItems.Count);
         for (int i = 0; i < newItems.Count; i++)
         {
             object? item = newItems[i];
