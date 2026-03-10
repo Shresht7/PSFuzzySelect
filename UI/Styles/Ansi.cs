@@ -186,15 +186,43 @@ public static class Ansi
     public static string AltBufferExit => $"{Esc}?1049l";
 
     /// <summary>
-    /// Removes ANSI CSI escape sequences from text.
-    /// This is a stopgap sanitizer for preview content and does not cover all ANSI variants.
+    /// Removes ANSI escape codes from a string, leaving only the visible text.
+    /// This is useful for displaying raw text without styling.
     /// </summary>
-    /// <param name="text">Input text that may contain ANSI CSI escapes.</param>
-    /// <returns>Sanitized text without CSI escape sequences.</returns>
+    /// <param name="text">The input string that may contain ANSI escape codes</param>
+    /// <returns>The input string with ANSI escape codes removed</returns>
     public static string Strip(string text)
     {
         if (string.IsNullOrEmpty(text)) return text;
 
-        return Regex.Replace(text, @"\x1B\[[0-?]*[ -/]*[@-~]", string.Empty);
+        // Whether we are currently inside an ANSI escape sequence
+        bool inEscapeSequence = false;
+        // StringBuilder for efficiently building the result string without escape codes
+        var result = new System.Text.StringBuilder(text.Length);
+
+        foreach (char c in text)
+        {
+            if (inEscapeSequence)
+            {
+                if ((c >= '@' && c <= '~') || c == 'm') // End of CSI sequence
+                {
+                    inEscapeSequence = false;
+                }
+                // Skip characters until the end of the escape sequence
+            }
+            else
+            {
+                if (c == '\x1b') // Start of escape sequence
+                {
+                    inEscapeSequence = true;
+                }
+                else
+                {
+                    result.Append(c); // Regular character, add to result
+                }
+            }
+        }
+
+        return result.ToString();
     }
 }
