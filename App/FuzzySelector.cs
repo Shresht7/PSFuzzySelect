@@ -18,39 +18,13 @@ public class FuzzySelector : IApplication
     /// The complete list of items to be matched against the search query.
     /// This list is populated from the input pipeline and can be updated dynamically as new items arrive.
     /// </summary>
-    private readonly List<object> _items = [];
+    private readonly List<MatchableItem> _items = [];
 
     /// <summary>Indicates whether the fuzzy selector is done receiving items from the pipeline.</summary>
     private bool _isStreamingFinished = false;
 
-    private readonly ObjectDisplayAdapter _displayAdapter;
-    private readonly Dictionary<object, string> _displayCache = new();
-
     /// <summary>The fuzzy matcher used to match items against the search query</summary>
     private readonly FuzzyMatcher _matcher = new();
-
-    /// <summary>
-    /// Gets the display string for the specified item, using the display adapter if available.
-    /// <param name="item">The item for which to get the display string.</param>
-    /// </summary>
-    /// <returns>The display string for the item.</returns>
-    private string GetDisplayString(object item)
-    {
-        // Check if the display string for this item is already cached to avoid redundant computations
-        if (_displayCache.TryGetValue(item, out var display)) return display;
-
-        // Generate the display string using the adapter. If the item is a PSObject,
-        // use the adapter to get the display string; otherwise, fall back to ToString()
-        display = item is PSObject psObj
-            ? _displayAdapter.GetDisplayString(psObj)
-            : item?.ToString() ?? string.Empty;
-
-        if (item != null)
-        {
-            _displayCache[item] = display;  // Cache the display string for future use
-        }
-        return display;
-    }
 
     #endregion Matcher
 
@@ -149,7 +123,7 @@ public class FuzzySelector : IApplication
 
     public FuzzySelector(
         string prompt,
-        IEnumerable<object>? initialItems = null,
+        List<MatchableItem>? initialItems = null,
         string[]? properties = null,
         bool multiSelect = false,
         bool showPreview = false,
@@ -157,15 +131,14 @@ public class FuzzySelector : IApplication
         PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
-        _items = initialItems?.ToList() ?? [];
-        _displayAdapter = new(properties);
+        _items = initialItems ?? [];
         _multiSelect = multiSelect;
         _showPreview = showPreview;
         _previewSize = GetPreviewSize(previewSize);
         _previewPosition = previewPosition;
 
         _input = new(prompt, string.Empty);
-        _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
+        _list = new([], multiSelect, item => _selectedItems.Contains(item));
 
         // Initial refresh to populate matches before the first render
         RefreshList();
@@ -286,12 +259,12 @@ public class FuzzySelector : IApplication
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshList(List<object>? newItems = null)
+    private void RefreshList(List<MatchableItem>? newItems = null)
     {
         // Determine the list of items that match the current query
         var currentMatches = newItems == null
-            ? FuzzyMatcher.Match(_items, _input.Query, GetDisplayString) // if newItems is null, perform a full match against the entire list
-            : FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString); // otherwise, perform an incremental match on existing matches
+            ? FuzzyMatcher.Match(_items, _input.Query) // if newItems is null, perform a full match against the entire list
+            : FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query); // otherwise, perform an incremental match on existing matches
 
         if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
 
@@ -352,7 +325,7 @@ public class FuzzySelector : IApplication
         return null;
     }
 
-    private Message? HandleItemsAdded(List<object> newItems)
+    private Message? HandleItemsAdded(List<MatchableItem> newItems)
     {
         _items.AddRange(newItems);
         RefreshList(newItems);

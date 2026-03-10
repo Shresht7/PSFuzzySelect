@@ -1,3 +1,5 @@
+using PSFuzzySelect.App;
+
 namespace PSFuzzySelect.Core;
 
 /// <summary>
@@ -16,9 +18,8 @@ public class FuzzyMatcher
     /// </summary>
     /// <param name="items">The collection of items to match against. Each item can be of any type, such as a string or PSObject.</param>
     /// <param name="query">The search query string that the user is trying to match.</param>
-    /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public static List<MatchResult> Match(List<object> items, string query, Func<object, string> displaySelector)
+    public static List<MatchResult> Match(List<MatchableItem> items, string query)
     {
         var results = new List<MatchResult>(items.Count);
 
@@ -36,8 +37,8 @@ public class FuzzyMatcher
 
         for (int i = 0; i < items.Count; i++)
         {
-            object? item = items[i];
-            var display = displaySelector(item);
+            var item = items[i];
+            var display = item.Display ?? item.ToString() ?? string.Empty;
             var matchInfo = TryMatch(display, queryLower);
             if (matchInfo.HasValue)
             {
@@ -60,9 +61,8 @@ public class FuzzyMatcher
     /// <param name="existingMatches">The list of existing match results.</param>
     /// <param name="newItems">The list of new items to match against the query.</param>
     /// <param name="query">The search query string.</param>
-    /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
-    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, List<object> newItems, string query, Func<object, string> displaySelector)
+    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, List<MatchableItem> newItems, string query)
     {
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
@@ -78,8 +78,8 @@ public class FuzzyMatcher
         var newMatches = new List<MatchResult>(newItems.Count);
         for (int i = 0; i < newItems.Count; i++)
         {
-            object? item = newItems[i];
-            var display = displaySelector(item);
+            var item = newItems[i];
+            var display = item.Display ?? item.ToString() ?? string.Empty;
             var matchInfo = TryMatch(display, q);
             if (matchInfo.HasValue)
             {

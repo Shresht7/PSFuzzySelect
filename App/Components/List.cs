@@ -10,7 +10,6 @@ namespace PSFuzzySelect.App.Components;
 public class List(
     List<MatchResult> matches,
     bool isMultiSelect,
-    Func<object, string> displaySelector,
     Func<object, bool> isSelected
 ) : IComponent
 {
@@ -19,7 +18,6 @@ public class List(
 
     private readonly bool _isMultiSelect = isMultiSelect;
 
-    private readonly Func<object, string> _displaySelector = displaySelector;
     private readonly Func<object, bool> _isSelected = isSelected;
 
     /// <summary>
@@ -94,7 +92,7 @@ public class List(
             }
 
             // Fetch the display string for the item using the provided display selector function
-            var displayString = _displaySelector(item.Item);
+            var displayString = item.DisplayString ?? item.Item.ToString() ?? string.Empty;
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));

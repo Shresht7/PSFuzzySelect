@@ -153,7 +153,7 @@ public class Engine(IApplication App) : IDisposable
 
         // Drain any queued messages (e.g. from PreviewWorker)
         int drained = 0;
-        var coalescedItems = new List<object>();
+        var coalescedItems = new List<MatchableItem>();
         while (drained < MaxQueuedMessagesPerFrame && _messageQueue.TryDequeue(out var queued))
         {
             drained++;
