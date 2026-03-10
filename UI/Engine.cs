@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Management.Automation;
-using System.Threading;
 
 using PSFuzzySelect.UI.Renderer;
 using PSFuzzySelect.UI.Components;

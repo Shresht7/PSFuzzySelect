@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>PSFuzzySelect</AssemblyName>
     <RootNamespace>PSFuzzySelect</RootNamespace>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -14,13 +14,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.5.4" PrivateAssets="All" />
+    <ProjectReference Include="..\Core\Core.csproj" />
+    <ProjectReference Include="..\UI\UI.csproj" />
   </ItemGroup>
 
-  <!-- Copy the module manifest to the output directory -->
-  <ItemGroup>
-    <None Update="PSFuzzySelect.psd1">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+  <Target Name="CopyModuleFiles" AfterTargets="Build">
+    <MakeDir Directories="$(SolutionDir)Module" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(SolutionDir)Module" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="PSFuzzySelect.psd1" DestinationFolder="$(SolutionDir)Module" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
