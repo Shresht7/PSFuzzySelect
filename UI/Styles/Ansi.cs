@@ -185,6 +185,41 @@ public static class Ansi
     /// <returns>`\x1b[?1049l`</returns>
     public static string AltBufferExit => $"{Esc}?1049l";
 
+    public static int VisibleLength(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return 0;
+
+        // Counter for the length of visible characters (excluding ANSI escape codes)
+        int count = 0;
+        // Whether we are currently inside an ANSI escape sequence
+        bool inEscapeSequence = false;
+
+        foreach (char c in text)
+        {
+            if (inEscapeSequence)
+            {
+                if ((c >= '@' && c <= '~') || c == 'm') // End of CSI sequence
+                {
+                    inEscapeSequence = false;
+                }
+                // Skip characters until the end of the escape sequence
+            }
+            else
+            {
+                if (c == '\x1b') // Start of escape sequence
+                {
+                    inEscapeSequence = true;
+                }
+                else
+                {
+                    count++; // Regular character, count it
+                }
+            }
+        }
+
+        return count;
+    }
+
     /// <summary>
     /// Removes ANSI escape codes from a string, leaving only the visible text.
     /// This is useful for displaying raw text without styling.
