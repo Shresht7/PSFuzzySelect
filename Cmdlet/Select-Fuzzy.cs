@@ -101,32 +101,35 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     #region Fields
 
+    /// <summary>The fuzzy selector instance that manages the user-interface and selection logic</summary>
     private FuzzySelector? _selector;
 
+    /// <summary>The engine that runs the fuzzy selector user-interface and handles communication between the UI thread and the PowerShell pipeline</summary>
     private Engine? _engine;
 
+    /// <summary>The thread on which the fuzzy selector user-interface is running</summary>
     private Thread? _uiThread;
 
-    /// <summary>An exception that may occur on the UI thread. This is captured to allow for proper error handling and reporting back to the PowerShell pipeline.</summary>
+    /// <summary>An exception that may occur on the UI thread. This is captured to allow for proper error handling and reporting back to the PowerShell pipeline</summary>
     private Exception? _uiThreadException;
 
     /// <summary>
-    ///  Runs the fuzzy selector user-interface on a separate thread to avoid blocking the PowerShell pipeline.
+    ///  Runs the fuzzy selector user-interface on a separate thread to avoid blocking the PowerShell pipeline
     /// </summary>
     /// <remarks>
-    /// This method captures any exceptions that occur on the UI thread and stores them in the <see cref="_uiThreadException"/> field for later handling.
+    /// This method captures any exceptions that occur on the UI thread and stores them in the <see cref="_uiThreadException"/> field for later handling
     /// </remarks>
     private void RunUIThread()
     {
-        try { _engine!.Run(); }
-        catch (Exception ex) { _uiThreadException = ex; }
+        try { _engine!.Run(); } // Run the fuzzy selector UI. This call blocks until the user has made a selection and closed the UI.
+        catch (Exception ex) { _uiThreadException = ex; }   // Capture any exceptions that occur on the UI thread
     }
 
-    /// <summary>A buffer for storing input objects before they are sent to the fuzzy selector user-interface</summary>
-    private readonly List<object> _inputBuffer = [];
-
     /// <summary>The batch size for processing input objects. This determines how many items are buffered before being sent to the UI for display</summary>
-    private readonly int _batchSize = 64;
+    private const int _batchSize = 64;
+
+    /// <summary>A buffer for storing input objects before they are sent to the fuzzy selector user-interface</summary>
+    private readonly List<object> _inputBuffer = new List<object>(_batchSize);
 
     /// <summary>
     /// The interval in milliseconds for flushing the input buffer to the UI.
@@ -165,6 +168,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     protected override void BeginProcessing()
     {
+        // Initialize the fuzzy selector with the provided parameters
         _selector = new FuzzySelector(
             Prompt,
             null,
@@ -175,6 +179,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
             PreviewPosition
         );
 
+        // Initialize the engine that will run the fuzzy selector UI and handle communication between the UI thread and the PowerShell pipeline
         _engine = new Engine(_selector);
         if (Preview.IsPresent) _engine.EnablePreview(PreviewScript);
 
@@ -194,8 +199,8 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
-        if (InputObject == null) return;
-        if (_engine == null) throw new InvalidOperationException("Engine not initialized!");
+        if (InputObject == null) return;    // If the input object is null, there is nothing to process
+        if (_engine == null) throw new InvalidOperationException("Engine not initialized!"); // Ensure the engine is initialized before processing records
 
         // Buffer incoming items
         _inputBuffer.Add(InputObject);
@@ -211,7 +216,6 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     #region End
 
-    /// <summary>Called once after all input has been processed</summary>
     protected override void EndProcessing()
     {
         if (_engine == null || _selector == null || _uiThread == null)
@@ -235,10 +239,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
             var selected = _selector.SelectedValue;
 
             // Write the selected object (or array of objects) to the pipeline if a selection was made
-            if (selected != null)
-            {
-                WriteObject(selected, enumerateCollection: true);
-            }
+            if (selected != null) WriteObject(selected, enumerateCollection: true);
         }
         finally
         {
