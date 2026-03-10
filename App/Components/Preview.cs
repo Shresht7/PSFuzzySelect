@@ -1,8 +1,9 @@
+using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Components.Box;
 using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Surface;
 
-namespace PSFuzzySelect.UI.Components;
+namespace PSFuzzySelect.App.Components;
 
 /// <summary>
 /// Renders and manages the preview pane content.
@@ -36,7 +37,7 @@ public class Preview : IComponent
     /// <param name="surface">The target surface.</param>
     public void Render(ISurface surface)
     {
-        new Box.Box(_paragraph).Border(BorderStyle.Single).Padding(1).Render(surface);
+        new Box(_paragraph).Border(BorderStyle.Single).Padding(1).Render(surface);
     }
 
     /// <summary>

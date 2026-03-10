@@ -1,12 +1,13 @@
 using System.Management.Automation;
+
 using PSFuzzySelect.Core;
-using PSFuzzySelect.UI.Components;
-using PSFuzzySelect.UI.Helpers;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
+using PSFuzzySelect.App.Components;
+using PSFuzzySelect.App.Helpers;
 
-namespace PSFuzzySelect.UI;
+namespace PSFuzzySelect.App;
 
 /// <summary>The main fuzzy selector application component. It manages the application state and user interactions.</summary>
 public class FuzzySelector : IApplication

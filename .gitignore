@@ -53,4 +53,8 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Visual Studio files
 .vs/
+
+# PowerShell Module
+Module/

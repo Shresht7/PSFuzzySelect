@@ -1,8 +1,9 @@
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.UI.Surface;
+using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Components.Text;
 
-namespace PSFuzzySelect.UI.Components;
+namespace PSFuzzySelect.App.Components;
 
 /// <summary>
 /// A component that allows the user to input a query string, which is used to filter the list of items.

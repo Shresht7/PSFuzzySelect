@@ -1,10 +1,11 @@
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Geometry;
+using PSFuzzySelect.UI.Components;
 using PSFuzzySelect.UI.Components.Text;
 using PSFuzzySelect.UI.Styles;
 
-namespace PSFuzzySelect.UI.Components;
+namespace PSFuzzySelect.App.Components;
 
 public class List(
     List<MatchResult> matches,
