@@ -1,0 +1,10 @@
+{
+    "profiles": {
+        "PSFuzzySelect (pwsh)": {
+            "commandName": "Executable",
+            "executablePath": "pwsh.exe",
+            "commandLineArgs": "-NoProfile -NoExit -Command \"Import-Module .\\Module\\PSFuzzySelect.psd1 -Force\"",
+            "workingDirectory": "$(ProjectDir)"
+        }
+    }
+}
