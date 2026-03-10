@@ -130,7 +130,9 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     private const int _batchSize = 64;
 
     /// <summary>A buffer for storing input objects before they are sent to the fuzzy selector user-interface</summary>
-    private readonly List<MatchableItem> _inputBuffer = new List<MatchableItem>(_batchSize);
+    private readonly MatchableItem[] _inputBuffer = new MatchableItem[_batchSize];
+
+    private int _inputBufferIndex = 0; // The current index in the input buffer, tracking how many items have been buffered
 
     /// <summary>
     /// The interval in milliseconds for flushing the input buffer to the UI.
@@ -151,13 +153,14 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     private void FlushInputBuffer()
     {
         // If there are no items in the buffer, there is nothing to flush
-        if (_inputBuffer.Count == 0) return;
+        if (_inputBufferIndex == 0) return;
 
         // Send the buffered items to the UI for display
         _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer));
 
         // Clear the buffer after flushing
-        _inputBuffer.Clear();
+        Array.Clear(_inputBuffer, 0, _inputBuffer.Length);
+        _inputBufferIndex = 0;
 
         // Restart the stopwatch to track the time until the next flush
         _streamStopwatch.Restart();
@@ -210,10 +213,10 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
         // Buffer incoming items
         var display = _displayAdapter?.GetDisplayString(InputObject);
-        _inputBuffer.Add(new MatchableItem(InputObject, display ?? string.Empty));
+        _inputBuffer[_inputBufferIndex++] = new MatchableItem(InputObject, display ?? string.Empty);
 
         // Flush the buffer if we've reached the batch size or if the flush interval has elapsed to ensure timely updates to the UI
-        if (_inputBuffer.Count >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
+        if (_inputBufferIndex >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
         {
             FlushInputBuffer();
         }

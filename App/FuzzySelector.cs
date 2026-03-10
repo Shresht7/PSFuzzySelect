@@ -1,11 +1,9 @@
-using System.Management.Automation;
 
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.App.Components;
-using PSFuzzySelect.App.Helpers;
 
 namespace PSFuzzySelect.App;
 
@@ -259,7 +257,7 @@ public class FuzzySelector : IApplication
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshList(List<MatchableItem>? newItems = null)
+    private void RefreshList(MatchableItem[]? newItems = null)
     {
         // Determine the list of items that match the current query
         var currentMatches = newItems == null
@@ -325,7 +323,7 @@ public class FuzzySelector : IApplication
         return null;
     }
 
-    private Message? HandleItemsAdded(List<MatchableItem> newItems)
+    private Message? HandleItemsAdded(MatchableItem[] newItems)
     {
         _items.AddRange(newItems);
         RefreshList(newItems);

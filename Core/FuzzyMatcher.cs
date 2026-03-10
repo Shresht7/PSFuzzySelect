@@ -62,14 +62,14 @@ public class FuzzyMatcher
     /// <param name="newItems">The list of new items to match against the query.</param>
     /// <param name="query">The search query string.</param>
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
-    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, List<MatchableItem> newItems, string query)
+    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, MatchableItem[] newItems, string query)
     {
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
         {
-            var combined = new List<MatchResult>(existingMatches.Count + newItems.Count);
+            var combined = new List<MatchResult>(existingMatches.Count + newItems.Length);
             combined.AddRange(existingMatches);
-            for (int i = 0; i < newItems.Count; i++)
+            for (int i = 0; i < newItems.Length; i++)
             {
                 combined.Add(new MatchResult(newItems[i], string.Empty, 0, Array.Empty<int>()));
             }
@@ -78,8 +78,8 @@ public class FuzzyMatcher
 
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
         var q = query.ToLowerInvariant();
-        var newMatches = new List<MatchResult>(newItems.Count);
-        for (int i = 0; i < newItems.Count; i++)
+        var newMatches = new List<MatchResult>(newItems.Length);
+        for (int i = 0; i < newItems.Length; i++)
         {
             var item = newItems[i];
             var display = item.Display ?? item.ToString() ?? string.Empty;

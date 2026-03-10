@@ -74,7 +74,7 @@ public readonly record struct MatchableItem(object Item, string Display);
 /// Dispatched by the cmdlet thread and processed by the FuzzySelector on the engine thread.
 /// </summary>
 /// <param name="Items">The batch of newly arrived items.</param>
-public record class ItemsAdded(List<MatchableItem> Items) : Message;
+public record class ItemsAdded(MatchableItem[] Items) : Message;
 
 /// <summary>
 /// Message indicating that the pipeline has finished producing items.
