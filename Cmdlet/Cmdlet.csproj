@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>PSFuzzySelect</AssemblyName>
-    <RootNamespace>PSFuzzySelect</RootNamespace>
+    <RootNamespace>PSFuzzySelect.Cmdlet</RootNamespace>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
