@@ -290,8 +290,8 @@ public class FuzzySelector : IApplication
     {
         // Determine the list of items that match the current query
         var currentMatches = newItems == null
-            ? _matcher.Match(_items, _input.Query, GetDisplayString) // if newItems is null, perform a full match against the entire list
-            : _matcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString); // otherwise, perform an incremental match on existing matches
+            ? FuzzyMatcher.Match(_items, _input.Query, GetDisplayString) // if newItems is null, perform a full match against the entire list
+            : FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString); // otherwise, perform an incremental match on existing matches
 
         if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
 

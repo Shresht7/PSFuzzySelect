@@ -18,7 +18,7 @@ public class FuzzyMatcher
     /// <param name="query">The search query string that the user is trying to match.</param>
     /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public List<MatchResult> Match(List<object> items, string query, Func<object, string> displaySelector)
+    public static List<MatchResult> Match(List<object> items, string query, Func<object, string> displaySelector)
     {
         var results = new List<MatchResult>(items.Count);
 
@@ -62,7 +62,7 @@ public class FuzzyMatcher
     /// <param name="query">The search query string.</param>
     /// <param name="displaySelector">A function to select the display string from each item.</param>
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
-    public List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, List<object> newItems, string query, Func<object, string> displaySelector)
+    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, List<object> newItems, string query, Func<object, string> displaySelector)
     {
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
@@ -129,7 +129,7 @@ public class FuzzyMatcher
     /// <param name="text">The text to match against.</param>
     /// <param name="query">The query string to match.</param>
     /// <returns>A tuple containing the score and positions of matched characters, or null if no match is found.</returns>
-    private (int score, int[] positions)? TryMatch(string text, string query)
+    private static (int score, int[] positions)? TryMatch(string text, string query)
     {
         int score = 0, textIndex = 0, consecutiveMatches = 0;
         var positions = new int[query.Length];
