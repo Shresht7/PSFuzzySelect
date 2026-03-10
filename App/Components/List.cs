@@ -15,7 +15,7 @@ public class List(
 ) : IComponent
 {
     /// <summary>The current list of matches to show in the UI</summary>
-    public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
+    public List<MatchResult> Matches { get; private set; } = matches;
 
     private readonly bool _isMultiSelect = isMultiSelect;
 
@@ -36,7 +36,7 @@ public class List(
     /// </summary>
     /// <param name="newMatches">The new list of match results to display.</param>
     /// <param name="preserveCursor">Whether to attempt to preserve the current cursor position if possible, or reset to the top of the list.</param>
-    public void SetMatches(IReadOnlyList<MatchResult> newMatches, bool preserveCursor = false)
+    public void SetMatches(List<MatchResult> newMatches, bool preserveCursor = false)
     {
         Matches = newMatches; // Update the matches list
 

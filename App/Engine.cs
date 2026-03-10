@@ -169,7 +169,7 @@ public class Engine(IApplication App) : IDisposable
             // Flush coalesced items as a single batch message before processing the next non-items message to prevent UI stalls
             if (coalescedItems.Count > 0)
             {
-                events.Add(new ItemsAdded(coalescedItems.ToArray()));
+                events.Add(new ItemsAdded(coalescedItems));
                 coalescedItems.Clear();
             }
 
@@ -180,7 +180,7 @@ public class Engine(IApplication App) : IDisposable
         // Flush any remaining coalesced items after processing the queued messages
         if (coalescedItems.Count > 0)
         {
-            events.Add(new ItemsAdded(coalescedItems.ToArray()));
+            events.Add(new ItemsAdded(coalescedItems));
             coalescedItems.Clear();
         }
 

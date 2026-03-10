@@ -153,7 +153,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         if (_inputBuffer.Count == 0) return;
 
         // Send the buffered items to the UI for display
-        _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer.ToArray()));
+        _engine!.EnqueueMessage(new ItemsAdded(_inputBuffer));
 
         // Clear the buffer after flushing
         _inputBuffer.Clear();

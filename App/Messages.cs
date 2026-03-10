@@ -66,7 +66,7 @@ public record class Quit : Message;
 /// Dispatched by the cmdlet thread and processed by the FuzzySelector on the engine thread.
 /// </summary>
 /// <param name="Items">The batch of newly arrived items.</param>
-public record class ItemsAdded(IReadOnlyList<object> Items) : Message;
+public record class ItemsAdded(List<object> Items) : Message;
 
 /// <summary>
 /// Message indicating that the pipeline has finished producing items.

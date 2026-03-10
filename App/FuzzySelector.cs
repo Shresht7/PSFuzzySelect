@@ -286,7 +286,7 @@ public class FuzzySelector : IApplication
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshList(IReadOnlyList<object>? newItems = null)
+    private void RefreshList(List<object>? newItems = null)
     {
         // Determine the list of items that match the current query
         var currentMatches = newItems == null
@@ -352,7 +352,7 @@ public class FuzzySelector : IApplication
         return null;
     }
 
-    private Message? HandleItemsAdded(IReadOnlyList<object> newItems)
+    private Message? HandleItemsAdded(List<object> newItems)
     {
         _items.AddRange(newItems);
         RefreshList(newItems);
