@@ -69,7 +69,10 @@ public class FuzzyMatcher
         {
             var combined = new List<MatchResult>(existingMatches.Count + newItems.Count);
             combined.AddRange(existingMatches);
-            foreach (var item in newItems) combined.Add(new MatchResult(item, string.Empty, 0, Array.Empty<int>()));
+            for (int i = 0; i < newItems.Count; i++)
+            {
+                combined.Add(new MatchResult(newItems[i], string.Empty, 0, Array.Empty<int>()));
+            }
             return combined;
         }
 
