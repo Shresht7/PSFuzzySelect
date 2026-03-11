@@ -32,7 +32,7 @@ namespace PSFuzzySelect.Cmdlet;
 ///     <para>Select multiple files</para>
 /// </example>
 /// <example>
-///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect -Preview { Get-Content $_.FullName }</code>
+///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect -Preview -PreviewScript { Get-Content $_.FullName }</code>
 ///     <para>Select multiple files with live-content preview on the right</para>
 /// </example>
 [Cmdlet(VerbsCommon.Select, "Fuzzy")]
@@ -73,11 +73,9 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     /// <summary>
     /// Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.
-    /// This parameter accepts a switch to enable the default preview or a script block for a custom preview.
     /// </summary>
     [Parameter]
-    [Alias("P")]
-    public object? Preview { get; set; }
+    public SwitchParameter Preview { get; set; }
 
     /// <summary>
     /// The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").
@@ -90,6 +88,15 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     [Parameter]
     public PreviewPosition PreviewPosition { get; set; } = PreviewPosition.Right;
+
+
+    /// <summary>
+    /// A script block used to generate the preview content for each item in the fuzzy selector interface.
+    /// The current item is provided as <c>$PSItem</c> / <c>$_</c>, and the script output is displayed in the preview pane.
+    /// If omitted while <see cref="Preview"/> is enabled, a default formatter is used.
+    /// </summary>
+    [Parameter]
+    public ScriptBlock? PreviewScript { get; set; }
 
     #endregion Parameters
 
@@ -174,30 +181,13 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     protected override void BeginProcessing()
     {
-        // Determine if preview is enabled and what script to use
-        ScriptBlock? previewScript = null;
-        bool previewEnabled = false;
-        switch (Preview)
-        {
-            case ScriptBlock sb:
-                previewScript = sb;
-                previewEnabled = true;
-                break;
-            case SwitchParameter sw when sw.IsPresent:
-                previewEnabled = true;
-                break;
-            case bool b:
-                previewEnabled = b;
-                break;
-        }
-
         // Initialize the fuzzy selector with the provided parameters
         _selector = new FuzzySelector(
             Prompt,
             null,
             Property,
             MultiSelect.IsPresent,
-            previewEnabled,
+            Preview.IsPresent,
             PreviewSize,
             PreviewPosition
         );
@@ -207,7 +197,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
         // Initialize the engine that will run the fuzzy selector UI and handle communication between the UI thread and the PowerShell pipeline
         _engine = new Engine(_selector);
-        if (previewEnabled) _engine.EnablePreview(previewScript);
+        if (Preview.IsPresent) _engine.EnablePreview(PreviewScript);
 
         // Start the User-Interface on a separate thread so as not to block the PowerShell pipeline
         // The PSObjects will be streamed into the UI by dispatching a ItemsAdded Message.
