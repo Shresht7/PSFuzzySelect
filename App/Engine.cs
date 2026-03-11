@@ -34,6 +34,9 @@ public class Engine(IApplication App) : IDisposable
     /// <summary>A flag indicating whether the fuzzy selector should quit</summary>
     private bool _shouldQuit = false;
 
+    /// <summary>Gets a value indicating whether the engine's main loop is currently running.</summary>
+    public bool IsRunning { get; private set; }
+
     /// <summary>The background worker responsible for generating preview content asynchronously</summary>
     private PreviewWorker? _previewWorker;
 
@@ -62,6 +65,7 @@ public class Engine(IApplication App) : IDisposable
     /// </summary>
     public void Run()
     {
+        IsRunning = true;
         Setup();
 
         try
@@ -81,6 +85,7 @@ public class Engine(IApplication App) : IDisposable
         finally
         {
             Cleanup();
+            IsRunning = false;
         }
     }
 
@@ -115,8 +120,27 @@ public class Engine(IApplication App) : IDisposable
     /// <param name="message">The message to enqueue</param>
     public void EnqueueMessage(Message message)
     {
+        if (_disposed) return;
+
         _messageQueue.Enqueue(message);
-        _messageEvent.Set();
+
+        var eventSignaled = false;
+        try
+        {
+            _messageEvent.Set();
+            eventSignaled = true;
+        }
+        catch (ObjectDisposedException)
+        {
+            // The engine is being disposed; fall through to clean up the queued message below.
+        }
+
+        // If the engine was disposed before the event could be signaled, remove the message
+        // so that we don't leave an unprocessable message in the queue.
+        if (_disposed && !eventSignaled)
+        {
+            _messageQueue.TryDequeue(out _);
+        }
     }
 
     #region Event Collection
