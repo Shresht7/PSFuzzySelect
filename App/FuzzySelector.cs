@@ -19,16 +19,22 @@ public class FuzzySelector : IApplication
     private readonly List<MatchableItem> _items = [];
 
     /// <summary>
-    /// The list of current match results based on the search query. This list is updated whenever the query changes or new items are added.
+    /// Double buffered match results. We use two lists to implement a "Ping-Pong" buffering strategy that allows us
+    /// to use one list as the 'source' (existing-matches) while the Matcher populates the 'destination' list, avoiding the issue of
+    /// clearing the source data before it can be merged with new items.  
     /// </summary>
-    /// <remarks>We reuse the same list instance to store match results to minimize allocations</remarks>
-    private readonly List<MatchResult> _matchResults = [];
+    private readonly List<MatchResult> _matchResultsA = [];
+    private readonly List<MatchResult> _matchResultsB = [];
+
+    /// <summary>
+    /// A boolean flag to indicate which match results list is currently active as the source for the List component and incremental matching.
+    /// After each match operation, this flag is toggled to swap the roles of the two lists for the next update cycle.
+    /// </summary>
+    private bool _useMatchResultA = true;
+
 
     /// <summary>Indicates whether the fuzzy selector is done receiving items from the pipeline.</summary>
     private bool _isStreamingFinished = false;
-
-    /// <summary>The fuzzy matcher used to match items against the search query</summary>
-    private readonly FuzzyMatcher _matcher = new();
 
     #endregion Matcher
 
@@ -265,18 +271,22 @@ public class FuzzySelector : IApplication
     /// </summary>
     private void RefreshList(MatchableItem[]? newItems = null)
     {
+        // Determine the current and next match result lists based on the double buffering strategy
+        var current = _useMatchResultA ? _matchResultsA : _matchResultsB;
+        var next = _useMatchResultA ? _matchResultsB : _matchResultsA;
+
         if (newItems == null)
             // For a full refresh or the initial render, we match against the entire item list
-            FuzzyMatcher.Match(_items, _input.Query, _matchResults);
+            FuzzyMatcher.Match(_items, _input.Query, next);
         else
             // For incremental updates, we only match the new items and merge them with the existing matches
-            FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query, _matchResults);
+            FuzzyMatcher.MatchIncremental(current, newItems, _input.Query, next);
 
-        // No change in matches, skip update
-        if (ReferenceEquals(_matchResults, _list.Matches)) return;
+        // Swap the current and next match result lists for the next update
+        _useMatchResultA = !_useMatchResultA;
 
         // Update the list component with the new matches, which will trigger a re-render of the match list in the user-interface
-        _list.SetMatches(_matchResults, preserveCursor: newItems != null);
+        _list.SetMatches(next, preserveCursor: newItems != null);
     }
 
     /// <summary>
