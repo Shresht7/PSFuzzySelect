@@ -70,14 +70,16 @@ public class List(
         else if (Cursor >= _scrollOffset + surface.Height)
             _scrollOffset = Cursor - surface.Height + 1;
 
-        // Use surface.Height to determine how many items to display
-        var visibleMatches = Matches.Skip(_scrollOffset).Take(surface.Height).ToList();
+        // Calculate the number of items we can actually see
+        int visibleCount = Math.Min(surface.Height, Matches.Count - _scrollOffset);
 
-        // Render loop update
-        for (var i = 0; i < visibleMatches.Count; i++)
+        // Render loop
+        for (int i = 0; i < visibleCount; i++)
         {
-            var item = visibleMatches[i];
-            bool isCurrent = i + _scrollOffset == Cursor;
+            int matchIndex = i + _scrollOffset;
+            var item = Matches[matchIndex];
+
+            bool isCurrent = matchIndex == Cursor;
             bool isChecked = _isSelected(item.Item);
 
             var cursorIndicator = isCurrent ? "❯ " : "  ";
@@ -91,8 +93,6 @@ public class List(
                 selectionStyle = isChecked ? selectionStyle.Bold() : selectionStyle.Dim();
             }
 
-            // Fetch the display string for the item using the provided display selector function
-            var displayString = item.DisplayString ?? item.Item.ToString() ?? string.Empty;
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));
@@ -100,7 +100,7 @@ public class List(
             new TextBlock()
                 .Add(new TextSpan(cursorIndicator, cursorStyle))
                 .Add(new TextSpan(selectionIndicator, selectionStyle))
-                .AddRange(GetHighlightedSpans(displayString, item.Positions, isCurrent, isChecked))
+                .AddRange(GetHighlightedSpans(item.DisplayString, item.Positions, isCurrent, isChecked))
                 .Overflow(TextOverflow.Ellipsis)
                 .Render(lineSurface);
         }
