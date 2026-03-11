@@ -19,6 +19,7 @@
     <Target Name="CopyModuleFiles" AfterTargets="Build">
         <MakeDir Directories="$(ProjectDir)Module" />
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(ProjectDir)Module" SkipUnchangedFiles="true" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).pdb" DestinationFolder="$(ProjectDir)Module" SkipUnchangedFiles="true" />
         <Copy SourceFiles="PSFuzzySelect.psd1" DestinationFolder="$(ProjectDir)Module" SkipUnchangedFiles="true" />
     </Target>
 

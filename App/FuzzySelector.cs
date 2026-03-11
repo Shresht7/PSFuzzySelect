@@ -1,11 +1,9 @@
-using System.Management.Automation;
 
 using PSFuzzySelect.Core;
 using PSFuzzySelect.UI.Layouts;
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
 using PSFuzzySelect.App.Components;
-using PSFuzzySelect.App.Helpers;
 
 namespace PSFuzzySelect.App;
 
@@ -18,39 +16,25 @@ public class FuzzySelector : IApplication
     /// The complete list of items to be matched against the search query.
     /// This list is populated from the input pipeline and can be updated dynamically as new items arrive.
     /// </summary>
-    private readonly List<object> _items = [];
+    private readonly List<MatchableItem> _items = [];
+
+    /// <summary>
+    /// Double buffered match results. We use two lists to implement a "Ping-Pong" buffering strategy that allows us
+    /// to use one list as the 'source' (existing-matches) while the Matcher populates the 'destination' list, avoiding the issue of
+    /// clearing the source data before it can be merged with new items.  
+    /// </summary>
+    private readonly List<MatchResult> _matchResultsA = [];
+    private readonly List<MatchResult> _matchResultsB = [];
+
+    /// <summary>
+    /// A boolean flag to indicate which match results list is currently active as the source for the List component and incremental matching.
+    /// After each match operation, this flag is toggled to swap the roles of the two lists for the next update cycle.
+    /// </summary>
+    private bool _useMatchResultA = true;
+
 
     /// <summary>Indicates whether the fuzzy selector is done receiving items from the pipeline.</summary>
     private bool _isStreamingFinished = false;
-
-    private readonly ObjectDisplayAdapter _displayAdapter;
-    private readonly Dictionary<object, string> _displayCache = new();
-
-    /// <summary>The fuzzy matcher used to match items against the search query</summary>
-    private readonly FuzzyMatcher _matcher = new();
-
-    /// <summary>
-    /// Gets the display string for the specified item, using the display adapter if available.
-    /// <param name="item">The item for which to get the display string.</param>
-    /// </summary>
-    /// <returns>The display string for the item.</returns>
-    private string GetDisplayString(object item)
-    {
-        // Check if the display string for this item is already cached to avoid redundant computations
-        if (_displayCache.TryGetValue(item, out var display)) return display;
-
-        // Generate the display string using the adapter. If the item is a PSObject,
-        // use the adapter to get the display string; otherwise, fall back to ToString()
-        display = item is PSObject psObj
-            ? _displayAdapter.GetDisplayString(psObj)
-            : item?.ToString() ?? string.Empty;
-
-        if (item != null)
-        {
-            _displayCache[item] = display;  // Cache the display string for future use
-        }
-        return display;
-    }
 
     #endregion Matcher
 
@@ -78,7 +62,7 @@ public class FuzzySelector : IApplication
 
     private static long NowMs() => DateTime.UtcNow.Ticks / TimeSpan.TicksPerMillisecond;
 
-    private Message? FlushDebouncedQueryIfReady(bool force = false)
+    private RequestPreview? FlushDebouncedQueryIfReady(bool force = false)
     {
         if (!_queryDirty) return null;
 
@@ -95,11 +79,11 @@ public class FuzzySelector : IApplication
     #region Preview
 
     /// <summary>Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.</summary>
-    private bool _showPreview = false;
+    private readonly bool _showPreview = false;
 
-    private Preview _preview = new();
+    private readonly Preview _preview = new();
 
-    private PreviewPosition _previewPosition = PreviewPosition.Right;
+    private readonly PreviewPosition _previewPosition = PreviewPosition.Right;
 
     /// <summary>
     /// Gets the item at the specified match index, or null if the index is out of bounds.
@@ -119,7 +103,7 @@ public class FuzzySelector : IApplication
         return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
     }
 
-    private Size _previewSize = Size.Fractional(0.5f);
+    private readonly Size _previewSize = Size.Fractional(0.5f);
 
     /// <summary>
     /// Parses the preview size string into a layout size.
@@ -127,9 +111,9 @@ public class FuzzySelector : IApplication
     /// <param name="previewSize">Size as percentage (for example, <c>50%</c>) or fixed size (for example, <c>30</c>).</param>
     /// <returns>A <see cref="Size"/> value used by layout composition.</returns>
     /// <exception cref="ArgumentException">Thrown when the input format is invalid.</exception>
-    private Size GetPreviewSize(string previewSize)
+    private static Size GetPreviewSize(string previewSize)
     {
-        if (previewSize.EndsWith("%") && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
+        if (previewSize.EndsWith('%') && int.TryParse(previewSize.TrimEnd('%'), out var percentage))
         {
             return Size.Fractional(percentage / 100.0f);
         }
@@ -149,7 +133,7 @@ public class FuzzySelector : IApplication
 
     public FuzzySelector(
         string prompt,
-        IEnumerable<object>? initialItems = null,
+        List<MatchableItem>? initialItems = null,
         string[]? properties = null,
         bool multiSelect = false,
         bool showPreview = false,
@@ -157,15 +141,14 @@ public class FuzzySelector : IApplication
         PreviewPosition previewPosition = PreviewPosition.Right
     )
     {
-        _items = initialItems?.ToList() ?? [];
-        _displayAdapter = new(properties);
+        _items = initialItems ?? [];
         _multiSelect = multiSelect;
         _showPreview = showPreview;
         _previewSize = GetPreviewSize(previewSize);
         _previewPosition = previewPosition;
 
         _input = new(prompt, string.Empty);
-        _list = new([], multiSelect, GetDisplayString, item => _selectedItems.Contains(item));
+        _list = new([], multiSelect, item => _selectedItems.Contains(item));
 
         // Initial refresh to populate matches before the first render
         RefreshList();
@@ -286,17 +269,24 @@ public class FuzzySelector : IApplication
     /// Refreshes the list of matches based on the current search query by invoking the fuzzy matcher against the collection of items.
     /// This method is called whenever the search query is updated to ensure that the displayed matches are always in sync with the user's input.
     /// </summary>
-    private void RefreshList(IReadOnlyList<object>? newItems = null)
+    private void RefreshList(MatchableItem[]? newItems = null)
     {
-        // Determine the list of items that match the current query
-        var currentMatches = newItems == null
-            ? _matcher.Match(_items, _input.Query, GetDisplayString) // if newItems is null, perform a full match against the entire list
-            : _matcher.MatchIncremental(_list.Matches, newItems, _input.Query, GetDisplayString); // otherwise, perform an incremental match on existing matches
+        // Determine the current and next match result lists based on the double buffering strategy
+        var current = _useMatchResultA ? _matchResultsA : _matchResultsB;
+        var next = _useMatchResultA ? _matchResultsB : _matchResultsA;
 
-        if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
+        if (newItems == null)
+            // For a full refresh or the initial render, we match against the entire item list
+            FuzzyMatcher.Match(_items, _input.Query, next);
+        else
+            // For incremental updates, we only match the new items and merge them with the existing matches
+            FuzzyMatcher.MatchIncremental(current, newItems, _input.Query, next);
+
+        // Swap the current and next match result lists for the next update
+        _useMatchResultA = !_useMatchResultA;
 
         // Update the list component with the new matches, which will trigger a re-render of the match list in the user-interface
-        _list.SetMatches(currentMatches, preserveCursor: newItems != null);
+        _list.SetMatches(next, preserveCursor: newItems != null);
     }
 
     /// <summary>
@@ -330,7 +320,7 @@ public class FuzzySelector : IApplication
     /// <summary>
     /// Handles confirmation. If nothing was explicitly selected, takes the item under the cursor.
     /// </summary>
-    private Message? HandleConfirm()
+    private Quit? HandleConfirm()
     {
         // Ensure pending debounced query is applied before selection
         FlushDebouncedQueryIfReady(force: true);
@@ -352,7 +342,7 @@ public class FuzzySelector : IApplication
         return null;
     }
 
-    private Message? HandleItemsAdded(IReadOnlyList<object> newItems)
+    private RequestPreview? HandleItemsAdded(MatchableItem[] newItems)
     {
         _items.AddRange(newItems);
         RefreshList(newItems);

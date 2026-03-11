@@ -138,7 +138,7 @@ public static class Ansi
         // Pre-generate ANSI escape codes for all colors and cache them for fast retrieval
         _fgCache = new Dictionary<Color, string>();
         _bgCache = new Dictionary<Color, string>();
-        foreach (Color color in Enum.GetValues(typeof(Color)))
+        foreach (Color color in Enum.GetValues<Color>())
         {
             _fgCache[color] = $"{Esc}{(int)color}m";
             _bgCache[color] = $"{Esc}{(int)color + 10}m";

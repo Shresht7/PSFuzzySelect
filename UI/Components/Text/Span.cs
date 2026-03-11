@@ -3,19 +3,39 @@ using PSFuzzySelect.UI.Styles;
 namespace PSFuzzySelect.UI.Components.Text;
 
 /// <summary>
-/// Represents a span of text with an associated style that can be applied to characters drawn on a render surface
+/// Represents a span of text with an associated style that can be applied to characters drawn on a render surface.
+/// Internally stores text as a memory slice to allow zero-allocation slicing when rendering.
 /// </summary>
-/// <param name="Text">The text content of the span</param>
-/// <param name="Style">The style to apply to the text in the span</param>
-public readonly record struct TextSpan(string Text, Style Style)
+public readonly record struct TextSpan
 {
-    /// <summary>
-    /// Implicitly convert a <see langword="string"/> to a <see cref="TextSpan"/> with the default style.
-    /// This allows you to pass in a <see langword="string"/> where a <see cref="TextSpan"/> is expected.
-    /// </summary>
-    /// <param name="text">The text to convert to a <see cref="TextSpan"/> with the default style</param>
-    public static implicit operator TextSpan(string text) => new(text, Style.Default);
+    private readonly ReadOnlyMemory<char> _memory;
 
-    /// <summary>The length of the text in the span, which is used for layout calculations when rendering the span on a surface</summary>
-    public int Length => Text.Length;
+    /// <summary>Construct a span from a string.</summary>
+    public TextSpan(string text, Style style)
+    {
+        _memory = string.IsNullOrEmpty(text) ? ReadOnlyMemory<char>.Empty : text.AsMemory();
+        Style = style;
+    }
+
+    /// <summary>Construct a span from a memory slice.</summary>
+    public TextSpan(ReadOnlyMemory<char> memory, Style style)
+    {
+        _memory = memory;
+        Style = style;
+    }
+
+    /// <summary>The style applied to this span.</summary>
+    public Style Style { get; init; }
+
+    /// <summary>Access the underlying text as a memory slice (zero-allocation).</summary>
+    public ReadOnlyMemory<char> Memory => _memory;
+
+    /// <summary>Compatibility string accessor. Calling this allocates a string from the memory.</summary>
+    public string Text => _memory.ToString();
+
+    /// <summary>Length of the span in characters.</summary>
+    public int Length => _memory.Length;
+
+    /// <summary>Implicit conversion from string for convenience.</summary>
+    public static implicit operator TextSpan(string text) => new(text, Style.Default);
 }

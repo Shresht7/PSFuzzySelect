@@ -10,16 +10,14 @@ namespace PSFuzzySelect.App.Components;
 public class List(
     List<MatchResult> matches,
     bool isMultiSelect,
-    Func<object, string> displaySelector,
     Func<object, bool> isSelected
 ) : IComponent
 {
     /// <summary>The current list of matches to show in the UI</summary>
-    public IReadOnlyList<MatchResult> Matches { get; private set; } = matches;
+    public List<MatchResult> Matches { get; private set; } = matches;
 
     private readonly bool _isMultiSelect = isMultiSelect;
 
-    private readonly Func<object, string> _displaySelector = displaySelector;
     private readonly Func<object, bool> _isSelected = isSelected;
 
     /// <summary>
@@ -36,7 +34,7 @@ public class List(
     /// </summary>
     /// <param name="newMatches">The new list of match results to display.</param>
     /// <param name="preserveCursor">Whether to attempt to preserve the current cursor position if possible, or reset to the top of the list.</param>
-    public void SetMatches(IReadOnlyList<MatchResult> newMatches, bool preserveCursor = false)
+    public void SetMatches(List<MatchResult> newMatches, bool preserveCursor = false)
     {
         Matches = newMatches; // Update the matches list
 
@@ -72,14 +70,16 @@ public class List(
         else if (Cursor >= _scrollOffset + surface.Height)
             _scrollOffset = Cursor - surface.Height + 1;
 
-        // Use surface.Height to determine how many items to display
-        var visibleMatches = Matches.Skip(_scrollOffset).Take(surface.Height).ToList();
+        // Calculate the number of items we can actually see
+        int visibleCount = Math.Min(surface.Height, Matches.Count - _scrollOffset);
 
-        // Render loop update
-        for (var i = 0; i < visibleMatches.Count; i++)
+        // Render loop
+        for (int i = 0; i < visibleCount; i++)
         {
-            var item = visibleMatches[i];
-            bool isCurrent = i + _scrollOffset == Cursor;
+            int matchIndex = i + _scrollOffset;
+            var item = Matches[matchIndex];
+
+            bool isCurrent = matchIndex == Cursor;
             bool isChecked = _isSelected(item.Item);
 
             var cursorIndicator = isCurrent ? "❯ " : "  ";
@@ -93,8 +93,6 @@ public class List(
                 selectionStyle = isChecked ? selectionStyle.Bold() : selectionStyle.Dim();
             }
 
-            // Fetch the display string for the item using the provided display selector function
-            var displayString = _displaySelector(item.Item);
 
             // Create a sub-surface for each line to ensure the TextBlock is correctly aligned
             var lineSurface = surface.CreateSubSurface(new Rect(0, i, surface.Width, 1));
@@ -102,7 +100,7 @@ public class List(
             new TextBlock()
                 .Add(new TextSpan(cursorIndicator, cursorStyle))
                 .Add(new TextSpan(selectionIndicator, selectionStyle))
-                .AddRange(GetHighlightedSpans(displayString, item.Positions, isCurrent, isChecked))
+                .AddRange(GetHighlightedSpans(item.DisplayString, item.Positions, isCurrent, isChecked))
                 .Overflow(TextOverflow.Ellipsis)
                 .Render(lineSurface);
         }
@@ -114,32 +112,75 @@ public class List(
         if (isSelected) baseStyle = baseStyle.WithForeground(Color.BrightWhite).Bold();
         var highlightStyle = baseStyle.WithForeground(Color.Yellow).Bold();
 
-        // If there are no highlighted positions, return the entire string as a single span
-        if (positions.Length == 0)
+        if (string.IsNullOrEmpty(displayString)) yield break;
+
+        // Normalize positions: filter out-of-range, sort and dedupe
+        if (positions == null || positions.Length == 0)
         {
-            yield return new TextSpan(displayString, baseStyle);
+            yield return new TextSpan(displayString.AsMemory(), baseStyle);
             yield break;
         }
 
-        // Otherwise, split the string into spans based on the highlighted positions
-        int lastIdx = 0;    // Track the last index we processed in the string
-        foreach (var position in positions)
+        // filter, sort and dedupe positions
+        var tmp = new List<int>(positions.Length);
+        for (int idx = 0; idx < positions.Length; idx++)
         {
-            // Yield the non-highlighted part before the highlighted character
-            if (position > lastIdx)
+            int p = positions[idx];
+            if (p >= 0 && p < displayString.Length)
             {
-                yield return new TextSpan(displayString[lastIdx..position], baseStyle);
+                tmp.Add(p);
             }
-            // Yield the highlighted character
-            yield return new TextSpan(displayString[position].ToString(), highlightStyle);
-            // Update the last index
-            lastIdx = position + 1;
         }
 
-        // Yield any remaining non-highlighted part after the last highlighted character
+        if (tmp.Count == 0)
+        {
+            yield return new TextSpan(displayString.AsMemory(), baseStyle);
+            yield break;
+        }
+
+        tmp.Sort();
+        var dedup = new List<int>(tmp.Count);
+        int prev = int.MinValue;
+        foreach (var v in tmp)
+        {
+            if (v != prev)
+            {
+                dedup.Add(v);
+                prev = v;
+            }
+        }
+
+        var pos = dedup.ToArray();
+
+        int lastIdx = 0;
+        int i = 0;
+        while (i < pos.Length)
+        {
+            int start = pos[i];
+
+            // non-highlighted before this highlighted run
+            if (start > lastIdx)
+            {
+                yield return new TextSpan(displayString.AsMemory(lastIdx, start - lastIdx), baseStyle);
+            }
+
+            // coalesce adjacent highlighted positions into one highlighted span
+            int end = start + 1;
+            i++;
+            while (i < pos.Length && pos[i] == end)
+            {
+                end++;
+                i++;
+            }
+
+            yield return new TextSpan(displayString.AsMemory(start, end - start), highlightStyle);
+            lastIdx = end;
+        }
+
+        // trailing non-highlighted
         if (lastIdx < displayString.Length)
         {
-            yield return new TextSpan(displayString[lastIdx..], baseStyle);
+            yield return new TextSpan(displayString.AsMemory(lastIdx, displayString.Length - lastIdx), baseStyle);
         }
     }
 

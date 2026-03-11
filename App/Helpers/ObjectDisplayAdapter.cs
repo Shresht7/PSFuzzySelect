@@ -6,18 +6,13 @@ namespace PSFuzzySelect.App.Helpers;
 /// <summary>
 /// Converts PSObjects into displayable string representations based on specified properties or default display properties
 /// </summary>
-public class ObjectDisplayAdapter
+public class ObjectDisplayAdapter(string[]? properties = null)
 {
     /// <summary>
     /// An optional array of property names to use for display. 
     /// If null or empty, the adapter will attempt to use the object's default display properties or ToString() method.
     /// </summary>
-    private readonly string[]? _properties;
-
-    public ObjectDisplayAdapter(string[]? properties = null)
-    {
-        _properties = properties;
-    }
+    private readonly string[]? _properties = properties;
 
     /// <summary>
     /// Generates a display string for a given PSObject based on the specified properties or default display properties.
@@ -49,7 +44,7 @@ public class ObjectDisplayAdapter
     /// <param name="obj">The PSObject to generate a display string for</param>
     /// <param name="properties">The properties to use for generating the display string</param>
     /// <returns>A string representation of the PSObject based on the specified properties</returns>
-    private string GetPropertyDisplay(PSObject obj, string[] properties)
+    private static string GetPropertyDisplay(PSObject obj, string[] properties)
     {
         var sb = new StringBuilder();
         bool first = true;  // Check to avoid leading separator
@@ -73,7 +68,7 @@ public class ObjectDisplayAdapter
     /// </summary>
     /// <param name="obj">The PSObject to retrieve default display properties for</param>
     /// <returns>An array of property names that are considered default for display, or null if none are found</returns>
-    private string[]? GetDefaultDisplayProperties(PSObject obj)
+    private static string[]? GetDefaultDisplayProperties(PSObject obj)
     {
         // Check for PSStandardMembers and DefaultDisplayPropertySet
         var standardMembers = obj.Members["PSStandardMembers"]?.Value as PSMemberSet;
@@ -94,7 +89,7 @@ public class ObjectDisplayAdapter
     /// <param name="obj">The PSObject to resolve the property value from</param>
     /// <param name="path">The dot-separated property path</param>
     /// <returns>The resolved property value, or null if not found</returns>
-    private object? ResolvePropertyValue(PSObject obj, string path)
+    private static object? ResolvePropertyValue(PSObject obj, string path)
     {
         if (string.IsNullOrEmpty(path)) return null; // If the path is empty, return null
 

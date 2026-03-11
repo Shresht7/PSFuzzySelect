@@ -9,19 +9,19 @@ namespace PSFuzzySelect.App;
 /// </summary>
 sealed class PreviewWorker : IDisposable
 {
-    private Runspace _runspace;
+    private readonly Runspace _runspace;
 
     private readonly BlockingCollection<object> _requests = new();
 
-    private Thread _workerThread;
+    private readonly Thread _workerThread;
 
-    private CancellationTokenSource _cts = new();
+    private readonly CancellationTokenSource _cts = new();
 
     private PowerShell? _powerShell;
 
     private readonly object _psLock = new();
 
-    private ScriptBlock _scriptBlock;
+    private readonly ScriptBlock _scriptBlock;
 
     private readonly Action<Message> _enqueueMessage;
 
@@ -111,7 +111,7 @@ sealed class PreviewWorker : IDisposable
                     var result = _powerShell.BeginInvoke();
 
                     // Wait for completion, cancellation or timeout
-                    int waitIdx = WaitHandle.WaitAny(new[] { result.AsyncWaitHandle, _cts.Token.WaitHandle }, 2000);
+                    int waitIdx = WaitHandle.WaitAny([result.AsyncWaitHandle, _cts.Token.WaitHandle], 2000);
 
                     if (waitIdx == 0) // Completed
                     {
