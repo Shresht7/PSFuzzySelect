@@ -29,13 +29,13 @@ public class FuzzyMatcher
         if (results.Capacity < items.Count)
             results.Capacity = items.Count;
 
-        // No query provided, return all items with their display strings and a default score of 0
+        // No query provided, return all items with their display strings and a default score
         if (string.IsNullOrWhiteSpace(query))
         {
             for (int i = 0; i < items.Count; i++)
             {
                 var item = items[i];
-                results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
+                results.Add(new MatchResult(item.Item, item.Display, ScoringConstants.DefaultScore, Array.Empty<int>()));
             }
             return; // early exit since we don't need to perform any matching logic when the query is empty
         }
@@ -67,6 +67,7 @@ public class FuzzyMatcher
     /// <param name="existingMatches">The list of existing match results.</param>
     /// <param name="newItems">The list of new items to match against the query.</param>
     /// <param name="query">The search query string.</param>
+    /// <param name="results">The list to store the merged match results.</param>
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
     public static void MatchIncremental(List<MatchResult> existingMatches, MatchableItem[] newItems, string query, List<MatchResult> results)
     {
@@ -86,7 +87,7 @@ public class FuzzyMatcher
             for (int i = 0; i < newItems.Length; i++)
             {
                 var item = newItems[i];
-                results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
+                results.Add(new MatchResult(item.Item, item.Display, ScoringConstants.DefaultScore, Array.Empty<int>()));
             }
             return; // early exit since we don't need to perform any matching logic when the query is empty
         }
@@ -179,13 +180,13 @@ public class FuzzyMatcher
             // Bonus for matching at start of text
             if (foundIndex == 0)
             {
-                score += 20;
+                score += ScoringConstants.StartOfTextBonus;
             }
 
             // Bonus for consecutive matches
             if (foundIndex == textIndex && consecutiveMatches > 0)
             {
-                score += 15;
+                score += ScoringConstants.ConsecutiveMatchBonus;
                 consecutiveMatches++;
             }
             else
@@ -196,11 +197,11 @@ public class FuzzyMatcher
             // Bonus for matching at a word boundary
             if (IsWordStart(text, foundIndex))
             {
-                score += 10;
+                score += ScoringConstants.WordBoundaryBonus;
             }
 
             // Base Score (Earlier matches are better)
-            score += Math.Max(0, 100 - foundIndex);
+            score += Math.Max(0, ScoringConstants.BaseScoreMax - foundIndex);
 
             textIndex = foundIndex + 1;
         }
