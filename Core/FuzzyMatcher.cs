@@ -81,14 +81,15 @@ public class FuzzyMatcher
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
         {
-            // Optimize: use AddRange for existing matches and direct Add for new items
-            results.AddRange(existingMatches);
+            // Manual loop instead of AddRange to avoid bulk copy overhead
+            for (int i = 0; i < existingMatches.Count; i++)
+                results.Add(existingMatches[i]);
             for (int i = 0; i < newItems.Length; i++)
             {
                 var item = newItems[i];
                 results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
             }
-            return; // early exit since we don't need to perform any matching logic when the query is empty
+            return;
         }
 
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
@@ -97,42 +98,56 @@ public class FuzzyMatcher
         // Early exit if there are no new items - just copy existing matches
         if (newItems.Length == 0)
         {
-            results.AddRange(existingMatches);
+            // Manual loop instead of AddRange
+            for (int i = 0; i < existingMatches.Count; i++)
+                results.Add(existingMatches[i]);
             return;
         }
         
-        var newMatches = new List<MatchResult>(newItems.Length);
+        // Count matching items first to allocate exact capacity
+        int matchCount = 0;
+        for (int i = 0; i < newItems.Length; i++)
+        {
+            var item = newItems[i];
+            var matchInfo = TryMatch(item.Display, q);
+            if (matchInfo.HasValue) matchCount++;
+        }
+
+        // If there are no new matches, simply return the existing matches
+        if (matchCount == 0)
+        {
+            // Manual loop instead of AddRange
+            for (int i = 0; i < existingMatches.Count; i++)
+                results.Add(existingMatches[i]);
+            return;
+        }
+
+        // Allocate array for new matches with exact size
+        var newMatches = new MatchResult[matchCount];
+        int newMatchIndex = 0;
+        
         for (int i = 0; i < newItems.Length; i++)
         {
             var item = newItems[i];
             var display = item.Display;
             var matchInfo = TryMatch(display, q);
             if (matchInfo.HasValue)
-            {
-                newMatches.Add(new MatchResult(item.Item, display, matchInfo.Value.score, matchInfo.Value.positions));
-            }
-        }
-
-        // If there are no new matches, simply return the existing matches
-        if (newMatches.Count == 0)
-        {
-            results.AddRange(existingMatches);
-            return;
+                newMatches[newMatchIndex++] = new MatchResult(item.Item, display, matchInfo.Value.score, matchInfo.Value.positions);
         }
 
         // Sort new matches by score descending, then by display string for consistent ordering
-        newMatches.Sort((a, b) =>
+        Array.Sort(newMatches, (a, b) =>
         {
             int cmp = b.Score.CompareTo(a.Score);
             return cmp != 0 ? cmp : string.Compare(a.DisplayString, b.DisplayString, StringComparison.Ordinal);
         });
 
         // Merge the two sorted lists
-        int existingIndex = 0, newIndex = 0;
-        while (existingIndex < existingMatches.Count && newIndex < newMatches.Count)
+        int existingIndex = 0, arrayIndex = 0;
+        while (existingIndex < existingMatches.Count && arrayIndex < newMatches.Length)
         {
             var existing = existingMatches[existingIndex];
-            var newMatch = newMatches[newIndex];
+            var newMatch = newMatches[arrayIndex];
 
             // Compare scores to determine order
             int cmp = newMatch.Score.CompareTo(existing.Score);
@@ -140,14 +155,14 @@ public class FuzzyMatcher
             // If scores are equal, use display string as tiebreaker to ensure consistent ordering
             if (cmp == 0) cmp = string.Compare(existing.DisplayString, newMatch.DisplayString, StringComparison.Ordinal);
             // Higher score should come first, so if cmp > 0, newMatch goes before existing
-            if (cmp > 0) { results.Add(newMatch); newIndex++; }
+            if (cmp > 0) { results.Add(newMatches[arrayIndex]); arrayIndex++; }
             // otherwise, existing goes first
-            else { results.Add(existing); existingIndex++; }
+            else { results.Add(existingMatches[existingIndex]); existingIndex++; }
         }
 
         // Add any remaining items from either list
         while (existingIndex < existingMatches.Count) results.Add(existingMatches[existingIndex++]);
-        while (newIndex < newMatches.Count) results.Add(newMatches[newIndex++]);
+        while (arrayIndex < newMatches.Length) results.Add(newMatches[arrayIndex++]);
     }
 
     /// <summary>
