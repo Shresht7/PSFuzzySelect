@@ -112,32 +112,75 @@ public class List(
         if (isSelected) baseStyle = baseStyle.WithForeground(Color.BrightWhite).Bold();
         var highlightStyle = baseStyle.WithForeground(Color.Yellow).Bold();
 
-        // If there are no highlighted positions, return the entire string as a single span
-        if (positions.Length == 0)
+        if (string.IsNullOrEmpty(displayString)) yield break;
+
+        // Normalize positions: filter out-of-range, sort and dedupe
+        if (positions == null || positions.Length == 0)
         {
-            yield return new TextSpan(displayString, baseStyle);
+            yield return new TextSpan(displayString.AsMemory(), baseStyle);
             yield break;
         }
 
-        // Otherwise, split the string into spans based on the highlighted positions
-        int lastIdx = 0;    // Track the last index we processed in the string
-        foreach (var position in positions)
+        // filter, sort and dedupe positions
+        var tmp = new List<int>(positions.Length);
+        for (int idx = 0; idx < positions.Length; idx++)
         {
-            // Yield the non-highlighted part before the highlighted character
-            if (position > lastIdx)
+            int p = positions[idx];
+            if (p >= 0 && p < displayString.Length)
             {
-                yield return new TextSpan(displayString[lastIdx..position], baseStyle);
+                tmp.Add(p);
             }
-            // Yield the highlighted character
-            yield return new TextSpan(displayString[position].ToString(), highlightStyle);
-            // Update the last index
-            lastIdx = position + 1;
         }
 
-        // Yield any remaining non-highlighted part after the last highlighted character
+        if (tmp.Count == 0)
+        {
+            yield return new TextSpan(displayString.AsMemory(), baseStyle);
+            yield break;
+        }
+
+        tmp.Sort();
+        var dedup = new List<int>(tmp.Count);
+        int prev = int.MinValue;
+        foreach (var v in tmp)
+        {
+            if (v != prev)
+            {
+                dedup.Add(v);
+                prev = v;
+            }
+        }
+
+        var pos = dedup.ToArray();
+
+        int lastIdx = 0;
+        int i = 0;
+        while (i < pos.Length)
+        {
+            int start = pos[i];
+
+            // non-highlighted before this highlighted run
+            if (start > lastIdx)
+            {
+                yield return new TextSpan(displayString.AsMemory(lastIdx, start - lastIdx), baseStyle);
+            }
+
+            // coalesce adjacent highlighted positions into one highlighted span
+            int end = start + 1;
+            i++;
+            while (i < pos.Length && pos[i] == end)
+            {
+                end++;
+                i++;
+            }
+
+            yield return new TextSpan(displayString.AsMemory(start, end - start), highlightStyle);
+            lastIdx = end;
+        }
+
+        // trailing non-highlighted
         if (lastIdx < displayString.Length)
         {
-            yield return new TextSpan(displayString[lastIdx..], baseStyle);
+            yield return new TextSpan(displayString.AsMemory(lastIdx, displayString.Length - lastIdx), baseStyle);
         }
     }
 
