@@ -172,6 +172,9 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     private ObjectDisplayAdapter? _displayAdapter;
 
+    /// <summary>A counter to track the total number of input objects processed</summary>
+    private int _inputCount = 0;
+
     #endregion Fields
 
     #region Begin
@@ -212,12 +215,17 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
-        if (InputObject == null) return;    // If the input object is null, there is nothing to process
-        if (_engine == null) throw new InvalidOperationException("Engine not initialized!"); // Ensure the engine is initialized before processing records
+        if (InputObject != null) EnqueueInput(InputObject); // Enqueue the input object for processing and display in the fuzzy selector UI
+    }
+
+    private void EnqueueInput(PSObject input)
+    {
+        if (input == null) return; // If the input object is null, there is nothing to enqueue
+        _inputCount++;          // Increment the count of processed input objects
 
         // Buffer incoming items
-        var display = _displayAdapter?.GetDisplayString(InputObject);
-        _inputBuffer[_inputBufferIndex++] = new MatchableItem(InputObject, display ?? string.Empty);
+        var display = _displayAdapter?.GetDisplayString(input);
+        _inputBuffer[_inputBufferIndex++] = new MatchableItem(input, display ?? string.Empty);
 
         // Flush the buffer if we've reached the batch size or if the flush interval has elapsed to ensure timely updates to the UI
         if (_inputBufferIndex >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
@@ -237,6 +245,13 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
         try
         {
+            // If no input was processed, it means this was a standalone call, default to Get-ChildItem in the current directory
+            if (_inputCount == 0 && !MyInvocation.ExpectingInput && !MyInvocation.BoundParameters.ContainsKey(nameof(InputObject)))
+            {
+                var fallbackResults = InvokeCommand.InvokeScript("Get-ChildItem");
+                foreach (var item in fallbackResults) EnqueueInput(item);
+            }
+
             // Flush any remaining items in the buffer
             FlushInputBuffer();
 
