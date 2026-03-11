@@ -70,12 +70,18 @@ public class FuzzyMatcher
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
     public static void MatchIncremental(List<MatchResult> existingMatches, MatchableItem[] newItems, string query, List<MatchResult> results)
     {
+        // Pre-allocate capacity before clearing to avoid internal array resizing during merge
+        int requiredCapacity = existingMatches.Count + newItems.Length;
+        if (results.Capacity < requiredCapacity)
+            results.Capacity = requiredCapacity;
+
         // Clear the results list before populating it with new matches
         results.Clear();
 
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
         {
+            // Optimize: use AddRange for existing matches and direct Add for new items
             results.AddRange(existingMatches);
             for (int i = 0; i < newItems.Length; i++)
             {
@@ -87,6 +93,14 @@ public class FuzzyMatcher
 
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
         var q = query.ToLowerInvariant();
+        
+        // Early exit if there are no new items - just copy existing matches
+        if (newItems.Length == 0)
+        {
+            results.AddRange(existingMatches);
+            return;
+        }
+        
         var newMatches = new List<MatchResult>(newItems.Length);
         for (int i = 0; i < newItems.Length; i++)
         {
