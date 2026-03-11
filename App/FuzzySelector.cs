@@ -334,11 +334,10 @@ public class FuzzySelector : IApplication
 
     /// <summary>
     /// Handles an incoming preview content update from the PreviewWorker.
-    /// ANSI CSI sequences are stripped as a stopgap before rendering.
     /// </summary>
     private Message? HandleUpdatePreview(string content)
     {
-        _preview.SetContent(Ansi.Strip(content));
+        _preview.SetContent(content);
         return null;
     }
 

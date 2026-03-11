@@ -1,5 +1,6 @@
 using PSFuzzySelect.UI.Surface;
 using PSFuzzySelect.UI.Styles;
+using PSFuzzySelect.UI.Parser;
 
 namespace PSFuzzySelect.UI.Components.Text;
 
@@ -51,10 +52,19 @@ public class TextBlock : IComponent
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TextBlock"/> class with a single span containing the provided text and the default style
+    /// Initializes a new instance of the <see cref="TextBlock"/> class with a single span containing the provided text and the default style.
+    /// If the text contains ANSI escape sequences, they will be parsed into styled spans automatically.
     /// </summary>
     /// <param name="Text">The text content for the span</param>
-    public TextBlock(string Text) : this(new TextSpan(Text, Style.Default)) { }
+    public TextBlock(string Text)
+    {
+        if (string.IsNullOrEmpty(Text)) return;
+
+        if (Text.Contains('\x1b'))
+            _spans.AddRange(AnsiParser.Parse(Text, Style.Default));
+        else
+            _spans.Add(new TextSpan(Text, Style.Default));
+    }
 
     /// <summary>
     /// Adds a span to the text component.

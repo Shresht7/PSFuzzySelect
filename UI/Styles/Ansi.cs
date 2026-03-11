@@ -127,30 +127,15 @@ public static class Ansi
     // COLORS
     // ------
 
-    // Cache
-
-    private static readonly Dictionary<Color, string> _fgCache;
-    private static readonly Dictionary<Color, string> _bgCache;
-
-    // Constructor
-    static Ansi()
-    {
-        // Pre-generate ANSI escape codes for all colors and cache them for fast retrieval
-        _fgCache = new Dictionary<Color, string>();
-        _bgCache = new Dictionary<Color, string>();
-        foreach (Color color in Enum.GetValues<Color>())
-        {
-            _fgCache[color] = $"{Esc}{(int)color}m";
-            _bgCache[color] = $"{Esc}{(int)color + 10}m";
-        }
-    }
-
-    // Foreground Colors
-
     /// <summary>Generates an ANSI escape code to set the foreground color</summary>
     /// <param name="color">The color to set for the foreground</param>
-    /// <returns>`\x1b[{color}m`</returns>
-    public static string Foreground(Color color) => _fgCache[color];
+    /// <returns>The ANSI escape sequence for the foreground color</returns>
+    public static string Foreground(Color color)
+    {
+        if (color.IsRgb) return ForegroundRgb(color.R!.Value, color.G!.Value, color.B!.Value);
+        if (color.IsAnsi) return $"{Esc}{color.AnsiIndex!.Value}m";
+        return string.Empty;
+    }
 
     /// <summary>Generates an ANSI escape code to set the foreground color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -159,12 +144,22 @@ public static class Ansi
     /// <returns>`\x1b[38;2;{r};{g};{b}m`</returns>
     public static string ForegroundRgb(int r, int g, int b) => $"{Esc}38;2;{r};{g};{b}m";
 
+    /// <summary>Generates an ANSI escape code to set the foreground color using an 8-bit indexed color value.</summary>
+    /// <param name="index">The 8-bit color index to use for the foreground color (valid range: 0-255).</param>
+    /// <returns>The ANSI escape sequence in the format `\x1b[38;5;{index}m`.</returns>
+    public static string ForegroundExtended(int index) => $"{Esc}38;5;{index}m";
+
     // Background Colors
 
     /// <summary>Generates an ANSI escape code to set the background color</summary>
     /// <param name="color">The color to set for the background</param>
-    /// <returns>`\x1b[{color + 10}m`</returns>
-    public static string Background(Color color) => _bgCache[color];
+    /// <returns>The ANSI escape sequence for the background color</returns>
+    public static string Background(Color color)
+    {
+        if (color.IsRgb) return BackgroundRgb(color.R!.Value, color.G!.Value, color.B!.Value);
+        if (color.IsAnsi) return $"{Esc}{color.AnsiIndex!.Value + 10}m";
+        return string.Empty;
+    }
 
     /// <summary>Generates an ANSI escape code to set the background color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -172,6 +167,9 @@ public static class Ansi
     /// <param name="b">The blue component of the color (0-255)</param>
     /// <returns>`\x1b[48;2;{r};{g};{b}m`</returns>
     public static string BackgroundRgb(int r, int g, int b) => $"{Esc}48;2;{r};{g};{b}m";
+
+    /// <summary>Generates an ANSI escape code to set the background color using an 8-bit index</summary>
+    public static string BackgroundExtended(int index) => $"{Esc}48;5;{index}m";
 
     // ALTERNATE BUFFER
     // ----------------
@@ -181,20 +179,88 @@ public static class Ansi
     /// <returns>`\x1b[?1049h`</returns>
     public static string AltBufferEnter => $"{Esc}?1049h";
 
+    /// <summary>
+    /// Calculates the number of visible characters in a string, excluding ANSI escape sequences.
+    /// </summary>
+    /// <param name="text">The input string that may contain ANSI escape codes.</param>
+    /// <returns>The count of visible characters in the input string.</returns>
     /// <summary>ANSI escape code to switch back to the main buffer</summary>
     /// <returns>`\x1b[?1049l`</returns>
     public static string AltBufferExit => $"{Esc}?1049l";
 
+    public static int VisibleLength(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return 0;
+
+        // Counter for the length of visible characters (excluding ANSI escape codes)
+        int count = 0;
+        // Whether we are currently inside an ANSI escape sequence
+        bool inEscapeSequence = false;
+
+        foreach (char c in text)
+        {
+            if (inEscapeSequence)
+            {
+                if ((c >= '@' && c <= '~') || c == 'm') // End of CSI sequence
+                {
+                    inEscapeSequence = false;
+                }
+                // Skip characters until the end of the escape sequence
+            }
+            else
+            {
+                if (c == '\x1b') // Start of escape sequence
+                {
+                    inEscapeSequence = true;
+                }
+                else
+                {
+                    count++; // Regular character, count it
+                }
+            }
+        }
+
+        return count;
+    }
+
     /// <summary>
-    /// Removes ANSI CSI escape sequences from text.
-    /// This is a stopgap sanitizer for preview content and does not cover all ANSI variants.
+    /// Removes ANSI escape codes from a string, leaving only the visible text.
+    /// This is useful for displaying raw text without styling.
     /// </summary>
-    /// <param name="text">Input text that may contain ANSI CSI escapes.</param>
-    /// <returns>Sanitized text without CSI escape sequences.</returns>
+    /// <param name="text">The input string that may contain ANSI escape codes</param>
+    /// <returns>The input string with ANSI escape codes removed</returns>
     public static string Strip(string text)
     {
         if (string.IsNullOrEmpty(text)) return text;
 
-        return Regex.Replace(text, @"\x1B\[[0-?]*[ -/]*[@-~]", string.Empty);
+        // Whether we are currently inside an ANSI escape sequence
+        bool inEscapeSequence = false;
+        // StringBuilder for efficiently building the result string without escape codes
+        var result = new System.Text.StringBuilder(text.Length);
+
+        foreach (char c in text)
+        {
+            if (inEscapeSequence)
+            {
+                if ((c >= '@' && c <= '~') || c == 'm') // End of CSI sequence
+                {
+                    inEscapeSequence = false;
+                }
+                // Skip characters until the end of the escape sequence
+            }
+            else
+            {
+                if (c == '\x1b') // Start of escape sequence
+                {
+                    inEscapeSequence = true;
+                }
+                else
+                {
+                    result.Append(c); // Regular character, add to result
+                }
+            }
+        }
+
+        return result.ToString();
     }
 }
