@@ -9,7 +9,7 @@ namespace PSFuzzySelect.Cmdlet;
 /// <summary>
 /// <para type="synopsis">Provides an interactive fuzzy selection interface for PowerShell pipeline objects</para>
 /// <para type="description">
-/// `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-fitlering and selecting objects
+/// `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-filtering and selecting objects
 /// from the pipeline. Items appear in the user-interface as the upstream command produces them (streaming).
 /// The selected objects are written to the output pipeline after the user confirms.
 /// 
@@ -21,11 +21,11 @@ namespace PSFuzzySelect.Cmdlet;
 /// </summary>
 /// <example>
 ///     <code>Get-ChildItem -File | Select-Fuzzy</code>
-///     <para>Interactively select a file</code>
+///     <para>Interactively select a file</para>
 /// </example>
 /// <example>
 ///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name</code>
-///     <para>Pick a file by name</code>
+///     <para>Pick a file by name</para>
 /// </example>
 /// <example>
 ///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect</code>
@@ -172,6 +172,9 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     private ObjectDisplayAdapter? _displayAdapter;
 
+    /// <summary>A counter to track the total number of input objects processed</summary>
+    private int _processedCount = 0;
+
     #endregion Fields
 
     #region Begin
@@ -212,12 +215,16 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
-        if (InputObject == null) return;    // If the input object is null, there is nothing to process
-        if (_engine == null) throw new InvalidOperationException("Engine not initialized!"); // Ensure the engine is initialized before processing records
+        if (InputObject != null) EnqueueInput(InputObject); // Enqueue the input object for processing and display in the fuzzy selector UI
+    }
+
+    private void EnqueueInput(PSObject input)
+    {
+        _processedCount++;          // Increment the count of processed input objects
 
         // Buffer incoming items
-        var display = _displayAdapter?.GetDisplayString(InputObject);
-        _inputBuffer[_inputBufferIndex++] = new MatchableItem(InputObject, display ?? string.Empty);
+        var display = _displayAdapter?.GetDisplayString(input);
+        _inputBuffer[_inputBufferIndex++] = new MatchableItem(input, display ?? string.Empty);
 
         // Flush the buffer if we've reached the batch size or if the flush interval has elapsed to ensure timely updates to the UI
         if (_inputBufferIndex >= _batchSize || _streamStopwatch.ElapsedMilliseconds >= _flushIntervalMs)
@@ -237,6 +244,13 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
         try
         {
+            // If no input was processed, it means this was a standalone call, default to Get-ChildItem in the current directory
+            if (ShouldUseFallbackScript())
+            {
+                var fallbackResults = InvokeCommand.InvokeScript("Get-ChildItem");
+                foreach (var item in fallbackResults) EnqueueInput(item);
+            }
+
             // Flush any remaining items in the buffer
             FlushInputBuffer();
 
@@ -259,6 +273,11 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         {
             _engine.Dispose();
         }
+    }
+
+    private bool ShouldUseFallbackScript()
+    {
+        return _processedCount == 0 && !MyInvocation.ExpectingInput && !MyInvocation.BoundParameters.ContainsKey(nameof(InputObject));
     }
 
     #endregion End
