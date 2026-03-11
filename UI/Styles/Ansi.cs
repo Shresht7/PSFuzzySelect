@@ -127,30 +127,15 @@ public static class Ansi
     // COLORS
     // ------
 
-    // Cache
-
-    private static readonly Dictionary<Color, string> _fgCache;
-    private static readonly Dictionary<Color, string> _bgCache;
-
-    // Constructor
-    static Ansi()
-    {
-        // Pre-generate ANSI escape codes for all colors and cache them for fast retrieval
-        _fgCache = new Dictionary<Color, string>();
-        _bgCache = new Dictionary<Color, string>();
-        foreach (Color color in Enum.GetValues<Color>())
-        {
-            _fgCache[color] = $"{Esc}{(int)color}m";
-            _bgCache[color] = $"{Esc}{(int)color + 10}m";
-        }
-    }
-
-    // Foreground Colors
-
     /// <summary>Generates an ANSI escape code to set the foreground color</summary>
     /// <param name="color">The color to set for the foreground</param>
-    /// <returns>`\x1b[{color}m`</returns>
-    public static string Foreground(Color color) => _fgCache[color];
+    /// <returns>The ANSI escape sequence for the foreground color</returns>
+    public static string Foreground(Color color)
+    {
+        if (color.IsRgb) return ForegroundRgb(color.R!.Value, color.G!.Value, color.B!.Value);
+        if (color.IsAnsi) return $"{Esc}{color.AnsiIndex!.Value}m";
+        return string.Empty;
+    }
 
     /// <summary>Generates an ANSI escape code to set the foreground color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -159,12 +144,20 @@ public static class Ansi
     /// <returns>`\x1b[38;2;{r};{g};{b}m`</returns>
     public static string ForegroundRgb(int r, int g, int b) => $"{Esc}38;2;{r};{g};{b}m";
 
+    /// <summary>Generates an ANSI escape code to set the foreground color using an 8-bit index</summary>
+    public static string ForegroundExtended(int index) => $"{Esc}38;5;{index}m";
+
     // Background Colors
 
     /// <summary>Generates an ANSI escape code to set the background color</summary>
     /// <param name="color">The color to set for the background</param>
-    /// <returns>`\x1b[{color + 10}m`</returns>
-    public static string Background(Color color) => _bgCache[color];
+    /// <returns>The ANSI escape sequence for the background color</returns>
+    public static string Background(Color color)
+    {
+        if (color.IsRgb) return BackgroundRgb(color.R!.Value, color.G!.Value, color.B!.Value);
+        if (color.IsAnsi) return $"{Esc}{color.AnsiIndex!.Value + 10}m";
+        return string.Empty;
+    }
 
     /// <summary>Generates an ANSI escape code to set the background color using RGB values</summary>
     /// <param name="r">The red component of the color (0-255)</param>
@@ -172,6 +165,9 @@ public static class Ansi
     /// <param name="b">The blue component of the color (0-255)</param>
     /// <returns>`\x1b[48;2;{r};{g};{b}m`</returns>
     public static string BackgroundRgb(int r, int g, int b) => $"{Esc}48;2;{r};{g};{b}m";
+
+    /// <summary>Generates an ANSI escape code to set the background color using an 8-bit index</summary>
+    public static string BackgroundExtended(int index) => $"{Esc}48;5;{index}m";
 
     // ALTERNATE BUFFER
     // ----------------
