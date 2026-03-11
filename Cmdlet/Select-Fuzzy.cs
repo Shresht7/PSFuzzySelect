@@ -173,7 +173,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     private ObjectDisplayAdapter? _displayAdapter;
 
     /// <summary>A counter to track the total number of input objects processed</summary>
-    private int _inputCount = 0;
+    private int _processedCount = 0;
 
     #endregion Fields
 
@@ -220,8 +220,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     private void EnqueueInput(PSObject input)
     {
-        if (input == null) return; // If the input object is null, there is nothing to enqueue
-        _inputCount++;          // Increment the count of processed input objects
+        _processedCount++;          // Increment the count of processed input objects
 
         // Buffer incoming items
         var display = _displayAdapter?.GetDisplayString(input);
@@ -246,7 +245,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         try
         {
             // If no input was processed, it means this was a standalone call, default to Get-ChildItem in the current directory
-            if (_inputCount == 0 && !MyInvocation.ExpectingInput && !MyInvocation.BoundParameters.ContainsKey(nameof(InputObject)))
+            if (ShouldUseFallbackScript())
             {
                 var fallbackResults = InvokeCommand.InvokeScript("Get-ChildItem");
                 foreach (var item in fallbackResults) EnqueueInput(item);
@@ -274,6 +273,11 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         {
             _engine.Dispose();
         }
+    }
+
+    private bool ShouldUseFallbackScript()
+    {
+        return _processedCount == 0 && !MyInvocation.ExpectingInput && !MyInvocation.BoundParameters.ContainsKey(nameof(InputObject));
     }
 
     #endregion End
