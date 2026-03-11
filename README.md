@@ -4,6 +4,9 @@
 
 Think `fzf` but as a first-class PowerShell cmdlet that understands PowerShell objects.
 
+> [!WARNING]
+> ⚠️ This module is in active development and ~~may~~ will have breaking changes. ⚠️
+
 ---
 
 ## Usage
