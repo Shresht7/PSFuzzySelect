@@ -113,14 +113,14 @@ public class TextBlock : IComponent
             // If the span is longer than the remaining space, only write the portion that fits
             if (span.Length > spaceLeft)
             {
-                surface.Write(currentX, y, span.Text.Substring(0, spaceLeft), span.Style);
+                surface.Write(currentX, y, span.Memory.Slice(0, spaceLeft), span.Style);
                 currentX += spaceLeft; // Advance the x position by the amount of text that was actually rendered
                 break; // No more space to render additional spans
             }
             // Otherwise, render the entire span
             else
             {
-                surface.Write(currentX, y, span.Text, span.Style);
+                surface.Write(currentX, y, span.Memory, span.Style);
                 currentX += span.Length; // Advance the x position based on the length of the span's text
             }
         }
