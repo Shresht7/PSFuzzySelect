@@ -186,31 +186,46 @@ public class List(
 
     public Message? HandleKey(ConsoleKeyInfo key)
     {
+        bool shiftPressed = (key.Modifiers & ConsoleModifiers.Shift) != 0;
+        bool ctrlPressed = (key.Modifiers & ConsoleModifiers.Control) != 0;
+
         return key.Key switch
         {
-            ConsoleKey.Tab => SelectItem(Matches[Cursor].Item),
-            ConsoleKey.UpArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(-Cursor),
+            ConsoleKey.Tab => _isMultiSelect
+                ? ToggleAndMove(shiftPressed ? -1 : 1)
+                : CursorMove(shiftPressed ? -1 : 1),
+
+            ConsoleKey.UpArrow when ctrlPressed => CursorMove(-Cursor),
             ConsoleKey.UpArrow => CursorMove(-1),
-            ConsoleKey.DownArrow when key.Modifiers.HasFlag(ConsoleModifiers.Control) => CursorMove(Matches.Count - Cursor - 1),
+
+            ConsoleKey.DownArrow when ctrlPressed => CursorMove(Matches.Count - Cursor - 1),
             ConsoleKey.DownArrow => CursorMove(1),
             _ => null
         };
     }
 
     /// <summary>
-    /// Creates a message to select the currently highlighted item in the list of matches.
-    /// This is triggered when the user presses the Tab or Spacebar key, indicating they want to select the current item.
+    /// Toggles the selection of an item and moves the cursor.
+    /// In the "Down" direction (delta > 0), it toggles before moving.
+    /// In the "Up" direction (delta < 0), it moves before toggling.
     /// </summary>
-    /// <param name="item">The item to be selected</param>
-    /// <returns>A message indicating the selection of the item, or null if the selection is invalid</returns>
-    private Select? SelectItem(object item)
+    private Select? ToggleAndMove(int delta)
     {
-        if (Cursor >= 0 && Cursor < Matches.Count)
+        if (Matches.Count == 0 || Cursor < 0 || Cursor >= Matches.Count) return null;
+
+        if (delta > 0)
         {
-            if (Cursor + 1 < Matches.Count) Cursor++; // Advance the cursor to the next item after selection, if possible
-            return new Select(item);
+            // Toggle current, then move down
+            var msg = new Select(Matches[Cursor].Item);
+            CursorMove(delta);
+            return msg;
         }
-        return null;
+        else
+        {
+            // Move up, then toggle new current
+            CursorMove(delta);
+            return new Select(Matches[Cursor].Item);
+        }
     }
 
     /// <summary>

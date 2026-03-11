@@ -300,10 +300,10 @@ public class FuzzySelector : IApplication
     }
 
     /// <summary>
-    /// Handles item selection. In single-select mode, immediately confirms.
+    /// Handles item selection. In single-select mode, updates the selection set without confirming.
     /// In multi-select mode, toggles the item and optionally requests a preview update.
     /// </summary>
-    private Message? HandleSelect(object item)
+    private RequestPreview? HandleSelect(object item)
     {
         if (_multiSelect)
         {
@@ -311,10 +311,11 @@ public class FuzzySelector : IApplication
             return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
         }
 
-        // Single-select mode: immediately confirm the selection
+        // Single-select mode: update the selection but do NOT confirm immediately.
+        // The selection is only finalized when the user presses Enter.
         _selectedItems.Clear();
         _selectedItems.Add(item);
-        return new Confirm();
+        return _showPreview ? new RequestPreview(GetMatchItem(_list.Cursor)) : null;
     }
 
     /// <summary>
