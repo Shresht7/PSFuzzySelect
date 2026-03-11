@@ -121,9 +121,26 @@ public class Engine(IApplication App) : IDisposable
     public void EnqueueMessage(Message message)
     {
         if (_disposed) return;
+
         _messageQueue.Enqueue(message);
-        try { _messageEvent.Set(); }
-        catch (ObjectDisposedException) { /* Ignore */ }
+
+        var eventSignaled = false;
+        try
+        {
+            _messageEvent.Set();
+            eventSignaled = true;
+        }
+        catch (ObjectDisposedException)
+        {
+            // The engine is being disposed; fall through to clean up the queued message below.
+        }
+
+        // If the engine was disposed before the event could be signaled, remove the message
+        // so that we don't leave an unprocessable message in the queue.
+        if (_disposed && !eventSignaled)
+        {
+            _messageQueue.TryDequeue(out _);
+        }
     }
 
     #region Event Collection
