@@ -9,7 +9,7 @@ namespace PSFuzzySelect.Cmdlet;
 /// <summary>
 /// <para type="synopsis">Provides an interactive fuzzy selection interface for PowerShell pipeline objects</para>
 /// <para type="description">
-/// `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-fitlering and selecting objects
+/// `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-filtering and selecting objects
 /// from the pipeline. Items appear in the user-interface as the upstream command produces them (streaming).
 /// The selected objects are written to the output pipeline after the user confirms.
 /// 
@@ -21,11 +21,11 @@ namespace PSFuzzySelect.Cmdlet;
 /// </summary>
 /// <example>
 ///     <code>Get-ChildItem -File | Select-Fuzzy</code>
-///     <para>Interactively select a file</code>
+///     <para>Interactively select a file</para>
 /// </example>
 /// <example>
 ///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name</code>
-///     <para>Pick a file by name</code>
+///     <para>Pick a file by name</para>
 /// </example>
 /// <example>
 ///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect</code>
