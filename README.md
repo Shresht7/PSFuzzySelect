@@ -2,7 +2,7 @@
 
 `PSFuzzySelect` is a PowerShell module that provides a fuzzy selection interface for PowerShell objects. It allows users to quickly filter and select items from a list of objects using a fuzzy matching algorithm and forwards the selected objects down the pipeline.
 
-Think `fzf` but as a first-class PowerShell cmdlet that understands PowerShell objects.
+Think `fzf` but as a first-class PowerShell cmdlet that understands the PowerShell pipeline.
 
 > [!WARNING]
 > ⚠️ This module is in active development and ~~may~~ will have breaking changes. ⚠️
@@ -53,6 +53,9 @@ Get-ChildItem -File -Recurse | Select-Fuzzy -Preview -PreviewScript { Get-Conten
 # Preview git log for each branch
 git branch --format="%(refname:short)" | Select-Fuzzy -Preview -PreviewScript { git log -20 --oneline --pretty=format:"%h %s" $_ }
 ```
+
+> [!CAUTION]
+> We have to collect and retain all pipeline objects in memory while the user is making their selection, so be cautious when using `Select-Fuzzy` with a large number of objects as it may lead to high memory usage (~600MB for ~1M objects in my tests). For excessively large lists, you are better off not blocking the pipeline and using a more traditional approach to selection like `Select-Object`.
 
 ## Parameters
 
