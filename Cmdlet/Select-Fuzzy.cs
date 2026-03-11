@@ -221,6 +221,14 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     /// </summary>
     protected override void ProcessRecord()
     {
+        // If the UI has already finished (e.g. user made a selection or cancelled), 
+        // stop the pipeline immediately to avoid unnecessary processing of remaining items.
+        if (_engine is { IsRunning: false })
+        {
+            EndProcessing();    // Ensure EndProcessing is called to perform any necessary cleanup and finalization
+            throw new PipelineStoppedException();   // Throwing this exception signals to PowerShell that the pipeline has been stopped, which is the appropriate way to halt processing in this context
+        }
+
         if (InputObject != null) EnqueueInput(InputObject); // Enqueue the input object for processing and display in the fuzzy selector UI
     }
 
@@ -243,8 +251,24 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     #region End
 
+    /// <summary>
+    /// A flag to ensure that the <see cref="EndProcessing"/> logic is only executed once.
+    /// This is necessary because <see cref="EndProcessing"/> can be called manually from <see cref="ProcessRecord"/> 
+    /// (to stop the pipeline early) and will still be called by PowerShell's infrastructure during the normal cleanup cycle.
+    /// </summary>
+    private bool _isEndProcessingCalled = false;
+
+    /// <summary>
+    /// Finalizes the processing of the cmdlet. This method is called by the PowerShell engine after all records 
+    /// have been processed or if the pipeline is stopped early.
+    /// </summary>
     protected override void EndProcessing()
     {
+        // Ensure that the teardown and output logic only runs once, regardless of whether it was triggered
+        // by the end of the pipeline or an early selection in ProcessRecord.
+        if (_isEndProcessingCalled) return;
+        _isEndProcessingCalled = true;
+
         if (_engine == null || _selector == null || _uiThread == null)
             throw new InvalidOperationException("Failed to initialize correctly!");
 
@@ -261,10 +285,10 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
             FlushInputBuffer();
 
             // Signal the UI that no more items will be added, allowing it to update its state accordingly
-            _engine.EnqueueMessage(new ItemsFinished());
+            if (_engine.IsRunning) _engine.EnqueueMessage(new ItemsFinished());
 
             // Wait for the UI Thread to finish (i.e., the user has made a selection and closed the UI)
-            _uiThread.Join();
+            if (_uiThread.IsAlive) _uiThread.Join();
 
             // If an exception occurred on the UI thread, rethrow it here to ensure it is properly reported in the PowerShell pipeline
             if (_uiThreadException != null) throw new InvalidOperationException("UI Error", _uiThreadException);
