@@ -18,6 +18,12 @@ public class FuzzySelector : IApplication
     /// </summary>
     private readonly List<MatchableItem> _items = [];
 
+    /// <summary>
+    /// The list of current match results based on the search query. This list is updated whenever the query changes or new items are added.
+    /// </summary>
+    /// <remarks>We reuse the same list instance to store match results to minimize allocations</remarks>
+    private readonly List<MatchResult> _matchResults = [];
+
     /// <summary>Indicates whether the fuzzy selector is done receiving items from the pipeline.</summary>
     private bool _isStreamingFinished = false;
 
@@ -259,15 +265,18 @@ public class FuzzySelector : IApplication
     /// </summary>
     private void RefreshList(MatchableItem[]? newItems = null)
     {
-        // Determine the list of items that match the current query
-        var currentMatches = newItems == null
-            ? FuzzyMatcher.Match(_items, _input.Query) // if newItems is null, perform a full match against the entire list
-            : FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query); // otherwise, perform an incremental match on existing matches
+        if (newItems == null)
+            // For a full refresh or the initial render, we match against the entire item list
+            FuzzyMatcher.Match(_items, _input.Query, _matchResults);
+        else
+            // For incremental updates, we only match the new items and merge them with the existing matches
+            FuzzyMatcher.MatchIncremental(_list.Matches, newItems, _input.Query, _matchResults);
 
-        if (ReferenceEquals(currentMatches, _list.Matches)) return; // No change in matches, skip update
+        // No change in matches, skip update
+        if (ReferenceEquals(_matchResults, _list.Matches)) return;
 
         // Update the list component with the new matches, which will trigger a re-render of the match list in the user-interface
-        _list.SetMatches(currentMatches, preserveCursor: newItems != null);
+        _list.SetMatches(_matchResults, preserveCursor: newItems != null);
     }
 
     /// <summary>

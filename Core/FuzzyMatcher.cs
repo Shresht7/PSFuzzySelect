@@ -18,10 +18,16 @@ public class FuzzyMatcher
     /// </summary>
     /// <param name="items">The collection of items to match against. Each item can be of any type, such as a string or PSObject.</param>
     /// <param name="query">The search query string that the user is trying to match.</param>
+    /// <param name="results">The list to store the match results. We reuse the same list to avoid unnecessary allocations</param>
     /// <returns>A list of MatchResult objects representing the matched items, their display strings, scores, and matched positions.</returns>
-    public static List<MatchResult> Match(List<MatchableItem> items, string query)
+    public static void Match(List<MatchableItem> items, string query, List<MatchResult> results)
     {
-        var results = new List<MatchResult>(items.Count);
+        // Clear the results list before populating it with new matches
+        results.Clear();
+
+        // Ensure the results list has enough capacity to hold all potential matches to minimize re-allocations during resizing
+        if (results.Capacity < items.Count)
+            results.Capacity = items.Count;
 
         // No query provided, return all items with their display strings and a default score of 0
         if (string.IsNullOrWhiteSpace(query))
@@ -31,7 +37,7 @@ public class FuzzyMatcher
                 var item = items[i];
                 results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
             }
-            return results;
+            return; // early exit since we don't need to perform any matching logic when the query is empty
         }
 
         var queryLower = query.ToLowerInvariant();
@@ -53,7 +59,6 @@ public class FuzzyMatcher
             int cmp = b.Score.CompareTo(a.Score);
             return cmp != 0 ? cmp : string.Compare(a.DisplayString, b.DisplayString, StringComparison.Ordinal);
         });
-        return results;
     }
 
     /// <summary>
@@ -63,19 +68,21 @@ public class FuzzyMatcher
     /// <param name="newItems">The list of new items to match against the query.</param>
     /// <param name="query">The search query string.</param>
     /// <returns>A list of MatchResult objects representing the merged match results.</returns>
-    public static List<MatchResult> MatchIncremental(List<MatchResult> existingMatches, MatchableItem[] newItems, string query)
+    public static void MatchIncremental(List<MatchResult> existingMatches, MatchableItem[] newItems, string query, List<MatchResult> results)
     {
+        // Clear the results list before populating it with new matches
+        results.Clear();
+
         // Append new items with score 0 when the query is empty
         if (string.IsNullOrWhiteSpace(query))
         {
-            var combined = new List<MatchResult>(existingMatches.Count + newItems.Length);
-            combined.AddRange(existingMatches);
+            results.AddRange(existingMatches);
             for (int i = 0; i < newItems.Length; i++)
             {
                 var item = newItems[i];
-                combined.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
+                results.Add(new MatchResult(item.Item, item.Display, 0, Array.Empty<int>()));
             }
-            return combined;
+            return; // early exit since we don't need to perform any matching logic when the query is empty
         }
 
         // Perform matching only on the new items and merge with existing matches to maintain order and performance
@@ -92,7 +99,12 @@ public class FuzzyMatcher
             }
         }
 
-        if (newMatches.Count == 0) return existingMatches; // No new matches, return existing list as-is
+        // If there are no new matches, simply return the existing matches
+        if (newMatches.Count == 0)
+        {
+            results.AddRange(existingMatches);
+            return;
+        }
 
         // Sort new matches by score descending, then by display string for consistent ordering
         newMatches.Sort((a, b) =>
@@ -102,7 +114,6 @@ public class FuzzyMatcher
         });
 
         // Merge the two sorted lists
-        var merged = new List<MatchResult>(existingMatches.Count + newMatches.Count);
         int existingIndex = 0, newIndex = 0;
         while (existingIndex < existingMatches.Count && newIndex < newMatches.Count)
         {
@@ -115,17 +126,14 @@ public class FuzzyMatcher
             // If scores are equal, use display string as tiebreaker to ensure consistent ordering
             if (cmp == 0) cmp = string.Compare(existing.DisplayString, newMatch.DisplayString, StringComparison.Ordinal);
             // Higher score should come first, so if cmp > 0, newMatch goes before existing
-            if (cmp > 0) { merged.Add(newMatch); newIndex++; }
+            if (cmp > 0) { results.Add(newMatch); newIndex++; }
             // otherwise, existing goes first
-            else { merged.Add(existing); existingIndex++; }
+            else { results.Add(existing); existingIndex++; }
         }
 
         // Add any remaining items from either list
-        while (existingIndex < existingMatches.Count) merged.Add(existingMatches[existingIndex++]);
-        while (newIndex < newMatches.Count) merged.Add(newMatches[newIndex++]);
-
-        // Return the final merged list
-        return merged;
+        while (existingIndex < existingMatches.Count) results.Add(existingMatches[existingIndex++]);
+        while (newIndex < newMatches.Count) results.Add(newMatches[newIndex++]);
     }
 
     /// <summary>
