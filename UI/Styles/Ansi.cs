@@ -144,7 +144,9 @@ public static class Ansi
     /// <returns>`\x1b[38;2;{r};{g};{b}m`</returns>
     public static string ForegroundRgb(int r, int g, int b) => $"{Esc}38;2;{r};{g};{b}m";
 
-    /// <summary>Generates an ANSI escape code to set the foreground color using an 8-bit index</summary>
+    /// <summary>Generates an ANSI escape code to set the foreground color using an 8-bit indexed color value.</summary>
+    /// <param name="index">The 8-bit color index to use for the foreground color (valid range: 0-255).</param>
+    /// <returns>The ANSI escape sequence in the format `\x1b[38;5;{index}m`.</returns>
     public static string ForegroundExtended(int index) => $"{Esc}38;5;{index}m";
 
     // Background Colors
@@ -177,6 +179,11 @@ public static class Ansi
     /// <returns>`\x1b[?1049h`</returns>
     public static string AltBufferEnter => $"{Esc}?1049h";
 
+    /// <summary>
+    /// Calculates the number of visible characters in a string, excluding ANSI escape sequences.
+    /// </summary>
+    /// <param name="text">The input string that may contain ANSI escape codes.</param>
+    /// <returns>The count of visible characters in the input string.</returns>
     /// <summary>ANSI escape code to switch back to the main buffer</summary>
     /// <returns>`\x1b[?1049l`</returns>
     public static string AltBufferExit => $"{Esc}?1049l";

@@ -95,7 +95,7 @@ public static class AnsiParser
                     {
                         if (int.TryParse(parts[i + 2], out int index))
                         {
-                            var color = Color.FromAnsi(index); // Note: Should probably distinguish extended indices from base 16
+                            var color = Color.FromAnsi(index);
                             style = (code == 38) ? style.WithForeground(color) : style.WithBackground(color);
                         }
                         i += 2;
