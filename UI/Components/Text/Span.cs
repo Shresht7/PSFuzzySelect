@@ -13,7 +13,7 @@ public readonly record struct TextSpan
     /// <summary>Construct a span from a string.</summary>
     public TextSpan(string text, Style style)
     {
-        _memory = text is null ? ReadOnlyMemory<char>.Empty : text.AsMemory();
+        _memory = string.IsNullOrEmpty(text) ? ReadOnlyMemory<char>.Empty : text.AsMemory();
         Style = style;
     }
 

@@ -162,8 +162,8 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         // Send the buffered items to the UI for display
         _engine!.EnqueueMessage(new ItemsAdded(itemsToSend));
 
-        // Clear the buffer after flushing
-        Array.Clear(_inputBuffer, 0, _inputBuffer.Length);
+        // Clear the used portion of the buffer after flushing
+        Array.Clear(_inputBuffer, 0, _inputBufferIndex);
         _inputBufferIndex = 0;
 
         // Restart the stopwatch to track the time until the next flush
