@@ -21,16 +21,16 @@ Select-Fuzzy [-InputObject <PSObject>] [-MultiSelect] [[-Property] <String[]>] [
 ## DESCRIPTION
 `Select-Fuzzy` presents a full-screen terminal-user-interface for fuzzy-filtering and selecting objects from the pipeline. Items appear in the user-interface as the upstream command produces them (streaming). The selected objects are written to the output pipeline after the user confirms.
 
-### Navigation
+  Navigation
 - **Up/Down Arrow**: Move the cursor up or down.
 - **Ctrl + Up/Down Arrow**: Jump to the very top or bottom of the list.
 - **Tab / Shift + Tab**: Move the cursor (In `-MultiSelect` mode, this also toggles selection).
 
-### Selection
+  Selection
 - **Enter**: Confirm the current selection and exit.
 - **Esc**: Cancel the selection and exit without outputting anything.
 
-### Search Query Editing
+  Search Query Editing
 - **Characters**: Type to filter the list.
 - **Backspace**: Delete the character before the cursor.
 - **Delete**: Delete the character at the cursor.
@@ -41,24 +41,28 @@ Select-Fuzzy [-InputObject <PSObject>] [-MultiSelect] [[-Property] <String[]>] [
 ## EXAMPLES
 
 ### Example 1: Basic File Selection
+
 ```powershell
 Get-ChildItem -File | Select-Fuzzy
 ```
 Interactively select a file from the current directory.
 
 ### Example 2: Selecting by Property
+
 ```powershell
 Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name
 ```
 Pick a file by its name from a recursive list.
 
 ### Example 3: Multi-select with Processes
+
 ```powershell
 Get-Process | Select-Fuzzy -MultiSelect | Stop-Process
 ```
 Select multiple processes and stop them.
 
 ### Example 4: Using the Preview Pane
+
 ```powershell
 Get-ChildItem -File -Recurse | Select-Fuzzy -ShowPreview -PreviewScript { Get-Content $_.FullName }
 ```
