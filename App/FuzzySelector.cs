@@ -133,6 +133,7 @@ public class FuzzySelector : IApplication
 
     public FuzzySelector(
         string prompt,
+        string query,
         List<MatchableItem>? initialItems = null,
         string[]? properties = null,
         bool multiSelect = false,
@@ -147,7 +148,7 @@ public class FuzzySelector : IApplication
         _previewSize = GetPreviewSize(previewSize);
         _previewPosition = previewPosition;
 
-        _input = new(prompt, string.Empty);
+        _input = new(prompt, query);
         _list = new([], multiSelect, item => _selectedItems.Contains(item));
 
         // Initial refresh to populate matches before the first render

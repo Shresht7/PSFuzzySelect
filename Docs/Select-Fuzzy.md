@@ -14,8 +14,8 @@ Provides an interactive fuzzy selection interface for PowerShell pipeline object
 
 ```
 Select-Fuzzy [-InputObject <PSObject>] [-MultiSelect] [[-Property] <String[]>] [-Prompt <String>]
- [-ShowPreview] [-PreviewSize <String>] [-PreviewPosition <PreviewPosition>] [-PreviewScript <ScriptBlock>]
- [-ProgressAction <ActionPreference>] [<CommonParameters>]
+ [-Query <String>] [-ShowPreview] [-PreviewSize <String>] [-PreviewPosition <PreviewPosition>]
+ [-PreviewScript <ScriptBlock>] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
@@ -45,6 +45,7 @@ Select-Fuzzy [-InputObject <PSObject>] [-MultiSelect] [[-Property] <String[]>] [
 ```powershell
 Get-ChildItem -File | Select-Fuzzy
 ```
+
 Interactively select a file from the current directory.
 
 ### Example 2: Selecting by Property
@@ -52,6 +53,7 @@ Interactively select a file from the current directory.
 ```powershell
 Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name
 ```
+
 Pick a file by its name from a recursive list.
 
 ### Example 3: Multi-select with Processes
@@ -59,6 +61,7 @@ Pick a file by its name from a recursive list.
 ```powershell
 Get-Process | Select-Fuzzy -MultiSelect | Stop-Process
 ```
+
 Select multiple processes and stop them.
 
 ### Example 4: Using the Preview Pane
@@ -66,6 +69,7 @@ Select multiple processes and stop them.
 ```powershell
 Get-ChildItem -File -Recurse | Select-Fuzzy -ShowPreview -PreviewScript { Get-Content $_.FullName }
 ```
+
 Select multiple files with a live content preview in a side pane.
 
 ## PARAMETERS
@@ -198,6 +202,21 @@ Accept wildcard characters: False
 Type: ActionPreference
 Parameter Sets: (All)
 Aliases: proga
+
+Required: False
+Position: Named
+Default value: None
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -Query
+The initial search query to populate the search input field when the fuzzy selector UI is launched.
+
+```yaml
+Type: String
+Parameter Sets: (All)
+Aliases:
 
 Required: False
 Position: Named

@@ -83,6 +83,12 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
     public string Prompt { get; set; } = "Search:";
 
     /// <summary>
+    /// The initial search query to populate the search input field when the fuzzy selector UI is launched.
+    /// </summary>
+    [Parameter]
+    public string Query { get; set; } = string.Empty;
+
+    /// <summary>
     /// Indicates whether to show the preview pane. This is implicitly enabled if <see cref="PreviewScript"/> is provided.
     /// </summary>
     [Parameter]
@@ -202,6 +208,7 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
         // Initialize the fuzzy selector with the provided parameters
         _selector = new FuzzySelector(
             Prompt,
+            Query,
             null,
             Property,
             MultiSelect.IsPresent,
