@@ -112,6 +112,37 @@ git branch --format="%(refname:short)" | Select-Fuzzy -Preview -PreviewScript { 
    ```pwsh
    Import-Module .\Module\PSFuzzySelect.psd1 -Force
    ```
+
+### Documentation
+
+This project uses [platyPS](https://github.com/PowerShell/platyPS) to generate PowerShell help from Markdown.
+
+#### Generate Markdown from the DLL
+
+Generates markdown files in the `Docs` folder based on the cmdlets defined in the `PSFuzzySelect.dll` assembly:
+
+```pwsh
+Import-Module platyPS
+Import-Module .\Module\PSFuzzySelect.dll -Force
+New-MarkdownHelp -Module PSFuzzySelect -OutputFolder Docs -Force
+```
+
+#### Update Markdown
+
+If you've already generated the markdown and just want to refresh it with new parameters or changes from the assembly:
+
+```pwsh
+Update-MarkdownHelpModule -Path .\Docs
+```
+
+#### Generate External Help XML
+
+To generate the `PSFuzzySelect.dll-Help.xml` file used by PowerShell for `Get-Help`:
+
+```pwsh
+New-ExternalHelp -Path .\Docs -OutputPath .\Module -Force
+```
+
 ---
 
 ## License
