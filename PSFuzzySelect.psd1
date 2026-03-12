@@ -12,7 +12,7 @@
 RootModule = 'PSFuzzySelect.dll'
 
 # Version number of this module.
-ModuleVersion = '0.1.0'
+ModuleVersion = '0.2.0'
 
 # Supported PSEditions
 # CompatiblePSEditions = @()
@@ -30,7 +30,7 @@ Author = 'Shresht7'
 Copyright = '(c) Shresht7. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = 'PSFuzzySelect is a PowerShell module that provides a fuzzy selection interface for PowerShell objects
+Description = 'A PowerShell module that provides a fuzzy selection cmdlet for interactive filtering and selection of items in the pipeline.'
 
 # Minimum version of the PowerShell engine required by this module
 PowerShellVersion = '7.0'
@@ -87,7 +87,7 @@ AliasesToExport = @()
 # ModuleList = @()
 
 # List of all files packaged with this module
-# FileList = @()
+FileList = @("PSFuzzySelect.dll", "PSFuzzySelect.psd1", "PSFuzzySelect.dll-Help.xml")
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{
@@ -98,10 +98,10 @@ PrivateData = @{
         Tags = @('fuzzy', 'select', 'selection', 'filter', 'picker', 'search', 'pipeline', 'fzf', 'interactive')
 
         # A URL to the license for this module.
-        # LicenseUri = ''
+        LicenseUri = 'https://github.com/Shresht7/PSFuzzySelect/blob/main/LICENSE'
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/Shresht7/PSFuzzySelect'
 
         # A URL to an icon representing this module.
         # IconUri = ''
