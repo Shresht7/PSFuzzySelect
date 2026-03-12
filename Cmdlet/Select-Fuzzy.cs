@@ -13,27 +13,38 @@ namespace PSFuzzySelect.Cmdlet;
 /// from the pipeline. Items appear in the user-interface as the upstream command produces them (streaming).
 /// The selected objects are written to the output pipeline after the user confirms.
 /// 
-/// Keybindings:
-///     Enter   Confirm Selection
-///     Esc     Cancel (Nothing written to the Output)
-///     ...
+/// Navigation:
+///     Up/Down Arrow     Move the cursor
+///     Ctrl+Up/Down      Jump to top/bottom
+///     Tab / Shift+Tab   Move the cursor (multi-select: toggle and move)
+/// 
+/// Selection:
+///     Enter             Confirm selection and exit
+///     Esc               Cancel and exit (no output)
+/// 
+/// Search:
+///     Type characters   Filter the list
+///     Backspace         Delete character before cursor
+///     Delete            Delete character at cursor
+///     Home/End          Move cursor to start/end of search query
+///     Left/Right Arrow  Move cursor in search query (Ctrl for word-jump)
 /// </para>
 /// </summary>
 /// <example>
 ///     <code>Get-ChildItem -File | Select-Fuzzy</code>
-///     <para>Interactively select a file</para>
+///     <para>Interactively select a file from the current directory.</para>
 /// </example>
 /// <example>
 ///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -Property Name</code>
-///     <para>Pick a file by name</para>
+///     <para>Pick a file by its name from a recursive list.</para>
 /// </example>
 /// <example>
-///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect</code>
-///     <para>Select multiple files</para>
+///     <code>Get-Process | Select-Fuzzy -MultiSelect | Stop-Process</code>
+///     <para>Select multiple processes and stop them.</para>
 /// </example>
 /// <example>
-///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -MultiSelect -Preview { Get-Content $_.FullName }</code>
-///     <para>Select multiple files with live-content preview on the right</para>
+///     <code>Get-ChildItem -File -Recurse | Select-Fuzzy -ShowPreview -PreviewScript { Get-Content $_.FullName }</code>
+///     <para>Select multiple files with a live content preview in a side pane.</para>
 /// </example>
 [Cmdlet(VerbsCommon.Select, "Fuzzy")]
 [Alias("psfzf")]
@@ -52,49 +63,50 @@ public sealed class SelectFuzzyCmdlet : PSCmdlet
 
     /// <summary>
     /// Indicates whether multiple items can be selected in the fuzzy selector.
-    /// If set to <see langword="true"/>, users can select multiple items; otherwise, only a single item can be selected.
+    /// When enabled, use Tab or Shift+Tab to toggle selection on items.
     /// </summary>
     [Parameter]
     public SwitchParameter MultiSelect { get; set; }
 
     /// <summary>
-    /// Properties to display and search on.
-    /// If not specified, uses the object's default display properties or `ToString()` representation.
+    /// The properties of the input objects to display and search against.
+    /// If not specified, the cmdlet uses the object's default display properties or its <c>ToString()</c> representation.
     /// </summary>
     [Parameter(Position = 0)]
     [ValidateNotNullOrEmpty]
     public string[]? Property { get; set; }
 
     /// <summary>
-    /// The prompt message to display in the fuzzy selector user-interface.
+    /// The prompt message to display next to the search input field (default: "Search:").
     /// </summary>
     [Parameter]
     public string Prompt { get; set; } = "Search:";
 
     /// <summary>
-    /// Indicates whether to show a preview of the selected item(s) in the fuzzy selector interface.
+    /// Indicates whether to show the preview pane. This is implicitly enabled if <see cref="PreviewScript"/> is provided.
     /// </summary>
     [Parameter]
     [Alias("Details")]
     public SwitchParameter ShowPreview { get; set; }
 
     /// <summary>
-    /// The size of the preview pane in the fuzzy selector interface, specified as a percentage (e.g., "50%") or fixed width (e.g., "30").
+    /// The size of the preview pane, specified as a percentage (e.g., "50%") or a fixed number of columns/rows (e.g., "30").
+    /// Defaults to "50%".
     /// </summary>
     [Parameter]
     public string PreviewSize { get; set; } = "50%";
 
     /// <summary>
-    /// The position of the preview pane in the fuzzy selector interface (e.g., left, right, top, bottom).
+    /// The position of the preview pane relative to the main list.
+    /// Valid values: Right, Left, Top, Bottom. Defaults to Right.
     /// </summary>
     [Parameter]
     public PreviewPosition PreviewPosition { get; set; } = PreviewPosition.Right;
 
 
     /// <summary>
-    /// A script block used to generate the preview content for each item in the fuzzy selector interface.
-    /// The current item is provided as <c>$PSItem</c> / <c>$_</c>, and the script output is displayed in the preview pane.
-    /// If omitted while <see cref="ShowPreview"/> is enabled, a default formatter is used.
+    /// A script block used to generate the preview content for the currently highlighted item.
+    /// The current item is available as <c>$_</c> or <c>$PSItem</c>. The output of the script is rendered as text in the preview pane.
     /// </summary>
     [Parameter]
     [Alias("Preview", "PreviewScriptBlock")]
